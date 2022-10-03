@@ -36,7 +36,7 @@ void show_test_ready(char file_name[6], unsigned long run_time)
     tft.setTextSize(4);         // sets text size for file name and run time
     tft.setTextColor(ORANGE);   // file name will be orange
     tft.print(file_name);       // prints file name to screen
-    tft.println(".txt");        // adds ".txt" to end of inputted file name
+    tft.println(".txt");        // adds ".txt" to end of inputted file name on the display screen
     tft.setCursor(70,55);       // sets cursor for run time
     tft.setTextColor(DARKCYAN); // sets run time color to DarkCyan
     min = run_time / 100;       // finds the values that will go in front of the colon
