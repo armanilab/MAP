@@ -62,13 +62,21 @@ void loop() {
   // TODO: update buttons
   //red_status = red_button.update_status();
   //green_status = green_button.update_status();
-  
+
   if (state == ENTER_NAME) {
     display.show_file_name(new_file_name);
     // TODO: blink current char
+    display.highlight_char(current_char);
 
     // react based on buttons
-    
+    // TODO: check syntax
+    if (green_status > Button.LONG_HOLD) {
+      // long hold stuff
+    } else if (green_status > Button.SHORT_HOLD) {
+      // short hold stuff
+    } else if (green_status > Button.CLICKED) {
+      // click
+    } // otherwise, button was not pressed, do nothing
     // do stuff
   } else if (state == ENTER_TIME) {
     // do more stuff
@@ -92,5 +100,6 @@ void change_state(State new_state) {
   if (new_state == ENTER_NAME) {
     new_file_name = file_name;
     current_char = 0;
+    display.highlight_char(current_char);
   }
 }
