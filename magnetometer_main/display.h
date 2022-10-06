@@ -47,6 +47,8 @@ void show_enter_name_overwrite(); // displays waring screen if about to overwrit
 
 void show_file_name(Adafruit_ST7789 tft, char file_entry[], int index) // displays the screen to enter the file name
 {
+    tft.fillScreen(ST77XX_BLACK); // clear the screen
+    
     tft.setCursor(30, 0);           // sets cursor for first line
     tft.setTextSize(2);             // sets text size for file name
     tft.setTextColor(DARKCYAN);     // file name will be DARKCYAN
