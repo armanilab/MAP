@@ -5,13 +5,29 @@
 Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 
 // colors defined
-#define ORANGE 0xFD20
+#define BLACK 0x0000
 #define NAVY 0x000F
+#define DARKGREEN 0x03E0
 #define DARKCYAN 0x03EF
+#define MAROON 0x7800
+#define PURPLE 0x780F
+#define OLIVE 0x7BE0
+#define LIGHTGREY 0xC618
+#define DARKGREY 0x7BEF
+#define BLUE 0x001F
+#define GREEN 0x07E0
+#define CYAN 0x07FF
+#define RED 0xF800
+#define MAGENTA 0xF81F
+#define YELLOW 0xFFE0
+#define WHITE 0xFFFF
+#define ORANGE 0xFD20
+#define GREENYELLOW 0xAFE5
+#define PINK 0xF81F
 
 
 
-void show_file_name(file_name); // displays the screen to enter the file name
+void show_file_name(char file_entry[], int index); // displays the screen to enter the file name
 
 void show_run_time(run_time); // displays the screen to enter the run time wanted
 
@@ -28,6 +44,48 @@ void show_error_sensor();
 void show_enter_name_overwrite(); // displays waring screen if about to overwrite previous file name
 
 
+
+void show_file_name(char file_entry[], int index) // displays the screen to enter the file name
+{
+    tft.setCursor(30, 0);        // sets cursor for first line
+    tft.setTextSize(2);         // sets text size for file name and run time
+    tft.setTextColor(DARKCYAN);   // file name will be orange
+    tft.print("Enter file name:");       // prints file name to screen
+    // tft.println(".txt");        // adds ".txt" to end of inputted file name on the display screen // don't need anymore because file name has .txt concatenated w/ it
+    tft.setTextSize(4);
+    tft.setCursor(50,40);       // sets cursor for run time
+    tft.setTextColor(WHITE); // sets run time color to DarkCyan
+
+    // use index to have char change colors compared to rest
+    for (int i = 0; i < index; i++)
+    {
+      tft.print(file_entry[i]);
+    }
+    tft.setTextColor(ORANGE);
+    tft.print(file_entry[index]);
+    tft.setTextColor(WHITE);
+    for (int i = index + 1; i < 6; i++)
+    {
+      tft.print(file_entry[i]);
+    }
+    tft.setCursor(50, 75);
+    tft.setTextColor(ORANGE);
+    for (int i = 0; i < index; i++)
+    {
+      tft.print(" ");
+    }
+    tft.print("^");
+    for (int i = index + 1; i < 6; i++)
+    {
+      tft.print(" ");
+    }
+    tft.setTextColor(RED);    // sets instructions for user to be in green
+    tft.setTextSize(2);                // changes text size to be smaller than important info about program
+    tft.setCursor(20,100);
+    tft.println("Asterisks will be");
+    tft.setCursor(75, 115);
+    tft.println("ignored.");
+}
 
 void show_test_ready(char file_name[6], unsigned long run_time)
 {
