@@ -101,18 +101,18 @@ void setup() {
 }
 
 void loop() {
-  // TODO: update buttons
+  // get updated button statuses
   int red_status = red.update_status();
   int green_status = green.update_status();
 
+  /* NAME ENTRY */
   if (state == ENTER_NAME) {
-    /* // TODO: display stuff
+    // TODO: display stuff
     // update display
     // 2nd argument = index of char to highlight (if out of range i.e. -1, highlight none)
     //display.show_file_name(new_file_name, current_char);
 
-
-    // update "display" (serial for now)
+    // update "display" (serial for now) - remove when done troubleshooting
     if (updated) { // only send updates if something has actually changed
       Serial.println("");
       Serial.println(file_entry);
@@ -137,10 +137,10 @@ void loop() {
       bool will_overwrite = check_file(file_name);
       if (will_overwrite) {
         // move to ENTER_NAME_OVERWRITE
-        Serial.println("File found - change to OVERWRITE in full program...");
+        Serial.println("File found - change to OVERWRITE...");
       } else {
         // move to ENTER_TIME state
-        Serial.println("change to ENTER_TIME in full program...");
+        Serial.println("change to ENTER_TIME...");
         state = ENTER_TIME;
       }
       updated = true;
@@ -149,18 +149,10 @@ void loop() {
       // move forward one character
       if (current_char < NAME_LEN - 1) {
         current_char++;
-        Serial.print("going forward a char to ");
-        Serial.println(current_char);
         updated = true;
-      } else {
-        // ignoring bc it's the last char
-        // in the actual program, take out this else clause, just printing for troubleshooting
-        Serial.println("NOT going forwards");
       }
     } else if (green_status > CLICK) {
       // increment current char
-      Serial.print("incrementing char ");
-      Serial.println(current_char);
       file_entry[current_char] = increment_char(file_entry[current_char]);
       updated = true;
     } // otherwise, button was not pressed, do nothing
@@ -170,22 +162,17 @@ void loop() {
       // go back one character
       if (current_char > 0) {
         current_char--;
-        Serial.print("going back a char to ");
-        Serial.println(current_char);
         updated = true;
-      } else {
-        // ignoring bc it's the first char
-        // in the actual program, take out this else clause, just printing for troubleshooting
-        Serial.println("NOT going backwards");
       }
     } else if (red_status > CLICK) {
       // decrement current character
-      Serial.print("decrementing char ");
-      Serial.println(current_char);
       file_entry[current_char] = decrement_char(file_entry[current_char]);
       updated = true;
     }
+
+  /* TIME ENTRY */
   } else if (state == ENTER_TIME) {
+    // remove this loop when done troubleshooting
     if (updated) { // only send updates if something has actually changed
       Serial.println("");
       Serial.print("min: ");
@@ -208,8 +195,6 @@ void loop() {
       updated = false;
     }
 
-    // check both buttons
-    // ignore long hold responses for now, since they would change state
     if (green_status > LONG_HOLD) {
       // convert run time to ms and save it
       unsigned long min = run_time[0] * 10 + run_time[1];
@@ -219,45 +204,34 @@ void loop() {
       Serial.print("Run time in ms: ");
       Serial.println(run_time_ms);
 
-      Serial.println("moving to TEST_READY in full program...");
+      Serial.println("moving to TEST_READY...");
 
     } else if (green_status > SHORT_HOLD) {
       if (current_char < TIME_LEN - 1) {
         current_char++;
-        Serial.print("going forward a char to ");
-        Serial.println(current_char);
         updated = true;
-      } else {
-        // ignoring bc it's the last char
-        // in the actual program, take out this else clause, just printing for troubleshooting
-        Serial.println("NOT going forwards");
       }
-
     } else if (green_status > CLICK) {
-      Serial.print("incrementing char ");
-      Serial.println(current_char);
       if (current_char == 2) { // max sec = 60
         run_time[current_char] = (run_time[current_char] + 1) %  6;
       } else {
         run_time[current_char] = (run_time[current_char] + 1) % 10;
       }
       updated = true;
-    } else if (red_status > LONG_HOLD) {
-      Serial.println("moving to ENTER_NAME in full program...");
+    }
+
+    if (red_status > LONG_HOLD) {
+      // user long held red button to go back to name entry
+      Serial.println("moving to ENTER_NAME...");
+      state = ENTER_NAME;
+
     } else if (red_status > SHORT_HOLD) {
-      if (current_char > 0) {
+      // user short held red button to go back 1 character
+      if (current_char > 0) { // decrement the character index
         current_char--;
-        Serial.print("going back a char to ");
-        Serial.println(current_char);
         updated = true;
-      } else {
-        // ignoring bc it's the first char
-        // in the actual program, take out this else clause, just printing for troubleshooting
-        Serial.println("NOT going backwards");
       }
     } else if (red_status > CLICK) {
-      Serial.print("decrementing char ");
-      Serial.println(current_char);
       if (current_char == 2) { // max sec = 60
         run_time[current_char] = (run_time[current_char] + 6 - 1) % 6;
       } else {
@@ -267,14 +241,26 @@ void loop() {
     }
   } else if (state == TEST_READY) {
     if (green_status > LONG_HOLD) {
-      // if file_name already exists in the directory, remove it
-      //open_log.removeFile(file_name);
-      // create a new file file_name.txt
+      // if confirmed ready, prep & move on to actual test
 
+      // if file_name already exists in the directory, remove it
+      open_log.removeFile(file_name);
+      // create a new file file_name.txt
+      open_log.append(file_name);
       // write header lines to the file
+      open_log.print("# ");
+      open_log.println(file_name);
+      open_log.print("# Run time: ");
+      open_log.print(run_time[0]);
+      open_log.print(run_time[1]);
+      open_log.print(" min, ");
+      open_log.print(run_time[2]);
+      open_log.print(run_time[3]);
+      open_log.println(" sec");
+      open_log.print("###");
 
       // flush file - flush() command
-
+      open_log.syncFile();
       // record start time
       start_time = millis();
 
