@@ -46,11 +46,11 @@ int Button::update_status()
 
 uint8_t Button::determine_brightness(unsigned long press_length) {
   uint8_t brightness = 0;
-  if (press_length > LONG_HOLD_THRESHOLD) {
+  if (press_length > LONG_HOLD) {
     brightness = 250;
-  } else if (press_length > SHORT_HOLD_THRESHOLD) {
+  } else if (press_length > SHORT_HOLD) {
     brightness = 100;
-  } else if (press_length > CLICK_THRESHOLD) {
+  } else if (press_length > CLICK) {
     brightness = 10;
   }
   return brightness;

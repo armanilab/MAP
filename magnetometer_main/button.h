@@ -6,9 +6,9 @@
 
 #include <SparkFun_Qwiic_Button.h>
 
-const int CLICK_THRESHOLD = 20;
-const int SHORT_HOLD_THRESHOLD = 1000;
-const int LONG_HOLD_THRESHOLD = 3000;
+const int CLICK = 20;
+const int SHORT_HOLD = 1000;
+const int LONG_HOLD = 3000;
 
 class Button
 {
