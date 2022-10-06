@@ -2,7 +2,7 @@
 #include <Adafruit_ST7789.h> // Hardware-specific library for ST7789
 #include <SPI.h>
 // Use dedicated hardware SPI pins
-Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
+//Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 
 // colors defined
 #define BLACK 0x0000
@@ -26,7 +26,7 @@ Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 #define PINK 0xF81F
 
 
-
+/*
 void show_file_name(char file_entry[], int index); // displays the screen to enter the file name
 
 void show_run_time(run_time); // displays the screen to enter the run time wanted
@@ -42,10 +42,10 @@ void show_error_logger();
 void show_error_sensor();
 
 void show_enter_name_overwrite(); // displays waring screen if about to overwrite previous file name
+*/
 
 
-
-void show_file_name(char file_entry[], int index) // displays the screen to enter the file name
+void show_file_name(Adafruit_ST7789 tft, char file_entry[], int index) // displays the screen to enter the file name
 {
     tft.setCursor(30, 0);           // sets cursor for first line
     tft.setTextSize(2);             // sets text size for file name
@@ -84,7 +84,7 @@ void show_file_name(char file_entry[], int index) // displays the screen to ente
     tft.setCursor(75, 115);
     tft.println("ignored.");
 }
-
+ /*
 void show_test_ready(char file_name[6], unsigned long run_time)
 {
     unsigned long min, sec;     // variables needed to show individual mins and secs
@@ -112,4 +112,4 @@ void show_test_ready(char file_name[6], unsigned long run_time)
     tft.setTextSize(2);                // changes text size to be smaller than important info about program
     tft.setCursor(10,110);
     tft.println("Hold green to START");
-}
+} */
