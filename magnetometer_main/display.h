@@ -47,42 +47,40 @@ void show_enter_name_overwrite(); // displays waring screen if about to overwrit
 
 void show_file_name(char file_entry[], int index) // displays the screen to enter the file name
 {
-    tft.setCursor(30, 0);        // sets cursor for first line
-    tft.setTextSize(2);         // sets text size for file name and run time
-    tft.setTextColor(DARKCYAN);   // file name will be orange
-    tft.print("Enter file name:");       // prints file name to screen
-    // tft.println(".txt");        // adds ".txt" to end of inputted file name on the display screen // don't need anymore because file name has .txt concatenated w/ it
-    tft.setTextSize(4);
-    tft.setCursor(50,40);       // sets cursor for run time
-    tft.setTextColor(WHITE); // sets run time color to DarkCyan
+    tft.setCursor(30, 0);           // sets cursor for first line
+    tft.setTextSize(2);             // sets text size for file name
+    tft.setTextColor(DARKCYAN);     // file name will be DARKCYAN
+    tft.print("Enter file name:");  // prints instructions
+    tft.setTextSize(4);             // sets text size for file name input       
+    tft.setCursor(50,40);           // sets cursor for file name input
+    tft.setTextColor(WHITE);        // sets file name input color to white
 
-    // use index to have char change colors compared to rest
-    for (int i = 0; i < index; i++)
+    for (int i = 0; i < index; i++) // for loop to print the characters user has already inputted
     {
-      tft.print(file_entry[i]);
+      tft.print(file_entry[i]);     
     }
-    tft.setTextColor(ORANGE);
-    tft.print(file_entry[index]);
+    tft.setTextColor(ORANGE);       
+    tft.print(file_entry[index]);   // prints out current char in ORANGE that user needs to edit
     tft.setTextColor(WHITE);
-    for (int i = index + 1; i < 6; i++)
+    for (int i = index + 1; i < 6; i++)     // prints out remaining chars in WHITE that user still can change
     {
       tft.print(file_entry[i]);
     }
-    tft.setCursor(50, 75);
+    tft.setCursor(50, 75);                  // code for the carrot that follows the current char that can be changed
     tft.setTextColor(ORANGE);
-    for (int i = 0; i < index; i++)
+    for (int i = 0; i < index; i++)         // prints out spaces unless the carrot needs to be printed
     {
       tft.print(" ");
     }
-    tft.print("^");
+    tft.print("^");                         // prints the carrot so that it is under the current char
     for (int i = index + 1; i < 6; i++)
     {
       tft.print(" ");
     }
-    tft.setTextColor(RED);    // sets instructions for user to be in green
-    tft.setTextSize(2);                // changes text size to be smaller than important info about program
+    tft.setTextColor(RED);                  // sets instructions for user to be in RED
+    tft.setTextSize(2);                     // changes text size to be smaller than important info about program
     tft.setCursor(20,100);
-    tft.println("Asterisks will be");
+    tft.println("Asterisks will be");       // prints instructions
     tft.setCursor(75, 115);
     tft.println("ignored.");
 }
