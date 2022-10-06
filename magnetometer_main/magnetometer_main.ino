@@ -33,12 +33,12 @@ States state;
 const uint8_t NAME_LEN = 6;
 char file_entry[NAME_LEN + 1] = "******";
 String file_name = "";
+uint8_t current_name_char = 0;
 // run time
 const uint8_t TIME_LEN = 4;
 uint8_t run_time[TIME_LEN] = {0, 0, 0, 0}; // nums in the run_time variable [mm/ss]
 unsigned long run_time_ms = 0; // run time converted to ms
-// entry use
-uint8_t current_char = 0;
+uint8_t current_time_char = 0;
 // test use
 unsigned long start_time = 0;
 unsigned long time_elapsed = 0;
@@ -144,11 +144,11 @@ void loop() {
 
     // update "display" (serial for now) - remove when done troubleshooting
     if (updated) { // only send updates if something has actually changed
-      show_file_name(tft, file_entry, current_char);
+      show_file_name(tft, file_entry, current_name_char);
 
       Serial.println("");
       Serial.println(file_entry);
-      for (int i = 0; i < current_char; i++) {
+      for (int i = 0; i < current_name_char; i++) {
         Serial.print(" ");
       }
       Serial.println("^");
@@ -179,26 +179,26 @@ void loop() {
 
     } else if (green_status > SHORT_HOLD) {
       // move forward one character
-      if (current_char < NAME_LEN - 1) {
-        current_char++;
+      if (current_name_char < NAME_LEN - 1) {
+        current_name_char++;
         updated = true;
       }
     } else if (green_status > CLICK) {
       // increment current char
-      file_entry[current_char] = increment_char(file_entry[current_char]);
+      file_entry[current_name_char] = increment_char(file_entry[current_name_char]);
       updated = true;
     } // otherwise, button was not pressed, do nothing
 
     // react to red button
     if (red_status > SHORT_HOLD) {
       // go back one character
-      if (current_char > 0) {
-        current_char--;
+      if (current_name_char > 0) {
+        current_name_char--;
         updated = true;
       }
     } else if (red_status > CLICK) {
       // decrement current character
-      file_entry[current_char] = decrement_char(file_entry[current_char]);
+      file_entry[current_name_char] = decrement_char(file_entry[current_name_char]);
       updated = true;
     }
 
@@ -214,13 +214,13 @@ void loop() {
       Serial.print(run_time[2]);
       Serial.println(run_time[3]);
       // use a cursor to indicate current char
-      if (current_char == 0) {
+      if (current_time_char == 0) {
         Serial.println("     ^");
-      } else if (current_char == 1) {
+      } else if (current_time_char == 1) {
         Serial.println("      ^");
-      } else if (current_char == 2) {
+      } else if (current_time_char == 2) {
         Serial.println("             ^");
-      } else if (current_char == 3) {
+      } else if (current_time_char == 3) {
         Serial.println("              ^");
       }
       Serial.println("");
@@ -239,15 +239,15 @@ void loop() {
       Serial.println("moving to TEST_READY...");
 
     } else if (green_status > SHORT_HOLD) {
-      if (current_char < TIME_LEN - 1) {
-        current_char++;
+      if (current_time_char < TIME_LEN - 1) {
+        current_time_char++;
         updated = true;
       }
     } else if (green_status > CLICK) {
       if (current_char == 2) { // max sec = 60
-        run_time[current_char] = (run_time[current_char] + 1) %  6;
+        run_time[current_time_char] = (run_time[current_time_char] + 1) %  6;
       } else {
-        run_time[current_char] = (run_time[current_char] + 1) % 10;
+        run_time[current_time_char] = (run_time[current_time_char] + 1) % 10;
       }
       updated = true;
     }
@@ -259,15 +259,15 @@ void loop() {
 
     } else if (red_status > SHORT_HOLD) {
       // user short held red button to go back 1 character
-      if (current_char > 0) { // decrement the character index
-        current_char--;
+      if (current_time_char > 0) { // decrement the character index
+        current_time_char--;
         updated = true;
       }
     } else if (red_status > CLICK) {
-      if (current_char == 2) { // max sec = 60
-        run_time[current_char] = (run_time[current_char] + 6 - 1) % 6;
+      if (current_time_char == 2) { // max sec = 60
+        run_time[current_time_char] = (run_time[current_time_char] + 6 - 1) % 6;
       } else {
-        run_time[current_char] = (run_time[current_char] + 10 -1) % 10;
+        run_time[current_time_char] = (run_time[current_time_char] + 10 -1) % 10;
       }
       updated = true;
     }
@@ -362,6 +362,8 @@ void loop() {
     if (green_status > LONG_HOLD) {
       // if long hold on green button, start new test - go to name entry
       state = ENTER_NAME;
+      current_name_char = 0;
+      current_time_char = 0;
       updated = true;
     }
 

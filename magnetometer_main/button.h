@@ -6,9 +6,10 @@
 
 #include <SparkFun_Qwiic_Button.h>
 
+// constants
 const int CLICK = 20;
 const int SHORT_HOLD = 1000;
-const int LONG_HOLD = 3000;
+const int LONG_HOLD = 2000;
 
 class Button
 {
@@ -22,11 +23,13 @@ private:
   uint8_t determine_brightness(unsigned long press_length);
 
 public:
+  // constructors
   Button();
   Button(int nondefault_i2c_address);
 
-  void set_brightness(uint8_t brightness_level);
+  // functions
   bool init(); // initialize the Button. returns true if successful
+  void set_brightness(uint8_t brightness_level);
   int update_status();
 };
 
