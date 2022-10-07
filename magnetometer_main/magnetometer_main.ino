@@ -36,7 +36,7 @@ String file_name = "";
 uint8_t current_name_char = 0;
 // run time
 const uint8_t TIME_LEN = 4;
-uint8_t run_time[TIME_LEN] = {0, 0, 0, 0}; // nums in the run_time variable [mm/ss]
+int run_time[TIME_LEN] = {0, 0, 0, 0}; // nums in the run_time variable [mm/ss]
 unsigned long run_time_ms = 0; // run time converted to ms
 uint8_t current_time_char = 0;
 // test use
@@ -206,6 +206,7 @@ void loop() {
   } else if (state == ENTER_TIME) {
     // remove this loop when done troubleshooting
     if (updated) { // only send updates if something has actually changed
+      show_run_time(tft, run_time, current_time_char);
       Serial.println("");
       Serial.print("min: ");
       Serial.print(run_time[0]);
@@ -244,7 +245,7 @@ void loop() {
         updated = true;
       }
     } else if (green_status > CLICK) {
-      if (current_char == 2) { // max sec = 60
+      if (current_time_char == 2) { // max sec = 60
         run_time[current_time_char] = (run_time[current_time_char] + 1) %  6;
       } else {
         run_time[current_time_char] = (run_time[current_time_char] + 1) % 10;
@@ -272,6 +273,14 @@ void loop() {
       updated = true;
     }
   } else if (state == TEST_READY) {
+    if (updated)
+    {
+      // show_test_ready(file_name, unsigned long run_time)
+      tft.fillScreen(ST77XX_BLACK);
+      tft.setCursor(0,0);
+      tft.setTextSize(2);
+      Serial.print("Test ready to start");
+    }
     if (green_status > LONG_HOLD) {
       // if confirmed ready, prep & move on to actual test
 

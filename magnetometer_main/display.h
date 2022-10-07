@@ -86,9 +86,71 @@ void show_file_name(Adafruit_ST7789 tft, char file_entry[], int index) // displa
     tft.setCursor(75, 115);
     tft.println("ignored.");
 }
- /*
-void show_test_ready(char file_name[6], unsigned long run_time)
+
+void show_run_time(Adafruit_ST7789 tft , int run_time[], int index) // displays the screen to enter the run time wanted
 {
+    tft.fillScreen(ST77XX_BLACK); // clear the screen
+
+    tft.setCursor(30, 0);           // sets cursor for first line
+    tft.setTextSize(3);             // sets text size for file name
+    tft.setTextColor(DARKCYAN);     // file name will be DARKCYAN
+    tft.print("Enter time:");
+
+
+    tft.setTextSize(5);             // sets text size for file name input       
+    tft.setCursor(50,50);           // sets cursor for file name input
+    tft.setTextColor(WHITE);        // sets file name input color to white
+
+    for (int i = 0; i < index; i++) // for loop to print the characters user has already inputted
+    {
+        if (i == 2)
+        {
+            tft.print(":");
+        }
+        tft.print(run_time[i]);
+    }
+    tft.setTextColor(ORANGE);       
+    tft.print(run_time[index]);   // prints out current char in ORANGE that user needs to edit
+    tft.setTextColor(WHITE);
+    for (int i = index + 1; i < 4; i++)     // prints out remaining chars in WHITE that user still can change
+    {
+        if (i == 2)
+        {
+            tft.print(":");
+        }
+        tft.print(run_time[i]);
+    }
+    tft.setCursor(50, 90);                  // code for the carrot that follows the current char that can be changed
+    tft.setTextColor(ORANGE);
+    for (int i = 0; i < index; i++)         // prints out spaces unless the carrot needs to be printed
+    {
+        if (i == 2)
+        {
+            tft.print(" ");
+        }
+        tft.print(" ");
+    }
+    tft.print("^");                         // prints the carrot so that it is under the current char
+    for (int i = index + 1; i < 4; i++)
+    {
+        if (i == 2)
+        {
+            tft.print(" ");
+        }
+        tft.print(" ");
+    }
+    tft.setTextSize(2);                // changes text size to be smaller than important info about program
+    tft.setTextColor(LIGHTGREY);
+    tft.setCursor(15,120);
+    tft.println("minutes : seconds");
+}
+
+
+ 
+void show_test_ready(Adafruit_ST7789 tft ,char file_name[6], unsigned long run_time)
+{
+    tft.fillScreen(ST77XX_BLACK); // clear the screen
+
     unsigned long min, sec;     // variables needed to show individual mins and secs
     tft.setCursor(0, 0);        // sets cursor for first line
     tft.setTextSize(4);         // sets text size for file name and run time
@@ -114,4 +176,37 @@ void show_test_ready(char file_name[6], unsigned long run_time)
     tft.setTextSize(2);                // changes text size to be smaller than important info about program
     tft.setCursor(10,110);
     tft.println("Hold green to START");
-} */
+} 
+
+
+
+// void show_test_ended(Adafruit_ST7789 tft ,char file_name[], int time_elapsed[]); // displays test ended screen w/ file name and actual time elapsed
+// {
+//     tft.fillScreen(ST77XX_BLACK); // clear the screen
+
+//     // unsigned long min, sec;     // variables needed to show individual mins and secs
+//     tft.setCursor(30, 0);        // sets cursor for first line
+//     tft.setTextSize(3);         // sets text size for file name and run time
+//     tft.setTextColor(GREEN);   // file name will be orange
+//     tft.print(file_name);       // prints file name to screen
+//     tft.println(".txt");        // adds ".txt" to end of inputted file name on the display screen
+//     tft.setCursor(70,55);       // sets cursor for run time
+//     tft.setTextColor(DARKCYAN); // sets run time color to DarkCyan
+//     min = run_time / 100;       // finds the values that will go in front of the colon
+//     if (min < 10)               // if min value is below 10, it will add a placeholder 0
+//     {
+//         tft.print("0");
+//     }
+//     tft.print(min);   
+//     tft.print(":");             
+//     sec = run_time % 100;       // operation to find seconds of user-inputted run-time
+//     if (sec < 10)               // if sec value is below 10, it will add a placeholder 0
+//     {
+//         tft.print("0");
+//     }
+//     tft.println(sec);
+//     tft.setTextColor(ST77XX_GREEN);    // sets instructions for user to be in green
+//     tft.setTextSize(2);                // changes text size to be smaller than important info about program
+//     tft.setCursor(10,110);
+//     tft.println("Hold green to START");
+// }
