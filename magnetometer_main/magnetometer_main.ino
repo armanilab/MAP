@@ -46,6 +46,8 @@ const unsigned long UPDATE_INT = 1000; // [ms] refresh rate of display during te
 unsigned long last_update = -UPDATE_INT;
 bool ended_early = false;
 
+int bytes_written = 0;
+
 bool updated = false; // indicates if data for display/serial has been updated
 // https://forum.arduino.cc/t/tip-easier-debug-log-toggling/151603
 // TODO; try this ^^^ (in a smaller program first though)
@@ -292,16 +294,25 @@ void loop() {
       // create a new file file_name.txt
       open_log.append(file_name);
       // write header lines to the file
-      open_log.print("# ");
-      open_log.println(file_name);
-      open_log.print("# Run time: ");
-      open_log.print(run_time[0]);
-      open_log.print(run_time[1]);
-      open_log.print(" min, ");
-      open_log.print(run_time[2]);
-      open_log.print(run_time[3]);
-      open_log.println(" sec");
-      open_log.println("###");
+
+      bytes_written = 0; // for error catching
+      
+      bytes_written += open_log.print("# ");
+      bytes_written += open_log.println(file_name);
+      bytes_written += open_log.print("# Run time: ");
+      bytes_written += open_log.print(run_time[0]);
+      bytes_written += open_log.print(run_time[1]);
+      bytes_written += open_log.print(" min, ");
+      bytes_written += open_log.print(run_time[2]);
+      bytes_written += open_log.print(run_time[3]);
+      bytes_written += open_log.println(" sec");
+      bytes_written += open_log.println("###");
+
+      if (bytes_written == 0) {
+        Serial.println("caught error in openlog");
+        updated = true;
+        state = ERROR_LOGGER;        
+      }
 
       // flush file - flush() command
       open_log.syncFile();
@@ -325,15 +336,21 @@ void loop() {
     // TODO: save a measurement to an array of recent values (for display of data)
 
     // write measurement to file, including time stamp, separated by tab
-    open_log.print(time_elapsed);
-    open_log.print("\t");
-    open_log.println(lux);
-    open_log.syncFile();
+    bytes_written = 0;
+    bytes_written += open_log.print(time_elapsed);
+    bytes_written += open_log.print("\t");
+    bytes_written += open_log.println(lux);
+    bytes_written += open_log.syncFile();
 
-
+    if (bytes_written == 0) {
+      Serial.println("caught open log error");
+      updated = true;
+      state = ERROR_LOGGER;
+    }
 
     // display stuff
     if (time_elapsed - last_update > UPDATE_INT) { // in place of the if (updated) statement
+      // TODO: add display stuff
       // DEBUG ONLY: write nums to serial monitor too (removing these will speed up program)
       Serial.print(time_elapsed);
       Serial.print("\t");
@@ -384,6 +401,11 @@ void loop() {
     }
 
   } else if (state == ERROR_LOGGER) {
+    if (updated) {
+      Serial.println("Error with open log");
+      updated = false;
+    }
+    // TODO; add test to check for openlog connection
     // not good stuff
   } else if (state == ERROR_SENSOR) {
     // arguably worse stuff?
