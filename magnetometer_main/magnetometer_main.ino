@@ -110,27 +110,18 @@ void setup() {
   // set up open log - should this have a check to confirm it worked properly?
   updated = true;
   open_log.begin();
-  while (!check_open_log_connection()) {
-    delay(RECONNECTION_DELAY);
-    if (updated) {
-      Serial.println("Waiting for open log...");
-      updated = false;
-    }
+  if (!check_open_log_connection()) {
+    logger_error();
   }
 
   // set up sensor  - confirm connection
-  if (tsl.begin()) {
-    Serial.println("TSL2591 sensor connected successfully!");
-  } else {
-    Serial.println("No sensor found - connect and reset to continue.");
-    while(1);
-  }
+  if (!tsl.begin()) {
+    sensor_error();
+  } 
+
   // configure sensor
-  // TODO: figure out the best settings, these are currently as low as possible
   tsl.setGain(TSL2591_GAIN_LOW);
   tsl.setTiming(TSL2591_INTEGRATIONTIME_100MS);
-
-  // TODO; i'm sure there's more setup lol
 
   Serial.println("Ready to go!");
   // initialize state to name entry
@@ -336,6 +327,11 @@ void loop() {
 
     // take a measurement
     uint32_t lum = tsl.getFullLuminosity();
+    if (lum == 0) { // sensor is not connected
+      Serial.println("caught sensor error");
+      state = ERROR_SENSOR;
+      updated = true;
+    }
     uint16_t ir = lum >> 16;
     uint16_t full = lum & 0xFFFF;
     float lux = tsl.calculateLux(full, ir);
@@ -408,20 +404,10 @@ void loop() {
     }
 
   } else if (state == ERROR_LOGGER) {
-    if (updated) {
-      Serial.println("Error with open log");
-      updated = false;
-    }
-    // TODO; add test to check for openlog connection
-    while (!check_open_log_connection()) {
-      delay(RECONNECTION_DELAY);
-    }
-
-    Serial.println("connection restablished.");
-    delay(MSG_TIME);
-    updated = true;
-    state = ENTER_NAME;
+    logger_error();
   } else if (state == ERROR_SENSOR) {
+
+    sensor_error();
     // arguably worse stuff?
   } else if (state == NAME_OVERWRITE) {
     // warning of bad stuff
@@ -505,4 +491,44 @@ bool check_open_log_connection() {
   } else {
     return true;
   }
+}
+
+bool check_sensor_connection() {
+  uint8_t status = tsl.getStatus();
+  if (status == 0) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+void logger_error() {
+  // TODO: add display messages
+  Serial.println("Error with open log");
+
+  // TODO; add test to check for openlog connection
+  while (!check_open_log_connection()) {
+    delay(RECONNECTION_DELAY);
+  }
+
+  Serial.println("open log connection restablished.");
+  delay(MSG_TIME);
+
+  updated = true;
+  state = ENTER_NAME;
+}
+
+void sensor_error() {
+  // TODO: add display messages
+  Serial.println("ERROR: sensor not connected");
+
+  while(!check_sensor_connection()) {
+    delay(RECONNECTION_DELAY);
+  }
+
+  Serial.println("sensor connection restablished");
+  delay(MSG_TIME);
+
+  updated = true;
+  state = ENTER_NAME;
 }
