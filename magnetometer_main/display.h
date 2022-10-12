@@ -341,7 +341,7 @@ void show_test_ended(Adafruit_ST7789 tft ,char file_name[], unsigned long min, u
     tft.println("[green] new test");
 }
 
-void show_error_logger()
+void show_error_logger(Adafruit_ST7789 tft)
 {
     tft.fillScreen(ST77XX_BLACK); // clear the screen
 
@@ -363,7 +363,7 @@ void show_error_logger()
     tft.println("Press GREEN to reset");
 }
 
-void show_error_sensor()
+void show_error_sensor(Adafruit_ST7789 tft)
 {
     tft.fillScreen(ST77XX_BLACK);   // clear the screen
 
@@ -386,7 +386,7 @@ void show_error_sensor()
 
 }
 
-void show_enter_name_overwrite(char file_name[]) // displays warning screen if about to overwrite previous file name
+void show_enter_name_overwrite(Adafruit_ST7789 tft, char file_name[]) // displays warnning screen if about to overwrite previous file name
 {
     tft.fillScreen(ST77XX_BLACK); // clear the screen
 

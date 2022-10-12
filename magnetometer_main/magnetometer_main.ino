@@ -50,17 +50,17 @@ bool updated = false; // indicates if data for display/serial has been updated
 // https://forum.arduino.cc/t/tip-easier-debug-log-toggling/151603
 // TODO; try this ^^^ (in a smaller program first though)
 
+const int RECONNECTION_DELAY = 250;
+const int MSG_TIME = 2000;
+
 /* NEW FXNS */
 char increment_char(char c);
 char decrement_char(char c);
 bool check_file(String file_name);
+bool check_open_log_connection();
 
 void setup() {
   /* HARDWARE SETUP */
-  // set up openlog
-  //Wire.begin();
-  //open_log.begin();
-
   // set up serial communication
   Serial.begin(9600);
   while (!Serial) { // wait for Serial port to open
@@ -108,7 +108,15 @@ void setup() {
   Serial.println("Buttons connected successfully!");
 
   // set up open log - should this have a check to confirm it worked properly?
+  updated = true;
   open_log.begin();
+  while (!check_open_log_connection()) {
+    delay(RECONNECTION_DELAY);
+    if (updated) {
+      Serial.println("Waiting for open log...");
+      updated = false;
+    }
+  }
 
   // set up sensor  - confirm connection
   if (tsl.begin()) {
@@ -152,7 +160,6 @@ void loop() {
         Serial.print(" ");
       }
       Serial.println("^");
-      Serial.println("");
       updated = false;
     }
 
@@ -168,8 +175,9 @@ void loop() {
       // check file name against existing files
       bool will_overwrite = check_file(file_name);
       if (will_overwrite) {
-        // move to ENTER_NAME_OVERWRITE
+        // move to NAME_OVERWRITE
         Serial.println("File found - change to OVERWRITE...");
+        state = NAME_OVERWRITE;
       } else {
         // move to ENTER_TIME state
         Serial.println("change to ENTER_TIME...");
@@ -224,7 +232,6 @@ void loop() {
       } else if (current_time_char == 3) {
         Serial.println("              ^");
       }
-      Serial.println("");
       updated = false;
     }
 
@@ -238,6 +245,8 @@ void loop() {
       Serial.println(run_time_ms);
 
       Serial.println("moving to TEST_READY...");
+      updated = true;
+      state = TEST_READY;
 
     } else if (green_status > SHORT_HOLD) {
       if (current_time_char < TIME_LEN - 1) {
@@ -279,7 +288,9 @@ void loop() {
       tft.fillScreen(ST77XX_BLACK);
       tft.setCursor(0,0);
       tft.setTextSize(2);
-      Serial.print("Test ready to start");
+      Serial.println("Test ready to start");
+      Serial.println("Hold green to confirm.");
+      updated = false;
     }
     if (green_status > LONG_HOLD) {
       // if confirmed ready, prep & move on to actual test
@@ -290,16 +301,25 @@ void loop() {
       // create a new file file_name.txt
       open_log.append(file_name);
       // write header lines to the file
-      open_log.print("# ");
-      open_log.println(file_name);
-      open_log.print("# Run time: ");
-      open_log.print(run_time[0]);
-      open_log.print(run_time[1]);
-      open_log.print(" min, ");
-      open_log.print(run_time[2]);
-      open_log.print(run_time[3]);
-      open_log.println(" sec");
-      open_log.print("###");
+
+      int bytes_written = 0; // for error catching
+      
+      bytes_written += open_log.print("# ");
+      bytes_written += open_log.println(file_name);
+      bytes_written += open_log.print("# Run time: ");
+      bytes_written += open_log.print(run_time[0]);
+      bytes_written += open_log.print(run_time[1]);
+      bytes_written += open_log.print(" min, ");
+      bytes_written += open_log.print(run_time[2]);
+      bytes_written += open_log.print(run_time[3]);
+      bytes_written += open_log.println(" sec");
+      bytes_written += open_log.println("###");
+
+      if (bytes_written == 0) {
+        Serial.println("caught error in openlog");
+        updated = true;
+        state = ERROR_LOGGER;        
+      }
 
       // flush file - flush() command
       open_log.syncFile();
@@ -315,27 +335,37 @@ void loop() {
     time_elapsed = millis() - start_time;
 
     // take a measurement
-    uint16_t lum = tsl.getLuminosity(TSL2591_FULLSPECTRUM);
+    uint32_t lum = tsl.getFullLuminosity();
+    uint16_t ir = lum >> 16;
+    uint16_t full = lum & 0xFFFF;
+    float lux = tsl.calculateLux(full, ir);
 
     // TODO: save a measurement to an array of recent values (for display of data)
 
     // write measurement to file, including time stamp, separated by tab
-    open_log.print(time_elapsed);
-    open_log.print("\t");
-    open_log.println(lum);
-    open_log.syncFile();
+    int bytes_written = 0;
+    bytes_written += open_log.print(time_elapsed);
+    bytes_written += open_log.print("\t");
+    bytes_written += open_log.println(lux);
+    bytes_written += open_log.syncFile();
 
-    // DEBUG ONLY: write nums to serial monitor too (removing these will speed up program)
-    Serial.print(time_elapsed);
-    Serial.print("\t");
-    Serial.println(lum);
-
-    // display stuff
-    if (time_elapsed - last_update > UPDATE_INT) {
-      // update display
+    if (bytes_written == 0) {
+      Serial.println("caught open log error");
+      updated = true;
+      state = ERROR_LOGGER;
     }
 
-    if (red_status > LONG_HOLD || time_elapsed >= run_time_ms) {
+    // display stuff
+    if (time_elapsed - last_update > UPDATE_INT) { // in place of the if (updated) statement
+      // TODO: add display stuff
+      // DEBUG ONLY: write nums to serial monitor too (removing these will speed up program)
+      Serial.print(time_elapsed);
+      Serial.print("\t");
+      Serial.println(lux);
+      last_update = time_elapsed;
+    }
+
+    if (red_status > LONG_HOLD || time_elapsed >= run_time_ms) { // user cancelled test
       open_log.syncFile();
       state = TEST_ENDED;
       if (time_elapsed < run_time_ms) {
@@ -366,6 +396,7 @@ void loop() {
       Serial.println(sec);
 
       Serial.println("Hold GREEN to start new test");
+      updated = false;
     }
 
     if (green_status > LONG_HOLD) {
@@ -377,10 +408,22 @@ void loop() {
     }
 
   } else if (state == ERROR_LOGGER) {
-    // not good stuff
+    if (updated) {
+      Serial.println("Error with open log");
+      updated = false;
+    }
+    // TODO; add test to check for openlog connection
+    while (!check_open_log_connection()) {
+      delay(RECONNECTION_DELAY);
+    }
+
+    Serial.println("connection restablished.");
+    delay(MSG_TIME);
+    updated = true;
+    state = ENTER_NAME;
   } else if (state == ERROR_SENSOR) {
     // arguably worse stuff?
-  } else if (state == ENTER_NAME_OVERWRITE) {
+  } else if (state == NAME_OVERWRITE) {
     // warning of bad stuff
 
     if (updated) {
@@ -391,15 +434,18 @@ void loop() {
       Serial.println("WARNING: Overwrite file?");
       Serial.println(file_name);
       Serial.println("[GREEN] confirm [RED] back");
+      updated = false;
     }
 
     if (green_status > LONG_HOLD) {
       // user long held green to confirm file name
       state = ENTER_TIME;
+      updated = true;
     }
     if (red_status > SHORT_HOLD) {
       // user held red to go back to re-enter file name
       state = ENTER_NAME;
+      updated = true;
     }
 
   }
@@ -450,4 +496,13 @@ bool check_file(String file_name) {
     next_file = open_log.getNextDirectoryItem();
   }
   return false;
+}
+
+bool check_open_log_connection() {
+  byte status = open_log.getStatus();
+  if (status == 0xFF) {
+    return false;
+  } else {
+    return true;
+  }
 }
