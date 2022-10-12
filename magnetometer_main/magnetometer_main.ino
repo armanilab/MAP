@@ -86,9 +86,6 @@ void setup() {
   tft.setRotation(3);
   tft.fillScreen(ST77XX_BLACK);
 
-  Serial.println(F("Screen Initialized"));
-  tft.fillScreen(ST77XX_BLACK);
-
   // set up buttons
   red = Button();
   green = Button(0x60);
@@ -117,7 +114,7 @@ void setup() {
   // set up sensor  - confirm connection
   if (!tsl.begin()) {
     sensor_error();
-  } 
+  }
 
   // configure sensor
   tsl.setGain(TSL2591_GAIN_LOW);
@@ -294,7 +291,7 @@ void loop() {
       // write header lines to the file
 
       int bytes_written = 0; // for error catching
-      
+
       bytes_written += open_log.print("# ");
       bytes_written += open_log.println(file_name);
       bytes_written += open_log.print("# Run time: ");
@@ -309,7 +306,7 @@ void loop() {
       if (bytes_written == 0) {
         Serial.println("caught error in openlog");
         updated = true;
-        state = ERROR_LOGGER;        
+        state = ERROR_LOGGER;
       }
 
       // flush file - flush() command
