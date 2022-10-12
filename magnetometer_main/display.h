@@ -136,7 +136,7 @@ void show_run_time(Adafruit_ST7789 tft , int run_time[], int index) // displays 
         }
         tft.print(" ");
     }
-    if (index == 2)
+    if (index == 2)                         // adds an extra space to account for the colon
     {
       tft.print(" ");
     }
@@ -145,14 +145,14 @@ void show_run_time(Adafruit_ST7789 tft , int run_time[], int index) // displays 
     {
         if (i == 2)
         {
-            tft.print(" ");
+            tft.print(" ");                 // adds an extra space to account for the colon
         }
         tft.print(" ");
     }
     tft.setTextSize(2);                // changes text size to be smaller than important info about program
     tft.setTextColor(LIGHTGREY);
     tft.setCursor(20,120);
-    tft.println("minutes : seconds");
+    tft.println("minutes : seconds");   // descriptive info to show user what the numbers are
 }
 
 
@@ -170,7 +170,7 @@ void show_test_ready(Adafruit_ST7789 tft ,char file_name[], int run_time[])
     tft.setCursor(70,55);       // sets cursor for run time
     tft.setTextColor(DARKCYAN); // sets run time color to DarkCyan
     
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 4; i++) // for loop prints out the run time that the user inputted
     {
         if (i == 2)
         {
@@ -179,23 +179,6 @@ void show_test_ready(Adafruit_ST7789 tft ,char file_name[], int run_time[])
         tft.print(run_time[i]);
     }
     
-    
-    
-    
-    // min = run_time / 100;       // finds the values that will go in front of the colon
-    // if (min < 10)               // if min value is below 10, it will add a placeholder 0
-    // {
-    //     tft.print("0");
-    // }
-    // tft.print(min);   
-    // tft.print(":");             
-    // sec = run_time % 100;       // operation to find seconds of user-inputted run-time
-    // if (sec < 10)               // if sec value is below 10, it will add a placeholder 0
-    // {
-    //     tft.print("0");
-    // }
-    // tft.println(sec);
-
     tft.setTextColor(ST77XX_GREEN);    // sets instructions for user to be in green
     tft.setTextSize(2);                // changes text size to be smaller than important info about program
     tft.setCursor(10,110);
@@ -207,7 +190,7 @@ void show_test_in_progress(Adafruit_ST7789 tft, int run_time[], unsigned long ti
 {
      tft.fillScreen(ST77XX_BLACK); // clear the screen
 
-    tft.setCursor(0,0);
+    tft.setCursor(0,0);             // changing cursor, text size, and color to display informational words
     tft.setTextSize(2);
     tft.setTextColor(ORANGE);
     tft.println("Time");
@@ -216,30 +199,30 @@ void show_test_in_progress(Adafruit_ST7789 tft, int run_time[], unsigned long ti
 
     tft.setTextColor(WHITE);
     tft.setCursor(0, 40);
-    unsigned long min, sec;     // variables needed to show individual mins and secs
-    min = time_elapsed / 100;       // finds the values that will go in front of the colon
-    if (min < 10)               // if min value is below 10, it will add a placeholder 0
+    unsigned long min, sec;         // variables needed to show individual mins and secs
+    min = time_elapsed / 100;       // finds the values that will go in front of the colon (mins)
+    if (min < 10)                   // if min value is below 10, it will add a placeholder 0
     {
         tft.print("0");
     }
     tft.print(min);   
     tft.print(":");             
-    sec = time_elapsed % 100;       // operation to find seconds of user-inputted run-time
-    if (sec < 10)               // if sec value is below 10, it will add a placeholder 0
+    sec = time_elapsed % 100;       // operation to find seconds of elapsed-time
+    if (sec < 10)                   // if sec value is below 10, it will add a placeholder 0
     {
         tft.print("0");
     }
     tft.println(sec);
-    
-    tft.setCursor(0, 70);
+
+    tft.setCursor(0, 70);           // displays words to tell user what value underneath is
     tft.setTextColor(ORANGE);
-    tft.println("Cur lux:");
+    tft.println("Cur lux:");        
     tft.setCursor(0,90);
     tft.setTextSize(3);
     tft.setTextColor(WHITE);
-    tft.println(recent_val);        // not exactly sure what this recent value is going to look like
+    tft.println(recent_val);        // prints out current lux
 
-    tft.setTextColor(DARKGREY);
+    tft.setTextColor(DARKGREY);     // prints out user inputted run time in bottom right corner
     tft.setCursor(210, 125);
     tft.setTextSize(1);
     for (int i = 0; i < 4; i++)
@@ -252,9 +235,66 @@ void show_test_in_progress(Adafruit_ST7789 tft, int run_time[], unsigned long ti
     }
 
     tft.setCursor(0, 125);
-    tft.print(file_name);
+    tft.print(file_name);           // prints out file name on bottom left corner
 
+// area to test out trendline display
 
+    int horizontal_end;
+    int vertical_end;
+
+    if (avg_slope > 1)                            // if slope is greater than one then it will be a much more vertical line and the starting horizontal point will change depending on slope value
+    {
+        vertical_end = 0;
+        horizontal_end = (50/avg_slope) + 50;
+    }
+    else if (avg_slope == 1)
+    {
+        horizontal_end = 100;
+        vertical_end = 0;
+    }
+    else if (avg_slope == 0)
+    {
+        horizontal_end = 100;
+        vertical_end = 50;
+    }
+    else if (avg_slope == -1)
+    {
+        vertical_end = 0;
+        horizontal_end = 0;
+    }
+    else if (avg_slope < 0 && avg_slope > -1)
+    {
+        horizontal_end = 0;
+        vertical_end = (((-50 * avg_slope) - 50) * (-1));
+        // vertical_end = vertical_end + 100;
+    }
+    else if (avg_slope < -1)
+    {
+        vertical_end = 0;
+        horizontal_end = (50/avg_slope) + 50;
+    }
+    else if (avg_slope < 1)                                                    // this means the slope will be less than 1 and therefore a shallower line
+    {
+        horizontal_end = 100;
+        vertical_end = (((-50 * avg_slope) - 50) * (-1));
+        vertical_end = 100 - vertical_end;
+    }
+
+    int two_horizontal_end = horizontal_end - 50;
+    two_horizontal_end = 50 - two_horizontal_end;
+
+    int two_vertical_end = vertical_end - 50;
+    two_vertical_end = 50 - two_vertical_end;
+    
+
+    int horizontal_shift = 120;
+    int vertical_shift = 10;
+
+    tft.drawLine(50 + horizontal_shift, 50 + vertical_shift, horizontal_end + horizontal_shift, vertical_end + vertical_shift, CYAN); // draws line
+    tft.drawLine(50 + horizontal_shift, 50 + vertical_shift, two_horizontal_end + horizontal_shift, two_vertical_end + vertical_shift, CYAN); // draws line
+
+    tft.drawRect(120 ,10 , 100 , 100, DARKGREY); 
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 }
 
@@ -264,11 +304,11 @@ void show_test_ended(Adafruit_ST7789 tft ,char file_name[], unsigned long min, u
     tft.fillScreen(ST77XX_BLACK); // clear the screen
 
     tft.setCursor(70, 0);        // sets cursor for first line
-    tft.setTextSize(2);         // sets text size for file name and run time
-    tft.setTextColor(DARKGREY);   // file name will be orange
-    tft.println("Test Ended");
+    tft.setTextSize(2);         // sets text size for displayed information
+    tft.setTextColor(DARKGREY);   // text will be dark grey
+    tft.println("Test Ended");      // prints out "Test Ended"
 
-    tft.setTextColor(WHITE);
+    tft.setTextColor(WHITE);    // changes text color, size, and location on screen
     tft.setTextSize(3);
     tft.setCursor(35, 25);
     tft.print(file_name);       // prints file name to screen
@@ -277,25 +317,23 @@ void show_test_ended(Adafruit_ST7789 tft ,char file_name[], unsigned long min, u
     tft.setCursor(35,65);       // sets cursor for run time
     tft.setTextSize(2);
     tft.setTextColor(DARKCYAN); // sets run time color to DarkCyan
-    tft.println("Actual Runtime:");
+    tft.println("Actual Runtime:"); // prints out text
     tft.setTextSize(3);
-    tft.setCursor(75, 85);
+    tft.setCursor(75, 85);          // changes text size, color, and location for the actual value of run time to be printed to screen
     tft.setTextColor(WHITE);
 
-    // unsigned long min, sec;     // variables needed to show individual mins and secs
-    // min = time_elapsed / 100;       // finds the values that will go in front of the colon
+
     if (min < 10)               // if min value is below 10, it will add a placeholder 0
     {
         tft.print("0");
     }
-    tft.print(min);   
-    tft.print(":");             
-    // sec = time_elapsed % 100;       // operation to find seconds of user-inputted run-time
+    tft.print(min);             // prints min value to screen
+    tft.print(":");             // adds a colon to seperate min and sec value
     if (sec < 10)               // if sec value is below 10, it will add a placeholder 0
     {
         tft.print("0");
     }
-    tft.println(sec);
+    tft.println(sec);           // prints sec value to screen
 
     tft.setTextColor(ST77XX_GREEN);    // sets instructions for user to be in green
     tft.setTextSize(2);                // changes text size to be smaller than important info about program
@@ -307,12 +345,12 @@ void show_error_logger()
 {
     tft.fillScreen(ST77XX_BLACK); // clear the screen
 
-    tft.setCursor(0,0);
+    tft.setCursor(0,0);         // writes text to the screen to tell user that an error has occured
     tft.setTextSize(3);
     tft.setTextColor(RED);
     tft.print("ERROR:");
     tft.setTextSize(2);
-    tft.println(" file write");
+    tft.println(" file write");    
 
     tft.setCursor(0, 45);
     tft.println("Check micro SD card");
@@ -327,9 +365,9 @@ void show_error_logger()
 
 void show_error_sensor()
 {
-    tft.fillScreen(ST77XX_BLACK); // clear the screen
+    tft.fillScreen(ST77XX_BLACK);   // clear the screen
 
-    tft.setCursor(0,0);
+    tft.setCursor(0,0);             // writes text to the screen to tell user that an error has occured
     tft.setTextSize(3);
     tft.setTextColor(RED);
     tft.print("ERROR:"); 
@@ -348,7 +386,7 @@ void show_error_sensor()
 
 }
 
-void show_enter_name_overwrite(char file_name[]) // displays waring screen if about to overwrite previous file name
+void show_enter_name_overwrite(char file_name[]) // displays warning screen if about to overwrite previous file name
 {
     tft.fillScreen(ST77XX_BLACK); // clear the screen
 
@@ -369,9 +407,9 @@ void show_enter_name_overwrite(char file_name[]) // displays waring screen if ab
     tft.setCursor(0,100);
     tft.setTextSize(2);
     tft.setTextColor(GREEN);
-    tft.print("[green] confirm");
+    tft.print("[green] confirm");       // tells user to press green to overwrite and confirm
     tft.setCursor(0, 120);
     tft.setTextColor(RED);
-    tft.print("[red] go back");
+    tft.print("[red] go back");         // tells user to press red to go back and change file name
 
 }   
