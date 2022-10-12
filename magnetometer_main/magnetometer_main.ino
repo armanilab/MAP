@@ -46,16 +46,18 @@ const unsigned long UPDATE_INT = 1000; // [ms] refresh rate of display during te
 unsigned long last_update = -UPDATE_INT;
 bool ended_early = false;
 
-int bytes_written = 0;
-
 bool updated = false; // indicates if data for display/serial has been updated
 // https://forum.arduino.cc/t/tip-easier-debug-log-toggling/151603
 // TODO; try this ^^^ (in a smaller program first though)
+
+const int RECONNECTION_DELAY = 250;
+const int MSG_TIME = 2000;
 
 /* NEW FXNS */
 char increment_char(char c);
 char decrement_char(char c);
 bool check_file(String file_name);
+bool check_open_log_connection();
 
 void setup() {
   /* HARDWARE SETUP */
@@ -106,9 +108,14 @@ void setup() {
   Serial.println("Buttons connected successfully!");
 
   // set up open log - should this have a check to confirm it worked properly?
-  if (open_log.begin() == false) {
-    Serial.println("Openlog connection failed! Reset when reconnected.");
-    while(1);
+  updated = true;
+  open_log.begin();
+  while (!check_open_log_connection()) {
+    delay(RECONNECTION_DELAY);
+    if (updated) {
+      Serial.println("Waiting for open log...");
+      updated = false;
+    }
   }
 
   // set up sensor  - confirm connection
@@ -295,7 +302,7 @@ void loop() {
       open_log.append(file_name);
       // write header lines to the file
 
-      bytes_written = 0; // for error catching
+      int bytes_written = 0; // for error catching
       
       bytes_written += open_log.print("# ");
       bytes_written += open_log.println(file_name);
@@ -336,7 +343,7 @@ void loop() {
     // TODO: save a measurement to an array of recent values (for display of data)
 
     // write measurement to file, including time stamp, separated by tab
-    bytes_written = 0;
+    int bytes_written = 0;
     bytes_written += open_log.print(time_elapsed);
     bytes_written += open_log.print("\t");
     bytes_written += open_log.println(lux);
@@ -406,7 +413,14 @@ void loop() {
       updated = false;
     }
     // TODO; add test to check for openlog connection
-    // not good stuff
+    while (!check_open_log_connection()) {
+      delay(RECONNECTION_DELAY);
+    }
+
+    Serial.println("connection restablished.");
+    delay(MSG_TIME);
+    updated = true;
+    state = ENTER_NAME;
   } else if (state == ERROR_SENSOR) {
     // arguably worse stuff?
   } else if (state == NAME_OVERWRITE) {
@@ -482,4 +496,13 @@ bool check_file(String file_name) {
     next_file = open_log.getNextDirectoryItem();
   }
   return false;
+}
+
+bool check_open_log_connection() {
+  byte status = open_log.getStatus();
+  if (status == 0xFF) {
+    return false;
+  } else {
+    return true;
+  }
 }
