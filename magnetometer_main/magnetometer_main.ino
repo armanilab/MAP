@@ -14,15 +14,17 @@
 #include <Adafruit_ST7789.h> // Hardware-specific library for ST7789
 #include <SPI.h>
 // our libraries:
-#include "display.h" // our library to control the display @Vic however you want to set this up
+// #include "display.h" // our library to control the display @Vic however you want to set this up
+#include "Display.h"
 #include "states.h"
 #include "button.h" // use this as a wrapper for the sparkfun library; declare one button object for each red and green button
 
-Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
+// Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 Adafruit_TSL2591 tsl = Adafruit_TSL2591(2591); // sensor object
 OpenLog open_log; // datalogger object
 Button red;
 Button green;
+Display tft = Display();
 
 // TODO: adjust click, long hold, short hold thresholds in button.h
 
@@ -82,9 +84,11 @@ void setup() {
   delay(10);
 
   // initialize TFT
+  /*
   tft.init(135, 240); // Init ST7789 240x135
   tft.setRotation(3);
   tft.fillScreen(ST77XX_BLACK);
+  */
 
   // set up buttons
   red = Button();
@@ -140,7 +144,7 @@ void loop() {
 
     // update "display" (serial for now) - remove when done troubleshooting
     if (updated) { // only send updates if something has actually changed
-      show_file_name(tft, file_entry, current_name_char);
+      show_file_name(file_entry, current_name_char);
 
       Serial.println("");
       Serial.println(file_entry);
@@ -202,7 +206,7 @@ void loop() {
   } else if (state == ENTER_TIME) {
     // remove this loop when done troubleshooting
     if (updated) { // only send updates if something has actually changed
-      show_run_time(tft, run_time, current_time_char);
+      show_run_time(run_time, current_time_char);
       Serial.println("");
       Serial.print("min: ");
       Serial.print(run_time[0]);
@@ -272,12 +276,14 @@ void loop() {
   } else if (state == TEST_READY) {
     if (updated)
     {
-      // show_test_ready(file_name, unsigned long run_time)
+      show_test_ready(file_name, unsigned long run_time);
+      /*
       tft.fillScreen(ST77XX_BLACK);
       tft.setCursor(0,0);
       tft.setTextSize(2);
       Serial.println("Test ready to start");
       Serial.println("Hold green to confirm.");
+      */
       updated = false;
     }
     if (green_status > LONG_HOLD) {
