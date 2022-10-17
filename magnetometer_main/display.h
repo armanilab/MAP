@@ -6,24 +6,15 @@
 
 // colors defined
 #define BLACK 0x0000
-#define NAVY 0x000F
 #define DARKGREEN 0x03E0
 #define DARKCYAN 0x03EF
-#define MAROON 0x7800
-#define PURPLE 0x780F
-#define OLIVE 0x7BE0
 #define LIGHTGREY 0xC618
 #define DARKGREY 0x7BEF
-#define BLUE 0x001F
 #define GREEN 0x07E0
 #define CYAN 0x07FF
 #define RED 0xF800
-#define MAGENTA 0xF81F
-#define YELLOW 0xFFE0
 #define WHITE 0xFFFF
 #define ORANGE 0xFD20
-#define GREENYELLOW 0xAFE5
-#define PINK 0xF81F
 
 
 /*
@@ -390,11 +381,11 @@ void show_enter_name_overwrite(Adafruit_ST7789 tft, char file_name[]) // display
 {
     tft.fillScreen(ST77XX_BLACK); // clear the screen
 
-    tft.setCursor(55,0);
+    tft.setCursor(55,0);            // warns user about warning
     tft.setTextSize(3);
     tft.setTextColor(RED);
     tft.print("WARNING:"); 
-    tft.setCursor(20, 25);
+    tft.setCursor(20    , 25);
     tft.setTextSize(2);
     tft.println(" overwrite file?");
 
@@ -412,4 +403,57 @@ void show_enter_name_overwrite(Adafruit_ST7789 tft, char file_name[]) // display
     tft.setTextColor(RED);
     tft.print("[red] go back");         // tells user to press red to go back and change file name
 
+}   
+
+
+void show_error_button(Adafruit_ST7789 tft)
+{
+    tft.fillScreen(ST77XX_BLACK);   // clear the screen
+
+    tft.setCursor(0,0);             // writes text to the screen to tell user that an error has occured
+    tft.setTextSize(3);
+    tft.setTextColor(RED);
+    tft.print("ERROR:"); 
+    tft.setTextSize(2);
+    tft.println(" button");
+    tft.setCursor(0, 25);
+    tft.println("disconnected");
+
+    tft.setCursor(65, 55);
+    tft.println("Check button");
+    tft.setCursor(68, 75);
+    tft.println("connection.");
+    tft.setTextColor(DARKGREEN);
+    tft.setCursor(0, 115);
+    tft.println("Press GREEN to reset");
+
+}
+
+
+void show_connection_re_established(Adafruit_ST7789 tft, char re_established[]) // displays warnning screen if about to overwrite previous file name
+{
+    tft.fillScreen(ST77XX_BLACK); // clear the screen
+
+    tft.setCursor(45,0);            // warns user about warning
+    tft.setTextSize(3);
+    tft.setTextColor(DARKGREEN);
+    tft.print(re_established); 
+    tft.setCursor(0, 25);
+    tft.setTextSize(2);
+    tft.println("connection re-established");
+
+    tft.setTextColor(DARKGREY);
+    tft.setTextSize(2);
+    tft.setCursor(10, 60);
+    tft.println("Test resetting...");     
+
+/*
+    tft.setCursor(0,100);
+    tft.setTextSize(2);
+    tft.setTextColor(GREEN);
+    tft.print("[green] confirm");       // tells user to press green to overwrite and confirm
+    tft.setCursor(0, 120);
+    tft.setTextColor(RED);
+    tft.print("[red] go back");         // tells user to press red to go back and change file name
+*/
 }   
