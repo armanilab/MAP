@@ -4,13 +4,19 @@
 
 Display::Display()
 {
-    // tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
+    //tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 
     // initialize TFT
-    tft.init(135, 240); // Init ST7789 240x135
+    /*tft.init(135, 240); // Init ST7789 240x135
     tft.setRotation(3); 
-    tft.fillScreen(ST77XX_BLACK);
+    tft.fillScreen(ST77XX_BLACK); */
 
+}
+
+void Display::begin() {
+  tft.init(135, 240); // Init ST7789 240x135
+  tft.setRotation(3); 
+  tft.fillScreen(ST77XX_BLACK);
 }
 
 

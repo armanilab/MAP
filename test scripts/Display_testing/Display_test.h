@@ -3,6 +3,7 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
+#include <Wire.h>
 #include <Adafruit_GFX.h> // Core graphics library
 #include <Adafruit_ST7789.h> // Hardware-specific library for ST7789
 #include <SPI.h>
@@ -23,14 +24,14 @@ class Display
 {
 private:
     // tft(TFT_CS, TFT_DC, TFT_RST);
-    Adafruit_ST7789 tft;
-    tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
+    Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 
 public:
     // constructors
     Display();
 
     // functions
+    void begin(); // initializes the screen
     void show_file_name(char file_entry[], int index); // displays the screen to enter the file name
     void show_run_time(int run_time[], int index); // displays the screen to enter the run time wanted
     void show_test_ready(char file_name[], int run_time[]);

@@ -25,7 +25,11 @@ void setup() {
   digitalWrite(TFT_I2C_POWER, HIGH);
   delay(10);
 
+  screen.begin();
+  delay(500);
+
   screen.show_error_logger();
+  Serial.print("showing logger error screen");
 }
 
 
