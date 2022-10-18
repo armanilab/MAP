@@ -3,7 +3,7 @@
  * Written by: Lexie Scholtz
  *             Vic Nunez
  * Created: 2022.09.29
- * Last Updated: 2022.10.04
+ * Last Updated: 2022.10.18
 */
 
 #include <Wire.h> // needed for open log
@@ -52,8 +52,9 @@ bool updated = false; // indicates if data for display/serial has been updated
 // https://forum.arduino.cc/t/tip-easier-debug-log-toggling/151603
 // TODO; try this ^^^ (in a smaller program first though)
 
-const int RECONNECTION_DELAY = 250;
+const int RECONNECTION_DELAY = 1000;
 const int MSG_TIME = 2000;
+const float LIGHT_THRESHOLD = 0.1;
 
 /* NEW FXNS */
 char increment_char(char c);
@@ -83,12 +84,8 @@ void setup() {
   digitalWrite(TFT_I2C_POWER, HIGH);
   delay(10);
 
-  // initialize TFT
-  /*
-  tft.init(135, 240); // Init ST7789 240x135
-  tft.setRotation(3);
-  tft.fillScreen(ST77XX_BLACK);
-  */
+  // initialize tft
+  //tft.begin();
 
   // set up buttons
   red = Button();
@@ -128,6 +125,7 @@ void setup() {
   // initialize state to name entry
   state = ENTER_NAME;
   updated = true;
+  Serial.println("test");
 }
 
 void loop() {
@@ -144,7 +142,7 @@ void loop() {
 
     // update "display" (serial for now) - remove when done troubleshooting
     if (updated) { // only send updates if something has actually changed
-      show_file_name(file_entry, current_name_char);
+      //tft.show_file_name(file_entry, current_name_char);
 
       Serial.println("");
       Serial.println(file_entry);
@@ -206,7 +204,7 @@ void loop() {
   } else if (state == ENTER_TIME) {
     // remove this loop when done troubleshooting
     if (updated) { // only send updates if something has actually changed
-      show_run_time(run_time, current_time_char);
+      //tft.show_run_time(run_time, current_time_char);
       Serial.println("");
       Serial.print("min: ");
       Serial.print(run_time[0]);
@@ -276,14 +274,14 @@ void loop() {
   } else if (state == TEST_READY) {
     if (updated)
     {
-      show_test_ready(file_name, unsigned long run_time);
+      //tft.show_test_ready(file_name, run_time);
       /*
       tft.fillScreen(ST77XX_BLACK);
       tft.setCursor(0,0);
-      tft.setTextSize(2);
+      tft.setTextSize(2); */
       Serial.println("Test ready to start");
       Serial.println("Hold green to confirm.");
-      */
+      
       updated = false;
     }
     if (green_status > LONG_HOLD) {
@@ -330,14 +328,14 @@ void loop() {
 
     // take a measurement
     uint32_t lum = tsl.getFullLuminosity();
-    if (lum == 0) { // sensor is not connected
+    uint16_t ir = lum >> 16;
+    uint16_t full = lum & 0xFFFF;
+    float lux = tsl.calculateLux(full, ir);
+    if (lux < LIGHT_THRESHOLD) { // sensor is not connected
       Serial.println("caught sensor error");
       state = ERROR_SENSOR;
       updated = true;
     }
-    uint16_t ir = lum >> 16;
-    uint16_t full = lum & 0xFFFF;
-    float lux = tsl.calculateLux(full, ir);
 
     // TODO: save a measurement to an array of recent values (for display of data)
 
@@ -488,21 +486,17 @@ bool check_file(String file_name) {
 }
 
 bool check_open_log_connection() {
-  byte status = open_log.getStatus();
+  return open_log.getStatus() != 0xFF;
+  /*byte status = open_log.getStatus();
   if (status == 0xFF) {
     return false;
   } else {
     return true;
-  }
+  } */
 }
 
 bool check_sensor_connection() {
-  uint8_t status = tsl.getStatus();
-  if (status == 0) {
-    return false;
-  } else {
-    return true;
-  }
+  return tsl.begin();
 }
 
 void logger_error() {
