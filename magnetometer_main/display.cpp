@@ -158,7 +158,7 @@ void Display::show_test_ready(char file_name[], int run_time[])
     tft.println("Hold green to START");
 } 
 
-void Display::show_test_in_progress(int run_time[], unsigned long time_elapsed, unsigned long recent_val, char file_name[], float avg_slope) // displays screen with time elapsed and active trendline
+void Display::show_test_in_progress(int run_time[], unsigned long time_elapsed, float recent_val, char file_name[], float avg_slope) // displays screen with time elapsed and active trendline
 {
      tft.fillScreen(ST77XX_BLACK); // clear the screen
 
@@ -407,7 +407,7 @@ void Display::show_error_button()
     tft.println("connection.");
     tft.setTextColor(DARKGREEN);
     tft.setCursor(0, 115);
-    tft.println("Press GREEN to reset");
+    // tft.println("Press GREEN to reset");
 
 }
 
