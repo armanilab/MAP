@@ -26,6 +26,7 @@ Button red;
 Button green;
 Display tft = Display();
 
+
 // TODO: adjust click, long hold, short hold thresholds in button.h
 
 States state;
@@ -74,6 +75,7 @@ void setup() {
   // set up i2C comms
   Wire.begin();
 
+  Serial.println("AFTER WIRE.Begin");
   // turn on screen
   // turn on backlite
   pinMode(TFT_BACKLITE, OUTPUT);
@@ -85,7 +87,9 @@ void setup() {
   delay(10);
 
   // initialize tft
-  //tft.begin();
+  Serial.println("Before Tft start");
+  tft.begin();
+  Serial.println("AFTER TFT start");
 
   // set up buttons
   red = Button();
@@ -143,7 +147,7 @@ void loop() {
     // update "display" (serial for now) - remove when done troubleshooting
     if (updated) { // only send updates if something has actually changed
       //tft.show_file_name(file_entry, current_name_char);
-      show_file_name(file_entry, current_name_char);  // call to display function
+      tft.show_file_name(file_entry, current_name_char);  // call to display function
       Serial.println("");
       Serial.println(file_entry);
       for (int i = 0; i < current_name_char; i++) {
@@ -205,7 +209,7 @@ void loop() {
     // remove this loop when done troubleshooting
     if (updated) { // only send updates if something has actually changed
       //tft.show_run_time(run_time, current_time_char);
-      show_run_time(run_time, current_time_char); // call to display function
+      tft.show_run_time(run_time, current_time_char); // call to display function
       Serial.println("");
       Serial.print("min: ");
       Serial.print(run_time[0]);
@@ -275,7 +279,7 @@ void loop() {
   } else if (state == TEST_READY) {
     if (updated)
     {
-      show_test_ready(file_name, run_time); // call to display function
+      tft.show_test_ready(file_name, run_time); // call to display function
       //tft.show_test_ready(file_name, run_time);
       /*
       tft.fillScreen(ST77XX_BLACK);
@@ -357,6 +361,7 @@ void loop() {
     // display stuff
     // finds avg_slope value
     // need array of recent vals?? Can we use a vector in arduino, that way we don't need a predetermined array size and can just push back the vector and track with an index?
+    /*
     int data_points = 5;                            // however many data points we are using per time interval
     int slopes[data_points - 1];                    // initializing array to hold the slopes between data points
     for (int i = data_points - 1; i > 0; i--)
@@ -371,8 +376,10 @@ void loop() {
     int time_interval = 1000;         // assuming the time interval is 1 second (1000ms) we are dividing the time interval by data points to help us calculate slope
     time_interval /= data_points;	
     avg_slope /= (float)time_interval;                    // our average slope will be the values we summed up divided by the calculated individual time interval
+    */ 
+    float avg_slope = 0.79;   // make shift slope for now
 
-    show_test_in_progress(run_time, time_elapsed, lux, file_name, avg_slope); // call to display function
+    tft.show_test_in_progress(run_time, time_elapsed, lux, file_name, avg_slope); // call to display function
     
 
     if (time_elapsed - last_update > UPDATE_INT) { // in place of the if (updated) statement
@@ -400,7 +407,7 @@ void loop() {
     if (updated) {
       int min = (time_elapsed / 1000) / 60; // need these variables for display function
       int sec = (time_elapsed / 1000) % 60;
-      show_test_ended(file_name, min, sec); // call to display function
+      tft.show_test_ended(file_name, min, sec); // call to display function
       // indicate test is done and why
       if (ended_early) {
         Serial.println("Test ended");
@@ -433,17 +440,17 @@ void loop() {
 
   } else if (state == ERROR_LOGGER) {
     logger_error();
-    show_error_logger();  // call to display function
+    tft.show_error_logger();  // call to display function
   } else if (state == ERROR_SENSOR) {
 
     sensor_error();
-    show_error_sensor();  // call to display function
+    tft.show_error_sensor();  // call to display function
     // arguably worse stuff?
   } else if (state == NAME_OVERWRITE) {
     // warning of bad stuff
 
     if (updated) {
-      show_enter_name_overwrite(file_name); // call to display function
+      tft.show_enter_name_overwrite(file_name); // call to display function
       // TODO: update the display
       // note this will only run once when we enter this state, it's not dynamic
       // like the entry states
@@ -559,3 +566,4 @@ void sensor_error() {
   updated = true;
   state = ENTER_NAME;
 }
+

@@ -22,6 +22,7 @@ void Display::begin() {
 
 void Display::show_file_name(char file_entry[], int index)
 {
+    Serial.println("IN NAME ENTRY");
     tft.fillScreen(ST77XX_BLACK); // clear the screen
     
     tft.setCursor(30, 0);           // sets cursor for first line
@@ -130,7 +131,7 @@ void Display::show_run_time(int run_time[], int index)
     tft.println("minutes : seconds");   // descriptive info to show user what the numbers are
 }
 
-void Display::show_test_ready(char file_name[], int run_time[])
+void Display::show_test_ready(String file_name, int run_time[])
 {
     tft.fillScreen(ST77XX_BLACK); // clear the screen
 
@@ -139,7 +140,7 @@ void Display::show_test_ready(char file_name[], int run_time[])
     tft.setTextSize(4);         // sets text size for file name and run time
     tft.setTextColor(ORANGE);   // file name will be orange
     tft.print(file_name);       // prints file name to screen
-    tft.println(".txt");        // adds ".txt" to end of inputted file name on the display screen
+    // tft.println(".txt");        // adds ".txt" to end of inputted file name on the display screen
     tft.setCursor(70,55);       // sets cursor for run time
     tft.setTextColor(DARKCYAN); // sets run time color to DarkCyan
     
@@ -158,7 +159,7 @@ void Display::show_test_ready(char file_name[], int run_time[])
     tft.println("Hold green to START");
 } 
 
-void Display::show_test_in_progress(int run_time[], unsigned long time_elapsed, float recent_val, char file_name[], float avg_slope) // displays screen with time elapsed and active trendline
+void Display::show_test_in_progress(int run_time[], unsigned long time_elapsed, float recent_val, String file_name, float avg_slope) // displays screen with time elapsed and active trendline
 {
      tft.fillScreen(ST77XX_BLACK); // clear the screen
 
@@ -274,7 +275,7 @@ void Display::show_test_in_progress(int run_time[], unsigned long time_elapsed, 
 
 }
 
-void Display::show_test_ended(char file_name[], unsigned long min, unsigned long sec) // displays test ended screen w/ file name and actual time elapsed
+void Display::show_test_ended(String file_name, unsigned long min, unsigned long sec) // displays test ended screen w/ file name and actual time elapsed
 {
     tft.fillScreen(ST77XX_BLACK); // clear the screen
 
@@ -287,7 +288,7 @@ void Display::show_test_ended(char file_name[], unsigned long min, unsigned long
     tft.setTextSize(3);
     tft.setCursor(35, 25);
     tft.print(file_name);       // prints file name to screen
-    tft.println(".txt");        // adds ".txt" to end of inputted file name on the display screen
+    // tft.println(".txt");        // adds ".txt" to end of inputted file name on the display screen
 
     tft.setCursor(35,65);       // sets cursor for run time
     tft.setTextSize(2);
@@ -361,7 +362,7 @@ void Display::show_error_sensor()
 
 }
 
-void Display::show_enter_name_overwrite(char file_name[]) // displays warnning screen if about to overwrite previous file name
+void Display::show_enter_name_overwrite(String file_name) // displays warnning screen if about to overwrite previous file name
 {
     tft.fillScreen(ST77XX_BLACK); // clear the screen
 
@@ -377,7 +378,7 @@ void Display::show_enter_name_overwrite(char file_name[]) // displays warnning s
     tft.setTextSize(3);
     tft.setCursor(25, 60);
     tft.print(file_name);       // prints file name to screen
-    tft.println(".txt");        // adds ".txt" to end of inputted file name on the display screen
+    // tft.println(".txt");        // adds ".txt" to end of inputted file name on the display screen
 
     tft.setCursor(0,100);
     tft.setTextSize(2);
