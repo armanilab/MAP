@@ -173,15 +173,17 @@ void Display::show_test_in_progress(int run_time[], unsigned long time_elapsed, 
 
     tft.setTextColor(WHITE);
     tft.setCursor(0, 40);
-    unsigned long min, sec;         // variables needed to show individual mins and secs
-    min = time_elapsed / 100;       // finds the values that will go in front of the colon (mins)
+    int min, sec;         // variables needed to show individual mins and secs
+    min = (time_elapsed / 1000) / 60; // need these variables for display function
+    sec = (time_elapsed / 1000) % 60;
+    // min = time_elapsed / 100;       // finds the values that will go in front of the colon (mins)
     if (min < 10)                   // if min value is below 10, it will add a placeholder 0
     {
         tft.print("0");
     }
     tft.print(min);
     tft.print(":");
-    sec = time_elapsed % 100;       // operation to find seconds of elapsed-time
+    // sec = time_elapsed % 100;       // operation to find seconds of elapsed-time
     if (sec < 10)                   // if sec value is below 10, it will add a placeholder 0
     {
         tft.print("0");
@@ -194,7 +196,16 @@ void Display::show_test_in_progress(int run_time[], unsigned long time_elapsed, 
     tft.setCursor(0,90);
     tft.setTextSize(3);
     tft.setTextColor(WHITE);
-    tft.println(recent_val);        // prints out current lux
+    
+    if (recent_val >= 1000)
+    {
+        tft.println(recent_val,0);
+    }
+    else 
+    {
+        tft.println(recent_val);        // prints out current lux
+    }
+    
 
     tft.setTextColor(DARKGREY);     // prints out user inputted run time in bottom right corner
     tft.setCursor(210, 125);

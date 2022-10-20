@@ -46,6 +46,14 @@ unsigned long time_elapsed = 0;
 const unsigned long UPDATE_INT = 1000; // [ms] refresh rate of display during test
 unsigned long last_update = -UPDATE_INT;
 bool ended_early = false;
+// avg_slope 
+int data_points = 5;
+int slope_index = 0;
+float prev_lux = 1;
+bool array_full = false;
+int slopes[5];                        // *IMPORTANT* If we change # of data points, we must change this number inside of brackets
+unsigned long time_interval = 200;
+float cur_slope;
 
 bool updated = false; // indicates if data for display/serial has been updated
 // https://forum.arduino.cc/t/tip-easier-debug-log-toggling/151603
@@ -325,6 +333,12 @@ void loop() {
       state = TEST_IN_PROGRESS;
       // TODO: set green LED to blink (use led cycle fxn) ?
     }
+    if (red_status > LONG_HOLD) {
+      // user long held red button to go back to time entry
+      Serial.println("moving to ENTER_TIME...");
+      state = ENTER_TIME;
+      updated = true;
+    }
   } else if (state == TEST_IN_PROGRESS) {
     // stuff that should be running during a test
     time_elapsed = millis() - start_time;
@@ -374,9 +388,49 @@ void loop() {
     time_interval /= data_points;
     avg_slope /= (float)time_interval;                    // our average slope will be the values we summed up divided by the calculated individual time interval
     */
-    float avg_slope = 0.79;   // make shift slope for now
+    // float avg_slope = 0.79;   // make shift slope for now
+    
+    // trying to find average slope
+    /*
+    // avg_slope 
+    int slope_index = 0;
+    float prev_lux = 1;
+    bool array_full = false;
+    int slopes[];
+    unsigned long time_interval = 200;
+    */
+    if (!array_full && slope_index == 0)
+    {
+      slopes[slope_index] = (lux / time_interval);
+      /*
+      Serial.print("First slope: ");
+      Serial.println(slopes[slope_index]);
+      delay(2000);
+      */
+    }
+    else 
+    {
+      cur_slope = lux - prev_lux;
+      cur_slope = cur_slope / time_interval;
+      slopes[slope_index] = cur_slope;
+    }
+    prev_lux = lux;
+    slope_index++;
+    if (slope_index >= data_points)
+    {
+      slope_index = 0;
+      array_full = true;
+    }
 
-    tft.show_test_in_progress(run_time, time_elapsed, lux, file_name, avg_slope); // call to display function
+    float avg_slope = 0;
+    for (int i = 0; i < data_points; i++)
+    {
+      avg_slope = avg_slope + slopes[i];
+    }
+    avg_slope = avg_slope / (float)data_points;
+
+
+    
 
 
     if (time_elapsed - last_update > UPDATE_INT) { // in place of the if (updated) statement
@@ -384,6 +438,7 @@ void loop() {
       Serial.print("\t");
       Serial.println(lux);
       last_update = time_elapsed;
+      tft.show_test_in_progress(run_time, time_elapsed, lux, file_name, avg_slope); // call to display function
     }
 
     if (red_status > LONG_HOLD || time_elapsed >= run_time_ms) { // user cancelled test
