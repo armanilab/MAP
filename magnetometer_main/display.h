@@ -34,7 +34,7 @@ public:
     void show_run_time(int run_time[], int index); // displays the screen to enter the run time wanted
     void show_test_ready(String file_name, int run_time[]);
     void show_test_in_progress(int run_time[], unsigned long time_elapsed, float recent_val, String file_name, float avg_slope); // displays screen with time elapsed and active trendline
-    void show_test_ended(String file_name, unsigned long min, unsigned long sec); // displays test ended screen w/ file name and actual time elapsed
+    void show_test_ended(String file_name, int min, int sec); // displays test ended screen w/ file name and actual time elapsed
     void show_error_logger();
     void show_error_sensor();
     void show_enter_name_overwrite(String file_name); // displays warnning screen if about to overwrite previous file name

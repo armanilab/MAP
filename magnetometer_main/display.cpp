@@ -276,7 +276,7 @@ void Display::show_test_in_progress(int run_time[], unsigned long time_elapsed, 
 
 }
 
-void Display::show_test_ended(String file_name, unsigned long min, unsigned long sec) // displays test ended screen w/ file name and actual time elapsed
+void Display::show_test_ended(String file_name, int min, int sec) // displays test ended screen w/ file name and actual time elapsed
 {
     tft.fillScreen(ST77XX_BLACK); // clear the screen
 
