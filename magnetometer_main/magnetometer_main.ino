@@ -371,67 +371,30 @@ void loop() {
 
     // display stuff
     // finds avg_slope value
-    // need array of recent vals?? Can we use a vector in arduino, that way we don't need a predetermined array size and can just push back the vector and track with an index?
-    /*
-    int data_points = 5;                            // however many data points we are using per time interval
-    int slopes[data_points - 1];                    // initializing array to hold the slopes between data points
-    for (int i = data_points - 1; i > 0; i--)
-    {
-        slopes[i-1] = vals[i] - vals[i-1];          // inserting values into the slopes array
-    }
-    float avg_slope = 0;
-    for (int i = data_points - 2; i >= 0; i--)
-    {
-        avg_slope += slopes[i];                    // for loop adds all the values in the slope array to help get average slope reading
-    }
-    int time_interval = 1000;         // assuming the time interval is 1 second (1000ms) we are dividing the time interval by data points to help us calculate slope
-    time_interval /= data_points;
-    avg_slope /= (float)time_interval;                    // our average slope will be the values we summed up divided by the calculated individual time interval
-    */
-    // float avg_slope = 0.79;   // make shift slope for now
-    
-    // trying to find average slope
-    /*
-    // avg_slope 
-    int slope_index = 0;
-    float prev_lux = 1;
-    bool array_full = false;
-    int slopes[];
-    unsigned long time_interval = 200;
-    */
-    if (!array_full && slope_index == 0)
+    if (!array_full && slope_index == 0)                // just a base case for the very first lux reading, so that a slope will still be displayed
     {
       slopes[slope_index] = (lux / time_interval);
-      /*
-      Serial.print("First slope: ");
-      Serial.println(slopes[slope_index]);
-      delay(2000);
-      */
     }
-    else 
+    else                                                // finds slope between current lux value and previous lux value
     {
-      cur_slope = lux - prev_lux;
+      cur_slope = lux - prev_lux;             
       cur_slope = cur_slope / time_interval;
-      slopes[slope_index] = cur_slope;
+      slopes[slope_index] = cur_slope;                  // puts current slope value into an array holding the last 4 slope values
     }
-    prev_lux = lux;
-    slope_index++;
-    if (slope_index >= data_points)
+    prev_lux = lux;                                     // updates the previous lux value to equal the current lux value
+    slope_index++;                                      // updates slope_index
+    if (slope_index >= data_points)                     // makes sure we don't access array indices that don't exist
     {
       slope_index = 0;
-      array_full = true;
+      array_full = true;                                // makes sure we don't re-enter our base case
     }
 
-    float avg_slope = 0;
+    float avg_slope = 0;                                // initializes our avg_slope variable
     for (int i = 0; i < data_points; i++)
     {
       avg_slope = avg_slope + slopes[i];
     }
-    avg_slope = avg_slope / (float)data_points;
-
-
-    
-
+    avg_slope = avg_slope / (float)data_points;     // avg_slope value of last x lux values
 
     if (time_elapsed - last_update > UPDATE_INT) { // in place of the if (updated) statement
       Serial.print(time_elapsed);

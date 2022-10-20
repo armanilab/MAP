@@ -196,10 +196,10 @@ void Display::show_test_in_progress(int run_time[], unsigned long time_elapsed, 
     tft.setCursor(0,90);
     tft.setTextSize(3);
     tft.setTextColor(WHITE);
-    
-    if (recent_val >= 1000)
+
+    if (recent_val >= 1000) 
     {
-        tft.println(recent_val,0);
+        tft.println(recent_val,0);      // cuts off decimal values if current lux value is larger than 1000   
     }
     else 
     {
