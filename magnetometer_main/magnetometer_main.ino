@@ -6,6 +6,7 @@
  * Last Updated: 2022.10.18
 */
 
+#include "Arduino.h"
 #include <Wire.h> // needed for open log
 #include <Adafruit_Sensor.h>
 #include "Adafruit_TSL2591.h" // light sensor library
@@ -22,12 +23,9 @@
 // Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 Adafruit_TSL2591 tsl = Adafruit_TSL2591(2591); // sensor object
 OpenLog open_log; // datalogger object
-Button red;
-Button green;
+Button red = Button();
+Button green = Button(0x60);
 Display tft = Display();
-
-
-// TODO: adjust click, long hold, short hold thresholds in button.h
 
 States state;
 
@@ -92,22 +90,15 @@ void setup() {
   Serial.println("AFTER TFT start");
 
   // set up buttons
-  red = Button();
-  green = Button(0x60);
-
   // TODO: refactor these so if these get plugged in properly, then the program will continue
   // i.e. program should only stall if they're not connected, not totally stop
   if (green.init() == false) {
-    Serial.println("Green button not connected! Reset when reconnected.");
-    while(1);
+    button_error();
   }
 
   if (red.init() == false) {
-    Serial.println("Red button not connected! Reset when reconnected.");
-    while(1);
+    button_error();
   }
-
-  Serial.println("Buttons connected successfully!");
 
   // set up open log - should this have a check to confirm it worked properly?
   updated = true;
@@ -136,6 +127,12 @@ void loop() {
   // get updated button statuses
   int red_status = red.update_status();
   int green_status = green.update_status();
+
+  // check for button disconnection:
+  if (red_status == -1 || green_status == -1) {
+    Serial.println("button(s) disconnected");
+    state = ERROR_BUTTON;
+  }
 
   /* NAME ENTRY */
   if (state == ENTER_NAME) {
@@ -287,7 +284,7 @@ void loop() {
       tft.setTextSize(2); */
       Serial.println("Test ready to start");
       Serial.println("Hold green to confirm.");
-      
+
       updated = false;
     }
     if (green_status > LONG_HOLD) {
@@ -365,7 +362,7 @@ void loop() {
     int data_points = 5;                            // however many data points we are using per time interval
     int slopes[data_points - 1];                    // initializing array to hold the slopes between data points
     for (int i = data_points - 1; i > 0; i--)
-    {   
+    {
         slopes[i-1] = vals[i] - vals[i-1];          // inserting values into the slopes array
     }
     float avg_slope = 0;
@@ -374,17 +371,15 @@ void loop() {
         avg_slope += slopes[i];                    // for loop adds all the values in the slope array to help get average slope reading
     }
     int time_interval = 1000;         // assuming the time interval is 1 second (1000ms) we are dividing the time interval by data points to help us calculate slope
-    time_interval /= data_points;	
+    time_interval /= data_points;
     avg_slope /= (float)time_interval;                    // our average slope will be the values we summed up divided by the calculated individual time interval
-    */ 
+    */
     float avg_slope = 0.79;   // make shift slope for now
 
     tft.show_test_in_progress(run_time, time_elapsed, lux, file_name, avg_slope); // call to display function
-    
+
 
     if (time_elapsed - last_update > UPDATE_INT) { // in place of the if (updated) statement
-      // TODO: add display stuff
-      // DEBUG ONLY: write nums to serial monitor too (removing these will speed up program)
       Serial.print(time_elapsed);
       Serial.print("\t");
       Serial.println(lux);
@@ -440,12 +435,11 @@ void loop() {
 
   } else if (state == ERROR_LOGGER) {
     logger_error();
-    tft.show_error_logger();  // call to display function
   } else if (state == ERROR_SENSOR) {
-
     sensor_error();
-    tft.show_error_sensor();  // call to display function
     // arguably worse stuff?
+  } else if (state == ERROR_BUTTON) {
+    button_error();
   } else if (state == NAME_OVERWRITE) {
     // warning of bad stuff
 
@@ -536,16 +530,22 @@ bool check_sensor_connection() {
   return tsl.begin();
 }
 
+bool check_button_connection() {
+  return red.check_connection() && green.check_connection();
+}
+
 void logger_error() {
   // TODO: add display messages
   Serial.println("Error with open log");
-
+  tft.show_error_logger();  // call to display function
+   
   // TODO; add test to check for openlog connection
   while (!check_open_log_connection()) {
     delay(RECONNECTION_DELAY);
   }
 
   Serial.println("open log connection restablished.");
+  tft.show_connection_re_established("Logger");
   delay(MSG_TIME);
 
   updated = true;
@@ -553,17 +553,35 @@ void logger_error() {
 }
 
 void sensor_error() {
-  // TODO: add display messages
+  // TODO: add display messages  
   Serial.println("ERROR: sensor not connected");
+  tft.show_error_sensor();  // call to display function
 
   while(!check_sensor_connection()) {
     delay(RECONNECTION_DELAY);
   }
 
   Serial.println("sensor connection restablished");
+  tft.show_connection_re_established("Sensor");
   delay(MSG_TIME);
 
   updated = true;
   state = ENTER_NAME;
 }
 
+void button_error() {
+  // TODO: add display messages
+  Serial.println("ERROR: button(s) not connected");
+  tft.show_error_button();
+
+  while(!check_button_connection()) {
+    delay(RECONNECTION_DELAY);
+  }
+
+  Serial.println("button(s) connection restablished");
+  tft.show_connection_re_established("Button(s)");
+  delay(MSG_TIME);
+
+  updated = true;
+  state = ENTER_NAME;
+}

@@ -21,6 +21,7 @@ private:
   // TODO: some fxn to update LED brightness based on the length of press
   // (called by update_status). or maybe this should be public?
   uint8_t determine_brightness(unsigned long press_length);
+  void set_brightness(uint8_t brightness_level);
 
 public:
   // constructors
@@ -29,7 +30,7 @@ public:
 
   // functions
   bool init(); // initialize the Button. returns true if successful
-  void set_brightness(uint8_t brightness_level);
+  bool check_connection();
   int update_status();
 };
 

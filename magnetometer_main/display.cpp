@@ -8,15 +8,16 @@ Display::Display()
 
     // initialize TFT
     tft.init(135, 240); // Init ST7789 240x135
-    tft.setRotation(3); 
+    tft.setRotation(3);
     tft.fillScreen(ST77XX_BLACK);
 
 }
 */
 
 void Display::begin() {
+  Serial.println("in Display::begin()");
   tft.init(135, 240); // Init ST7789 240x135
-  tft.setRotation(3); 
+  tft.setRotation(3);
   tft.fillScreen(ST77XX_BLACK);
 }
 
@@ -24,20 +25,20 @@ void Display::show_file_name(char file_entry[], int index)
 {
     Serial.println("IN NAME ENTRY");
     tft.fillScreen(ST77XX_BLACK); // clear the screen
-    
+
     tft.setCursor(30, 0);           // sets cursor for first line
     tft.setTextSize(2);             // sets text size for file name
     tft.setTextColor(DARKCYAN);     // file name will be DARKCYAN
     tft.print("Enter file name:");  // prints instructions
-    tft.setTextSize(4);             // sets text size for file name input       
+    tft.setTextSize(4);             // sets text size for file name input
     tft.setCursor(50,40);           // sets cursor for file name input
     tft.setTextColor(WHITE);        // sets file name input color to white
 
     for (int i = 0; i < index; i++) // for loop to print the characters user has already inputted
     {
-      tft.print(file_entry[i]);     
+      tft.print(file_entry[i]);
     }
-    tft.setTextColor(ORANGE);       
+    tft.setTextColor(ORANGE);
     tft.print(file_entry[index]);   // prints out current char in ORANGE that user needs to edit
     tft.setTextColor(WHITE);
     for (int i = index + 1; i < 6; i++)     // prints out remaining chars in WHITE that user still can change
@@ -73,7 +74,7 @@ void Display::show_run_time(int run_time[], int index)
     tft.print("Enter time:");
 
 
-    tft.setTextSize(5);             // sets text size for file name input       
+    tft.setTextSize(5);             // sets text size for file name input
     tft.setCursor(50,50);           // sets cursor for file name input
     tft.setTextColor(WHITE);        // sets file name input color to white
 
@@ -91,7 +92,7 @@ void Display::show_run_time(int run_time[], int index)
         tft.print(":");
     }
 
-    tft.setTextColor(ORANGE);       
+    tft.setTextColor(ORANGE);
     tft.print(run_time[index]);   // prints out current char in ORANGE that user needs to edit
     tft.setTextColor(WHITE);
     for (int i = index + 1; i < 4; i++)     // prints out remaining chars in WHITE that user still can change
@@ -143,7 +144,7 @@ void Display::show_test_ready(String file_name, int run_time[])
     // tft.println(".txt");        // adds ".txt" to end of inputted file name on the display screen
     tft.setCursor(70,55);       // sets cursor for run time
     tft.setTextColor(DARKCYAN); // sets run time color to DarkCyan
-    
+
     for (int i = 0; i < 4; i++) // for loop prints out the run time that the user inputted
     {
         if (i == 2)
@@ -152,12 +153,12 @@ void Display::show_test_ready(String file_name, int run_time[])
         }
         tft.print(run_time[i]);
     }
-    
+
     tft.setTextColor(ST77XX_GREEN);    // sets instructions for user to be in green
     tft.setTextSize(2);                // changes text size to be smaller than important info about program
     tft.setCursor(10,110);
     tft.println("Hold green to START");
-} 
+}
 
 void Display::show_test_in_progress(int run_time[], unsigned long time_elapsed, float recent_val, String file_name, float avg_slope) // displays screen with time elapsed and active trendline
 {
@@ -178,8 +179,8 @@ void Display::show_test_in_progress(int run_time[], unsigned long time_elapsed, 
     {
         tft.print("0");
     }
-    tft.print(min);   
-    tft.print(":");             
+    tft.print(min);
+    tft.print(":");
     sec = time_elapsed % 100;       // operation to find seconds of elapsed-time
     if (sec < 10)                   // if sec value is below 10, it will add a placeholder 0
     {
@@ -189,7 +190,7 @@ void Display::show_test_in_progress(int run_time[], unsigned long time_elapsed, 
 
     tft.setCursor(0, 70);           // displays words to tell user what value underneath is
     tft.setTextColor(ORANGE);
-    tft.println("Cur lux:");        
+    tft.println("Cur lux:");
     tft.setCursor(0,90);
     tft.setTextSize(3);
     tft.setTextColor(WHITE);
@@ -212,7 +213,7 @@ void Display::show_test_in_progress(int run_time[], unsigned long time_elapsed, 
 
 
 // trendline display definition
-// we are drawing two lines, both starting from center of area where we will display line. We calculate the line for the upper half of the area, 
+// we are drawing two lines, both starting from center of area where we will display line. We calculate the line for the upper half of the area,
 // then calculate the bottom half line using the values from the top line
 
     int horizontal_end;
@@ -225,7 +226,7 @@ void Display::show_test_in_progress(int run_time[], unsigned long time_elapsed, 
     }
     else if (avg_slope == 1)                        // takes care of base case; no calculations needed if slope is equal to one
     {
-        horizontal_end = 100;       
+        horizontal_end = 100;
         vertical_end = 0;
     }
     else if (avg_slope == 0)                        // takes care of another base case; line will be completely horizontal
@@ -261,7 +262,7 @@ void Display::show_test_in_progress(int run_time[], unsigned long time_elapsed, 
 
     int two_vertical_end = vertical_end - 50;           // same thing happens with the vertical variable
     two_vertical_end = 50 - two_vertical_end;
-    
+
 
     int horizontal_shift = 120;                         // this accounts for the shift that we need to do so that our line doesn't go over other information displayed on the screen
     int vertical_shift = 10;
@@ -326,7 +327,7 @@ void Display::show_error_logger()
     tft.setTextColor(RED);
     tft.print("ERROR:");
     tft.setTextSize(2);
-    tft.println(" file write");    
+    tft.println(" file write");
 
     tft.setCursor(0, 45);
     tft.println("Check micro SD card");
@@ -346,7 +347,7 @@ void Display::show_error_sensor()
     tft.setCursor(0,0);             // writes text to the screen to tell user that an error has occured
     tft.setTextSize(3);
     tft.setTextColor(RED);
-    tft.print("ERROR:"); 
+    tft.print("ERROR:");
     tft.setTextSize(2);
     tft.println(" light");
     tft.setCursor(0, 25);
@@ -369,7 +370,7 @@ void Display::show_enter_name_overwrite(String file_name) // displays warnning s
     tft.setCursor(55,0);            // warns user about potential name overwrite
     tft.setTextSize(3);
     tft.setTextColor(RED);
-    tft.print("WARNING:"); 
+    tft.print("WARNING:");
     tft.setCursor(20    , 25);
     tft.setTextSize(2);
     tft.println(" overwrite file?");
@@ -387,7 +388,7 @@ void Display::show_enter_name_overwrite(String file_name) // displays warnning s
     tft.setCursor(0, 120);
     tft.setTextColor(RED);
     tft.print("[red] go back");         // tells user to press red to go back and change file name
-}   
+}
 
 void Display::show_error_button()
 {
@@ -396,14 +397,14 @@ void Display::show_error_button()
     tft.setCursor(0,0);             // writes text to the screen to tell user that an error has occured
     tft.setTextSize(3);
     tft.setTextColor(RED);
-    tft.print("ERROR:"); 
+    tft.print("ERROR:");
     tft.setTextSize(2);
-    tft.println(" button");
+    tft.println(" button(s)");
     tft.setCursor(0, 25);
     tft.println("disconnected");
 
     tft.setCursor(55, 55);
-    tft.println("Check button");
+    tft.println("Check button(s)");
     tft.setCursor(55, 75);
     tft.println("connection.");
     tft.setTextColor(DARKGREEN);
@@ -419,7 +420,7 @@ void Display::show_connection_re_established(char re_established[]) // displays 
     tft.setCursor(45,0);            // prints test to screen to let user know connection is re-established and test is resetting
     tft.setTextSize(3);
     tft.setTextColor(DARKGREEN);
-    tft.print(re_established); 
+    tft.print(re_established);
     tft.setCursor(35, 25);
     tft.setTextSize(2);
     tft.println("connection");
@@ -430,6 +431,6 @@ void Display::show_connection_re_established(char re_established[]) // displays 
     tft.setTextColor(DARKGREY);
     tft.setTextSize(2);
     tft.setCursor(10, 100);
-    tft.println("Test resetting...");    
+    tft.println("Test resetting...");
 
-}   
+}

@@ -24,8 +24,15 @@ bool Button::init() {
   return qbutton.begin(i2c_address);
 }
 
+bool Button::check_connection() {
+  return qbutton.isConnected();
+}
+
 int Button::update_status()
 {
+  if (!qbutton.isConnected()) {
+    return -1;
+  }
   if (qbutton.isPressed()) {
     if (!was_pressed) {
       was_pressed = true;
@@ -41,7 +48,7 @@ int Button::update_status()
     }
     qbutton.LEDoff();
   }
-  return -1; // if button was either not clicked or clicked and not released
+  return 0; // if button was either not clicked or clicked and not released
 }
 
 uint8_t Button::determine_brightness(unsigned long press_length) {
