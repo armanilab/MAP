@@ -52,7 +52,7 @@ int slope_index = 0;
 float prev_lux = 1;
 bool array_full = false;
 int slopes[5];                        // *IMPORTANT* If we change # of data points, we must change this number inside of brackets
-unsigned long time_interval = 200;
+unsigned long time_interval = 200;    // *IMPORTANT* need to find the value this needs to be at
 float cur_slope;
 
 bool updated = false; // indicates if data for display/serial has been updated
