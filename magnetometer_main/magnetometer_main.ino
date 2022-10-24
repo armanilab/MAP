@@ -164,26 +164,31 @@ void loop() {
 
     // green button input
     if (green_status > LONG_HOLD) {
-      // post processing on entered name
-      file_name = String(file_entry);
-      file_name.replace("*", ""); // remove *'s from name
-      file_name.concat(".txt"); // append .txt to make a text file
-      Serial.print("processed file name: ");
-      Serial.println(file_name);
-
-      // check file name against existing files
-      bool will_overwrite = check_file(file_name);
-      if (will_overwrite) {
-        // move to NAME_OVERWRITE
-        Serial.println("File found - change to OVERWRITE...");
-        state = NAME_OVERWRITE;
-      } else {
-        // move to ENTER_TIME state
-        Serial.println("change to ENTER_TIME...");
-        state = ENTER_TIME;
+      if (strcmp(file_entry, "******") == 0)    // makes sure user does not run a test on a nameless file
+      {
+          Serial.println("CANNOT MOVE FORWARD");
       }
-      updated = true;
+      else {
+        // post processing on entered name
+        file_name = String(file_entry);
+        file_name.replace("*", ""); // remove *'s from name
+        file_name.concat(".txt"); // append .txt to make a text file
+        Serial.print("processed file name: ");
+        Serial.println(file_name);
 
+        // check file name against existing files
+        bool will_overwrite = check_file(file_name);
+        if (will_overwrite) {
+          // move to NAME_OVERWRITE
+          Serial.println("File found - change to OVERWRITE...");
+          state = NAME_OVERWRITE;
+        } else {
+          // move to ENTER_TIME state
+          Serial.println("change to ENTER_TIME...");
+          state = ENTER_TIME;
+        }
+        updated = true;
+      }
     } else if (green_status > SHORT_HOLD) {
       // move forward one character
       if (current_name_char < NAME_LEN - 1) {
@@ -236,17 +241,17 @@ void loop() {
     }
 
     if (green_status > LONG_HOLD) {
-      // convert run time to ms and save it
-      unsigned long min = run_time[0] * 10 + run_time[1];
-      unsigned long sec = run_time[2] * 10 + run_time[3];
-      run_time_ms = min * 60000 + sec * 1000;
+        // convert run time to ms and save it
+        unsigned long min = run_time[0] * 10 + run_time[1];
+        unsigned long sec = run_time[2] * 10 + run_time[3];
+        run_time_ms = min * 60000 + sec * 1000;
 
-      Serial.print("Run time in ms: ");
-      Serial.println(run_time_ms);
+        Serial.print("Run time in ms: ");
+        Serial.println(run_time_ms);
 
-      Serial.println("moving to TEST_READY...");
-      updated = true;
-      state = TEST_READY;
+        Serial.println("moving to TEST_READY...");
+        updated = true;
+        state = TEST_READY;
 
     } else if (green_status > SHORT_HOLD) {
       if (current_time_char < TIME_LEN - 1) {
