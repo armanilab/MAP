@@ -47,11 +47,11 @@ const unsigned long UPDATE_INT = 1000; // [ms] refresh rate of display during te
 unsigned long last_update = -UPDATE_INT;
 bool ended_early = false;
 // avg_slope 
-int data_points = 20;
+int data_points = 40;
 int slope_index = 0;
 float prev_lux = 1;
 bool array_full = false;
-int slopes[19];                        // *IMPORTANT* If we change # of data points, we must change this number inside of brackets
+int slopes[39];                        // *IMPORTANT* If we change # of data points, we must change this number inside of brackets
 float time_interval;    // *IMPORTANT* need to find the value this needs to be at
 unsigned long prev_time_elapsed = 0;
 float cur_slope;
@@ -74,9 +74,9 @@ void setup() {
   /* HARDWARE SETUP */
   // set up serial communication
   Serial.begin(9600);
-  while (!Serial) { // wait for Serial port to open
-    delay(10);
-  }
+  // while (!Serial) { // wait for Serial port to open
+  //   delay(10);
+  // }
   delay(500);
 
   // set up i2C comms
