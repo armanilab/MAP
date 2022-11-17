@@ -16,7 +16,7 @@
 #include <SPI.h>
 // our libraries:
 // #include "display.h" // our library to control the display @Vic however you want to set this up
-// #include "Display.h"
+#include "Display.h"
 #include "states.h"
 #include "button.h" // use this as a wrapper for the sparkfun library; declare one button object for each red and green button
 
@@ -25,7 +25,7 @@ Adafruit_TSL2591 tsl = Adafruit_TSL2591(2591); // sensor object
 OpenLog open_log; // datalogger object
 Button red = Button();
 Button green = Button(0x60);
-// Display tft = Display();
+Display tft = Display();
 
 States state;
 
@@ -74,28 +74,28 @@ void setup() {
   /* HARDWARE SETUP */
   // set up serial communication
   Serial.begin(9600);
-  while (!Serial) { // wait for Serial port to open
-    delay(10);
-  }
+  // while (!Serial) { // wait for Serial port to open
+  //   delay(10);
+  // }
   delay(500);
 
   // set up i2C comms
   Wire.begin();
 
-  Serial.println("Is Serial Working at all?");
+  // Serial.println("Is Serial Working at all?");
   // turn on screen
   // turn on backlite
-  // pinMode(TFT_BACKLITE, OUTPUT);
-  // digitalWrite(TFT_BACKLITE, HIGH);
+  pinMode(TFT_BACKLITE, OUTPUT);
+  digitalWrite(TFT_BACKLITE, HIGH);
 
   // turn on the TFT / I2C power supply
-  // pinMode(TFT_I2C_POWER, OUTPUT);
-  // digitalWrite(TFT_I2C_POWER, HIGH);
+  pinMode(TFT_I2C_POWER, OUTPUT);
+  digitalWrite(TFT_I2C_POWER, HIGH);
   delay(10);
 
   // initialize tft
   // Serial.println("Before Tft start");
-  // tft.begin();
+  tft.begin();
   // Serial.println("AFTER TFT start");
 
   // set up buttons
@@ -125,11 +125,11 @@ void setup() {
   tsl.setGain(TSL2591_GAIN_LOW);
   tsl.setTiming(TSL2591_INTEGRATIONTIME_100MS);
 
-  Serial.println("Ready to go!");
+  // Serial.println("Ready to go!");
   // initialize state to name entry
   state = ENTER_NAME;
   updated = true;
-  Serial.println("test");
+  // Serial.println("test");
 }
 
 void loop() {
@@ -139,7 +139,7 @@ void loop() {
 
   // check for button disconnection:
   if (red_status == -1 || green_status == -1) {
-    Serial.println("button(s) disconnected");
+    // Serial.println("button(s) disconnected");
     state = ERROR_BUTTON;
   }
 
@@ -153,13 +153,13 @@ void loop() {
     // update "display" (serial for now) - remove when done troubleshooting
     if (updated) { // only send updates if something has actually changed
       //tft.show_file_name(file_entry, current_name_char);
-      // tft.show_file_name(file_entry, current_name_char);  // call to display function
-      Serial.println("");
-      Serial.println(file_entry);
+      tft.show_file_name(file_entry, current_name_char);  // call to display function
+      // Serial.println("");
+      // Serial.println(file_entry);
       for (int i = 0; i < current_name_char; i++) {
-        Serial.print(" ");
+        // Serial.print(" ");
       }
-      Serial.println("^");
+      // Serial.println("^");
       updated = false;
     }
 
@@ -167,25 +167,25 @@ void loop() {
     if (green_status > LONG_HOLD) {
       if (strcmp(file_entry, "******") == 0)
       {
-        Serial.println(file_entry);
+        // Serial.println(file_entry);
       }
       else {
       // post processing on entered name
       file_name = String(file_entry);
       file_name.replace("*", ""); // remove *'s from name
       file_name.concat(".txt"); // append .txt to make a text file
-      Serial.print("processed file name: ");
-      Serial.println(file_name);
+      // Serial.print("processed file name: ");
+      // Serial.println(file_name);
 
       // check file name against existing files
       bool will_overwrite = check_file(file_name);
       if (will_overwrite) {
         // move to NAME_OVERWRITE
-        Serial.println("File found - change to OVERWRITE...");
+        // Serial.println("File found - change to OVERWRITE...");
         state = NAME_OVERWRITE;
       } else {
         // move to ENTER_TIME state
-        Serial.println("change to ENTER_TIME...");
+        // Serial.println("change to ENTER_TIME...");
         state = ENTER_TIME;
       }
       updated = true;
@@ -222,23 +222,23 @@ void loop() {
     // remove this loop when done troubleshooting
     if (updated) { // only send updates if something has actually changed
       //tft.show_run_time(run_time, current_time_char);
-      // tft.show_run_time(run_time, current_time_char); // call to display function
-      Serial.println("");
-      Serial.print("min: ");
-      Serial.print(run_time[0]);
-      Serial.print(run_time[1]);
-      Serial.print(" sec: ");
-      Serial.print(run_time[2]);
-      Serial.println(run_time[3]);
+      tft.show_run_time(run_time, current_time_char); // call to display function
+      // Serial.println("");
+      // Serial.print("min: ");
+      // Serial.print(run_time[0]);
+      // Serial.print(run_time[1]);
+      // Serial.print(" sec: ");
+      // Serial.print(run_time[2]);
+      // Serial.println(run_time[3]);
       // use a cursor to indicate current char
       if (current_time_char == 0) {
-        Serial.println("     ^");
+        // Serial.println("     ^");
       } else if (current_time_char == 1) {
-        Serial.println("      ^");
+        // Serial.println("      ^");
       } else if (current_time_char == 2) {
-        Serial.println("             ^");
+        // Serial.println("             ^");
       } else if (current_time_char == 3) {
-        Serial.println("              ^");
+        // Serial.println("              ^");
       }
       updated = false;
     }
@@ -249,10 +249,10 @@ void loop() {
       unsigned long sec = run_time[2] * 10 + run_time[3];
       run_time_ms = min * 60000 + sec * 1000;
 
-      Serial.print("Run time in ms: ");
-      Serial.println(run_time_ms);
+      // Serial.print("Run time in ms: ");
+      // Serial.println(run_time_ms);
 
-      Serial.println("moving to TEST_READY...");
+      // Serial.println("moving to TEST_READY...");
       updated = true;
       state = TEST_READY;
 
@@ -272,7 +272,7 @@ void loop() {
 
     if (red_status > LONG_HOLD) {
       // user long held red button to go back to name entry
-      Serial.println("moving to ENTER_NAME...");
+      // Serial.println("moving to ENTER_NAME...");
       state = ENTER_NAME;
 
     } else if (red_status > SHORT_HOLD) {
@@ -292,14 +292,14 @@ void loop() {
   } else if (state == TEST_READY) {
     if (updated)
     {
-      // tft.show_test_ready(file_name, run_time); // call to display function
+      tft.show_test_ready(file_name, run_time); // call to display function
       //tft.show_test_ready(file_name, run_time);
       /*
       tft.fillScreen(ST77XX_BLACK);
       tft.setCursor(0,0);
       tft.setTextSize(2); */
-      Serial.println("Test ready to start");
-      Serial.println("Hold green to confirm.");
+      // Serial.println("Test ready to start");
+      // Serial.println("Hold green to confirm.");
 
       updated = false;
     }
@@ -327,7 +327,7 @@ void loop() {
       bytes_written += open_log.println("###");
 
       if (bytes_written == 0) {
-        Serial.println("caught error in openlog");
+        // Serial.println("caught error in openlog");
         updated = true;
         state = ERROR_LOGGER;
       }
@@ -343,7 +343,7 @@ void loop() {
     }
     if (red_status > LONG_HOLD) {
       // user long held red button to go back to time entry
-      Serial.println("moving to ENTER_TIME...");
+      // Serial.println("moving to ENTER_TIME...");
       state = ENTER_TIME;
       updated = true;
     }
@@ -357,7 +357,7 @@ void loop() {
     uint16_t full = lum & 0xFFFF;
     float lux = tsl.calculateLux(full, ir);
     if (lux < LIGHT_THRESHOLD) { // sensor is not connected
-      Serial.println("caught sensor error");
+      // Serial.println("caught sensor error");
       state = ERROR_SENSOR;
       updated = true;
     }
@@ -373,7 +373,7 @@ void loop() {
     bytes_written += open_log.syncFile();
 
     if (bytes_written == 0) {
-      Serial.println("caught open log error");
+      // Serial.println("caught open log error");
       updated = true;
       state = ERROR_LOGGER;
     }
@@ -418,11 +418,11 @@ void loop() {
     prev_time_elapsed = time_elapsed;
 
     if (time_elapsed - last_update > UPDATE_INT) { // in place of the if (updated) statement
-      Serial.print(time_elapsed);
-      Serial.print("\t");
-      Serial.println(lux);
+      // Serial.print(time_elapsed);
+      // Serial.print("\t");
+      // Serial.println(lux);
       last_update = time_elapsed;
-      // tft.show_test_in_progress(run_time, time_elapsed, lux, file_name, avg_slope); // call to display function
+      tft.show_test_in_progress(run_time, time_elapsed, lux, file_name, avg_slope); // call to display function
       Serial.print("Avg slope: ");
       Serial.println(avg_slope);
     }
@@ -443,26 +443,26 @@ void loop() {
     if (updated) {
       int min = (time_elapsed / 1000) / 60; // need these variables for display function
       int sec = (time_elapsed / 1000) % 60;
-      // tft.show_test_ended(file_name, min, sec); // call to display function
+      tft.show_test_ended(file_name, min, sec); // call to display function
       // indicate test is done and why
       if (ended_early) {
-        Serial.println("Test ended");
+        // Serial.println("Test ended");
       } else {
-        Serial.println("Test completed");
+        // Serial.println("Test completed");
       }
 
       // print the run time
-      Serial.print("Actual run time: ");
+      // Serial.print("Actual run time: ");
       // convert elapsed_time to mm:ss
       /*
       int min = (time_elapsed / 1000) / 60;
       int sec = (time_elapsed / 1000) % 60;
       */
-      Serial.print(min);
-      Serial.print(":");
-      Serial.println(sec);
+      // Serial.print(min);
+      // Serial.print(":");
+      // Serial.println(sec);
 
-      Serial.println("Hold GREEN to start new test");
+      // Serial.println("Hold GREEN to start new test");
       updated = false;
     }
 
@@ -485,14 +485,14 @@ void loop() {
     // warning of bad stuff
 
     if (updated) {
-      // tft.show_enter_name_overwrite(file_name); // call to display function
+      tft.show_enter_name_overwrite(file_name); // call to display function
       // TODO: update the display
       // note this will only run once when we enter this state, it's not dynamic
       // like the entry states
 
-      Serial.println("WARNING: Overwrite file?");
-      Serial.println(file_name);
-      Serial.println("[GREEN] confirm [RED] back");
+      // Serial.println("WARNING: Overwrite file?");
+      // Serial.println(file_name);
+      // Serial.println("[GREEN] confirm [RED] back");
       updated = false;
     }
 
@@ -548,8 +548,8 @@ bool check_file(String file_name) {
   String next_file = open_log.getNextDirectoryItem();
   while (next_file != "") {
     if (next_file == file_name) {
-      Serial.print(file_name);
-      Serial.println(" found!");
+      // Serial.print(file_name);
+      // Serial.println(" found!");
       return true;
     }
     next_file = open_log.getNextDirectoryItem();
@@ -577,16 +577,16 @@ bool check_button_connection() {
 
 void logger_error() {
   // TODO: add display messages
-  Serial.println("Error with open log");
-  // tft.show_error_logger();  // call to display function
+  // Serial.println("Error with open log");
+  tft.show_error_logger();  // call to display function
    
   // TODO; add test to check for openlog connection
   while (!check_open_log_connection()) {
     delay(RECONNECTION_DELAY);
   }
 
-  Serial.println("open log connection restablished.");
-  // tft.show_connection_re_established("Logger");
+  // Serial.println("open log connection restablished.");
+  tft.show_connection_re_established("Logger");
   delay(MSG_TIME);
 
   updated = true;
@@ -595,15 +595,15 @@ void logger_error() {
 
 void sensor_error() {
   // TODO: add display messages  
-  Serial.println("ERROR: sensor not connected");
-  // tft.show_error_sensor();  // call to display function
+  // Serial.println("ERROR: sensor not connected");
+  tft.show_error_sensor();  // call to display function
 
   while(!check_sensor_connection()) {
     delay(RECONNECTION_DELAY);
   }
 
-  Serial.println("sensor connection restablished");
-  // tft.show_connection_re_established("Sensor");
+  // Serial.println("sensor connection restablished");
+  tft.show_connection_re_established("Sensor");
   delay(MSG_TIME);
 
   updated = true;
@@ -612,15 +612,15 @@ void sensor_error() {
 
 void button_error() {
   // TODO: add display messages
-  Serial.println("ERROR: button(s) not connected");
-  // tft.show_error_button();
+  // Serial.println("ERROR: button(s) not connected");
+  tft.show_error_button();
 
   while(!check_button_connection()) {
     delay(RECONNECTION_DELAY);
   }
 
-  Serial.println("button(s) connection restablished");
-  // tft.show_connection_re_established("Button(s)");
+  // Serial.println("button(s) connection restablished");
+  tft.show_connection_re_established("Button(s)");
   delay(MSG_TIME);
 
   updated = true;

@@ -1,5 +1,5 @@
 // header class for display class
-/*
+
 #ifndef DISPLAY_H
 #define DISPLAY_H
 

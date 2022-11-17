@@ -1,6 +1,5 @@
 /* class definition: Display */
-
-// #include "Display.h"
+#include "Display.h"
 
 /*
 Display::Display()
@@ -14,7 +13,7 @@ Display::Display()
 
 }
 */
-/*
+
 void Display::begin() {
   Serial.println("in Display::begin()");
   tft.init(135, 240); // Init ST7789 240x135
@@ -446,4 +445,3 @@ void Display::show_connection_re_established(char re_established[]) // displays 
     tft.println("Test resetting...");
 
 }
-*/
