@@ -42,7 +42,7 @@ for file in file_list:
     data = np.genfromtxt(file_path)
 
     # plot data
-    plt.plot(data[:, 0], data[:, 1], label=file)
+    plt.plot(data[:, 0], data[:, 1], label=file, linestyle='None', marker = '+', markersize=0.25)
 
 plt.title("QDM Data")
 plt.xlabel("Time (s)")
