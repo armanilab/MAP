@@ -1,1 +1,1 @@
-# magnetometer
+# magnetospectrophotometer
