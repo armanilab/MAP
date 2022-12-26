@@ -32,6 +32,7 @@ public:
   bool init(); // initialize the Button. returns true if successful
   bool check_connection();
   int update_status();
+  void blink_LED();
 };
 
 #endif

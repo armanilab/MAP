@@ -66,3 +66,7 @@ uint8_t Button::determine_brightness(unsigned long press_length) {
 void Button::set_brightness(uint8_t brightness_level) {
   qbutton.LEDon(brightness_level);
 }
+
+void Button::blink_LED() {
+  qbutton.LEDconfig(255, 1000, 1000);
+}

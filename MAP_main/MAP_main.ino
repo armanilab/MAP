@@ -444,6 +444,8 @@ void loop() {
       int min = (time_elapsed / 1000) / 60; // need these variables for display function
       int sec = (time_elapsed / 1000) % 60;
       tft.show_test_ended(file_name, min, sec); // call to display function
+      red.blink_LED();
+      green.blink_LED();
       // indicate test is done and why
       if (ended_early) {
         // Serial.println("Test ended");
