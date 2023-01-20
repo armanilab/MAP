@@ -6,6 +6,7 @@
 
 #include <SparkFun_Qwiic_Button.h>
 
+
 // constants
 const int CLICK = 20;
 const int SHORT_HOLD = 1000;
