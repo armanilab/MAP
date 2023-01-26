@@ -150,12 +150,21 @@ def plot_light_curve(df, normalized=False):
 
 def filter_by_name(df):
     print("")
-    print("Filtering by name")
+    print("Filtering by file name")
     file = input("Enter file name [q to cancel]: ")
 
-    # some correction if they don't include .txt
+    # add .txt to end of file name if not included
     if (file[-4:] != '.txt'):
         file += '.txt'
+
+    files = df.loc[df['File-name'] == file]
+
+    print("Preview of selected file(s):")
+    print(files[['File-name', 'Series-ID', 'Date', 'File-location']])
+
+    filter_id = "File-name: " + file
+
+    return files, filter_id
 
 # Filter the selected data by a series ID
 #   input:
