@@ -345,9 +345,9 @@ void Display::show_error_logger()
     tft.println("and open log");
     tft.setCursor(0,85);
     tft.println("connection.");
-    tft.setTextColor(DARKGREY);
-    tft.setCursor(0, 115);
-    tft.println("Micro SD card/open log not detected");
+    // tft.setTextColor(DARKGREY);
+    // tft.setCursor(0, 115);
+    // tft.println("Micro SD card/open log not detected");
 }
 
 void Display::show_error_sensor()

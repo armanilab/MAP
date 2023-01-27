@@ -131,20 +131,21 @@ void setup() {
   updated = true;
   // Serial.println("test");
 
-  open_log.searchDirectory("LOG*.TXT"); //Give me a list of just the logs
-  String LOG_name = open_log.getNextDirectoryItem(); //looking through the list of logs
+  // open_log.searchDirectory("LOG*.TXT"); //Give me a list of just the logs
+  // String LOG_name = open_log.getNextDirectoryItem(); //looking through the list of logs
 
-  while (LOG_name != "") //getNextDirectoryItem() will return "" when we've hit the end of the directory
-  {
-    Serial.println(LOG_name);
-    open_log.removeFile(LOG_name);
-    LOG_name = open_log.getNextDirectoryItem();
-  }
-  Serial.println(F("Done!"));
+  // while (LOG_name != "") //getNextDirectoryItem() will return "" when we've hit the end of the directory
+  // {
+  //   // Serial.println(LOG_name);
+  //   open_log.removeFile(LOG_name);
+  //   LOG_name = open_log.getNextDirectoryItem();
+  // }
+  // // Serial.println(F("Done!"));
 
 }
 
 void loop() {
+
   // get updated button statuses
   int red_status = red.update_status();
   int green_status = green.update_status();
@@ -522,7 +523,7 @@ void loop() {
     }
 
   }
-
+  
 }
 
 char increment_char(char c) {
