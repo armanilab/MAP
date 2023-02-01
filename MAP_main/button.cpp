@@ -68,5 +68,11 @@ void Button::set_brightness(uint8_t brightness_level) {
 }
 
 void Button::blink_LED() {
-  qbutton.LEDconfig(255, 1000, 1000);
+  while (!qbutton.isPressed())
+  {
+    qbutton.LEDon(250);
+    for (int i = 0; i < 10; i++){}
+    qbutton.LEDoff();
+  }
+  qbutton.LEDoff();
 }
