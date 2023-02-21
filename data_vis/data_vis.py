@@ -9,7 +9,19 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import math
 
+
+# IMPORTANT VARIABLES
 DATA_DIR = "../../../test_data/"
+# in the log of data files, the first two columns MUST be the file name and
+# relative path to file (from the location of the log file).
+file_col = 1
+directory_col = 2
+
+trial_col = 7
+conc_col = 14
+
+MEAS_PERIOD = 10 # number of seconds to average to get light transmission measurement
+
 
 def main():
     # check for correct number of arguments
@@ -23,45 +35,60 @@ def main():
     file = sys.argv[1]
 
     df = pd.read_excel(file)
+    df = pre_process(df)
     print(df.shape)
 
     to_plot = df
-    current_filters = ""
+    current_filters = []
 
     while True:
-        # TODO: finish selection options
-        print("Filter options:")
-        print("[1] Date")
-        print("[2] File Location")
-        print("[3] File Name")
-        print("[4] Series ID")
-        print("[5] Sample ID")
-        print("[r] to reset all filters")
-        print("[q] to quit")
+        # print selection options for filters
+        # all columns are possible filters
+        # filter numbers start at 1 for user convenience
 
+        print("Filter options: [select via number]")
+        for i in range(len(df.columns)):
+            print("[" + str(i + 1) + "] " + str(df.columns[i]))
+        print("[q] to quit")
+        print("[r] to reset all filters")
         filter_input = input("Enter filter number: ")
         try:
-            filter_num = int(filter_input)
+            filter_num = int(filter_input) - 1
         except ValueError:
-            print(filter_num)
             if filter_input == 'r':
                 to_plot = df
-                current_filters = ""
+                current_filters = []
                 print("All filters reset.")
                 continue
             elif filter_input == 'q':
                 print("Ending data visualization.")
                 return
+            else:
+                print("Could not select filter. Try again.")
+                print("")
+                continue
 
-        if filter_num == 3:
-            # to_plot, filter_applied = filter_by_name(to_plot)
-            pass
+        # check the range of the filter
+        if filter_num < 0 or filter_num > len(df.columns):
+            print("Selected filter is out of range. Try again.")
 
-        if filter_num == 4:
-            to_plot, filter_applied = filter_by_series(to_plot)
+        if filter_num == 5:
+            to_plot, filter_label = filter_by_series(to_plot)
+            current_filters.append(filter_label)
+
+        # apply the filter
+        found, filtered_df, filter_label = apply_filter(to_plot, filter_num)
+
+        if found:
+            current_filters.append(filter_label)
+            to_plot = filtered_df
 
 
-        print("Current filters applied: " + current_filters)
+        print("Current filters applied: ")
+        #print(current_filters)
+        # TODO: fix this. currently prints each char on a separate line
+        for i in range(len(current_filters)):
+            print("  " + current_filters[i])
         again = input("Filter further? [y/n] ")
         if again == 'n':
             break
@@ -85,16 +112,84 @@ def main():
             print("")
             print("Add additional options? Include all letters at once")
             print("[n] Normalize curve")
+            # add value to specify legend entries and/or plot markers/colors, etc.
             print("any other key or just enter to continue")
 
-            options = input("Enter (multiple) options: ")
+            options = input("Enter options [multiple okay]: ")
             normalize = False
             if 'n' in options:
                 normalize = True
 
             plot_light_curve(to_plot, normalize)
+        elif plot_num == 2:
+            print("")
+            plot_concentration_curve(to_plot)
         else:
             break
+
+def apply_filter(df, filter_num):
+    print("")
+    print("Filtering by ", end="")
+
+    # find filter type
+    filter_type = df.columns[filter_num]
+    print(filter_type)
+
+    # print out the options
+    print("Options:")
+    options = df[filter_type].unique().tolist()
+    sorted_options = df[filter_type].unique().tolist()
+    sorted_options.sort()
+
+    if isinstance(options[0], str) and '' not in options:
+        print("adding default to str")
+        sorted_options.insert(0, '')
+    if isinstance(options[0], int) or isinstance(options[0], float) and 0 not in options:
+        print("adding default option to num")
+        sorted_options.insert(0, 0)
+
+    for i in range(len(sorted_options)):
+            print("  [" + str(i) + "] "+ str(sorted_options[i]))
+
+    while True:
+        # prompt the user to select an option to filter
+        prompt = "Enter " + filter_type + " [q to cancel]: "
+        selection = input(prompt)
+
+        # if user enters 'q', cancel
+        if selection == 'q':
+            return False, None, None
+
+        # check if the entered id is in the list. if so, show the selected rows
+        if selection in sorted_options:
+            # find entries that fit this filter
+            entries = df.loc[df[filter_type] == selection]
+
+        else:
+            try:
+                selection_num = int(selection)
+                options_index = options.index(sorted_options[selection_num])
+
+                entries = df.loc[df[filter_type] == options[options_index]]
+                selection = options[options_index]
+            except ValueError:
+                # if the selection could not be found, prompt user again
+                print("Could not find " + filter_type + ": '" + selection + "'")
+                print("Please try again.")
+                continue
+
+        # print a preview of the selected rows
+        print("")
+        print("Number of entries found: " + str(len(entries)))
+        print("Preview of selected rows:")
+        print(entries)
+
+        # create string indicating what was filtered
+        filter_id = filter_type + ": " + selection
+
+        # return the selected entries, and the filter string
+        return True, entries, filter_id
+
 
 # TODO: add title label
 def plot_light_curve(df, normalized=False):
@@ -110,8 +205,8 @@ def plot_light_curve(df, normalized=False):
 
     # plot each curve
     for row in df.itertuples():
-        directory = row[3]
-        file_name = row[4]
+        directory = str(row[directory_col])
+        file_name = str(row[file_col])
         file_path = path.join(DATA_DIR, directory, file_name)
         if file_path[:-4] != '.txt':
             file_path += '.txt'
@@ -148,23 +243,78 @@ def plot_light_curve(df, normalized=False):
     plt.tight_layout()
     plt.show()
 
-def filter_by_name(df):
-    print("")
-    print("Filtering by file name")
-    file = input("Enter file name [q to cancel]: ")
+def plot_concentration_curve(df):
+    # make plot fig
+    fig, ax = plt.subplots()
 
-    # add .txt to end of file name if not included
-    if (file[-4:] != '.txt'):
-        file += '.txt'
+    title_str = "Concentration curve\n"
 
-    files = df.loc[df['File-name'] == file]
+    styles = [['r', 'o', 'Trial 1'],
+              ['g', 'v', 'Trial 2'],
+              ['b', 's', 'Trial 3'],
+              ['k', '.', '']]
 
-    print("Preview of selected file(s):")
-    print(files[['File-name', 'Series-ID', 'Date', 'File-location']])
+    for row in df.itertuples():
+        # get the directory and file name from the dataframe
+        directory = row[directory_col]
+        file_name = row[file_col]
+        conc = row[conc_col]
 
-    filter_id = "File-name: " + file
+        # create file path
+        file_path = path.join(DATA_DIR, directory, file_name)
 
-    return files, filter_id
+        if file_path[:-4] != '.txt':
+            file_path += '.txt'
+
+        # read text file
+        data = np.genfromtxt(file_path)
+
+        # [color, marker type, marker size]
+        trial_num = row[trial_col]
+        plot_style = styles[(trial_num - 1) % len(styles)]
+
+        # read and process data
+        init_tot_lux = 0
+        init_tot_pts = 0
+        fin_tot_lux = 0
+        fin_tot_pts = 0
+
+        start_time = data[0, 0]
+        end_time = data[-1, 0]
+        print("processing file: " + file_name)
+        print("start: " + str(start_time))
+        print("end: " + str(end_time))
+        print("num of data points: " + str(len(data[:, 0])))
+
+        for i in range(len(data[:, 0])):
+            t = float(data[i, 0]) # time stamp
+
+            if t <= (start_time + MEAS_PERIOD):
+                init_tot_lux += data[i, 1]
+                init_tot_pts += 1
+            if t >= (end_time - MEAS_PERIOD):
+                print(t)
+                fin_tot_lux += data[i, 1]
+                fin_tot_pts += 1
+
+        init_lux_avg = init_tot_lux / init_tot_pts
+        fin_lux_avg = fin_tot_lux / fin_tot_pts
+        delta_lux = fin_lux_avg - init_lux_avg
+        print(str(conc) + ": " + str(delta_lux))
+
+        plt.plot(conc, delta_lux, color=plot_style[0], marker=plot_style[1])
+
+    ax.set_title(title_str)
+    ax.set_xlabel("Concentration [mg/mL]")
+    ax.set_ylabel("Change in lux")
+
+    # set up legend
+    for si in range(len(styles)-1):
+        plt.plot([], [], color=styles[si][0], marker=styles[si][1], label=styles[si][2])
+
+    ax.legend()
+    plt.tight_layout()
+    plt.show()
 
 # Filter the selected data by a series ID
 #   input:
@@ -201,4 +351,16 @@ def filter_by_series(df):
             print("Please try again.")
 
     return series, filter_id
+
+def pre_process(df):
+    for ci in range(len(df.columns)):
+        if isinstance(df.iloc[0, ci], str):
+            df[df.columns[ci]] = df[df.columns[ci]].fillna("")
+        if isinstance(df.iloc[0, ci], float) or isinstance(df.iloc[0, ci], int):
+            df[df.columns[ci]] = df[df.columns[ci]].fillna(0)
+        # if there is a column of dates, convert it to a string of format YYYY.MM.DD
+        if isinstance(df.iloc[0, ci], pd.Timestamp):
+            df[df.columns[ci]] = [date.strftime('%Y.%m.%d') for date in df[df.columns[ci]]]
+    return df
+
 main()
