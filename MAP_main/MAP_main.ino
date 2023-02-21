@@ -3,7 +3,7 @@
  * Written by: Lexie Scholtz
  *             Vic Nunez
  * Created: 2022.09.29
- * Last Updated: 2022.10.18
+ * Last Updated: 2023.02.07
 */
 
 #include "Arduino.h"
@@ -57,8 +57,6 @@ unsigned long prev_time_elapsed = 0;
 float cur_slope;
 
 bool updated = false; // indicates if data for display/serial has been updated
-// https://forum.arduino.cc/t/tip-easier-debug-log-toggling/151603
-// TODO; try this ^^^ (in a smaller program first though)
 
 const int RECONNECTION_DELAY = 1000;
 const int MSG_TIME = 2000;
@@ -169,9 +167,9 @@ void loop() {
       tft.show_file_name(file_entry, current_name_char);  // call to display function
       // Serial.println("");
       // Serial.println(file_entry);
-      for (int i = 0; i < current_name_char; i++) {
+      //for (int i = 0; i < current_name_char; i++) {
         // Serial.print(" ");
-      }
+      //}
       // Serial.println("^");
       updated = false;
     }
@@ -484,7 +482,7 @@ void loop() {
     if (green_status > LONG_HOLD) {
       // if long hold on green button, start new test - go to name entry
       state = ENTER_NAME;
-      current_name_char = 0;
+      current_name_char = NAME_LEN - 1;
       current_time_char = 0;
       updated = true;
     }
