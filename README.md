@@ -1,1 +1,1 @@
-# magnetophotometer
+# Magnetophotometer (MAP)
