@@ -1,5 +1,5 @@
 #include <Wire.h> // needed for open log
-#include "Display_test.h"
+#include "display_test.h"
 
 Display screen = Display();
 
@@ -28,8 +28,7 @@ void setup() {
   screen.begin();
   delay(500);
 
-  screen.show_error_logger();
-  Serial.print("showing logger error screen");
+  screen.show_test_ready("display", [9, 9, 9, 9]);
 }
 
 
@@ -37,4 +36,3 @@ void setup() {
 void loop()
 {
 }
-
