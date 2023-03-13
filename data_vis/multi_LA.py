@@ -84,6 +84,12 @@ S2_array = np.zeros(len(X_array))
 #####################################################################
 
 
+#########Checking to see if "plots" directory exists################
+if os.path.exists('plots') != True:
+	os.mkdir('plots') 
+###################################################################
+
+
 ###############Fitting and data allocation############################
 for i, name in enumerate(fileNames):
 	#Determine fit params for light curves#########
