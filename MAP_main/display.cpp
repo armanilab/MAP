@@ -20,6 +20,38 @@ void Display::begin() {
   tft.fillScreen(ST77XX_BLACK);
 }
 
+void Display::show_LED_stablization(unsigned long time_elapsed) {
+  Serial.println("In LED Stabilization screen");
+  tft.fillScreen(ST77XX_BLACK); // clear the screen
+
+  tft.setTextColor(ORANGE);
+  tft.setCursor(40, 20);           // sets cursor for first line
+  tft.setTextSize(2);             // sets text size for LED WARMING UP line
+  tft.print("LED Warming Up");    // prints instructions
+
+  tft.setTextSize(5);             // sets text size for file name input
+  tft.setCursor(50,60);           // sets cursor for file name input
+  tft.setTextColor(WHITE);        // sets file name input color to white
+
+  int min, sec;         // variables needed to show individual mins and secs
+  min = (time_elapsed / 1000) / 60; // need these variables for display function
+  sec = (time_elapsed / 1000) % 60;
+  // min = time_elapsed / 100;       // finds the values that will go in front of the colon (mins)
+  if (min < 10)                   // if min value is below 10, it will add a placeholder 0
+  {
+      tft.print("0");
+  }
+  tft.print(min);
+  tft.print(":");
+  // sec = time_elapsed % 100;       // operation to find seconds of elapsed-time
+  if (sec < 10)                   // if sec value is below 10, it will add a placeholder 0
+  {
+      tft.print("0");
+  }
+  tft.println(sec);
+
+}
+
 void Display::show_file_name(char file_entry[], int index)
 {
     Serial.println("IN NAME ENTRY");

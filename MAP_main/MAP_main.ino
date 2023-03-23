@@ -42,6 +42,7 @@ unsigned long run_time_ms = 0; // run time converted to ms
 uint8_t current_time_char = 0;
 // test use
 unsigned long start_time = 0;
+unsigned long LED_start_time = 0;
 unsigned long time_elapsed = 0;
 const unsigned long UPDATE_INT = 1000; // [ms] refresh rate of display during test
 unsigned long last_update = -UPDATE_INT;
@@ -70,6 +71,7 @@ bool check_open_log_connection();
 
 void setup() {
   /* HARDWARE SETUP */
+  LED_start_time = millis();
   // set up serial communication
   Serial.begin(9600);
   // while (!Serial) { // wait for Serial port to open
@@ -122,6 +124,29 @@ void setup() {
   // configure sensor
   tsl.setGain(TSL2591_GAIN_LOW);
   tsl.setTiming(TSL2591_INTEGRATIONTIME_100MS);
+
+  unsigned long LED_last_update = -UPDATE_INT;
+  while (1) {
+      int setup_green_status = green.update_status();
+      time_elapsed = millis() - LED_start_time;
+      // tft.show_LED_stablization(time_elapsed);
+      // if (setup_green_status > LONG_HOLD) { // user cancelled test
+      //   break;
+      // }
+
+      if (time_elapsed - LED_last_update > UPDATE_INT) { // in place of the if (updated) statement
+      // Serial.print(time_elapsed);
+      // Serial.print("\t");
+      // Serial.println(lux);
+      LED_last_update = time_elapsed;
+      tft.show_LED_stablization(time_elapsed);
+    }
+    if (setup_green_status > LONG_HOLD) { // user cancelled test
+        break;
+      }
+    
+  }
+
 
   // Serial.println("Ready to go!");
   // initialize state to name entry
