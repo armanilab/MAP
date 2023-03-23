@@ -31,8 +31,8 @@ States state;
 
 /* IMPORTANT VARIABLES */
 // name entry and file name
-const uint8_t NAME_LEN = 6;
-char file_entry[NAME_LEN + 1] = "******";
+const uint8_t NAME_LEN = 8;
+char file_entry[NAME_LEN + 1] = "********";
 String file_name = "";
 uint8_t current_name_char = 0;
 // run time
@@ -176,7 +176,7 @@ void loop() {
 
     // green button input
     if (green_status > LONG_HOLD) {
-      if (strcmp(file_entry, "******") == 0)
+      if (strcmp(file_entry, "********") == 0)
       {
         // Serial.println(file_entry);
       }
@@ -534,6 +534,8 @@ char increment_char(char c) {
   } else if (c >= '0' && c < '9') {
     return ++c;
   } else if (c == '9') {
+    return '!';
+  } else if (c == '!') {
     return '_';
   } else { // c == '_'
     return '*';
@@ -544,6 +546,8 @@ char decrement_char(char c) {
   if (c == '*') {
     return '_';
   } else if (c == '_') {
+    return '!';
+  } else if (c == '!') {
     return '9';
   } else if (c > '0' && c <= '9') {
     return --c;
