@@ -1,9 +1,9 @@
 /*
- * Code for the magnetometer.
+ * Code for the magnetophotometer (MAP).
  * Written by: Lexie Scholtz
  *             Vic Nunez
  * Created: 2022.09.29
- * Last Updated: 2023.02.07
+ * Last Updated: 2023.03.27
 */
 
 #include "Arduino.h"
@@ -146,7 +146,7 @@ void setup() {
     if (setup_green_status > LONG_HOLD) { // user cancelled test
         break;
       }
-    
+
   }
 
 
@@ -400,6 +400,10 @@ void loop() {
       updated = true;
     }
 
+    if (full == 0 && ir == 0) { // sensor cannot detect any light
+      lux = 0; // otherwise this will write nan to file
+    }
+
     // TODO: save a measurement to an array of recent values (for display of data)
 
     // write measurement to file, including time stamp, separated by tab
@@ -509,8 +513,8 @@ void loop() {
     if (green_status > LONG_HOLD) {
       // if long hold on green button, start new test - go to name entry
       state = ENTER_NAME;
-      current_name_char = NAME_LEN - 1;
-      current_time_char = 0;
+      //current_name_char = NAME_LEN - 1;
+      //current_time_char = 0;
       updated = true;
     }
 
