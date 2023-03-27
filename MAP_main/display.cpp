@@ -20,17 +20,49 @@ void Display::begin() {
   tft.fillScreen(ST77XX_BLACK);
 }
 
+void Display::show_LED_stablization(unsigned long time_elapsed) {
+  Serial.println("In LED Stabilization screen");
+  tft.fillScreen(ST77XX_BLACK); // clear the screen
+
+  tft.setTextColor(ORANGE);
+  tft.setCursor(40, 20);           // sets cursor for first line
+  tft.setTextSize(2);             // sets text size for LED WARMING UP line
+  tft.print("LED Warming Up");    // prints instructions
+
+  tft.setTextSize(5);             // sets text size for file name input
+  tft.setCursor(50,60);           // sets cursor for file name input
+  tft.setTextColor(WHITE);        // sets file name input color to white
+
+  int min, sec;         // variables needed to show individual mins and secs
+  min = (time_elapsed / 1000) / 60; // need these variables for display function
+  sec = (time_elapsed / 1000) % 60;
+  // min = time_elapsed / 100;       // finds the values that will go in front of the colon (mins)
+  if (min < 10)                   // if min value is below 10, it will add a placeholder 0
+  {
+      tft.print("0");
+  }
+  tft.print(min);
+  tft.print(":");
+  // sec = time_elapsed % 100;       // operation to find seconds of elapsed-time
+  if (sec < 10)                   // if sec value is below 10, it will add a placeholder 0
+  {
+      tft.print("0");
+  }
+  tft.println(sec);
+
+}
+
 void Display::show_file_name(char file_entry[], int index)
 {
     Serial.println("IN NAME ENTRY");
     tft.fillScreen(ST77XX_BLACK); // clear the screen
 
-    tft.setCursor(30, 0);           // sets cursor for first line
+    tft.setCursor(25, 0);           // sets cursor for first line
     tft.setTextSize(2);             // sets text size for file name
     tft.setTextColor(DARKCYAN);     // file name will be DARKCYAN
     tft.print("Enter file name:");  // prints instructions
     tft.setTextSize(4);             // sets text size for file name input
-    tft.setCursor(50,40);           // sets cursor for file name input
+    tft.setCursor(30,40);           // sets cursor for file name input
     tft.setTextColor(WHITE);        // sets file name input color to white
 
     for (int i = 0; i < index; i++) // for loop to print the characters user has already inputted
@@ -40,18 +72,18 @@ void Display::show_file_name(char file_entry[], int index)
     tft.setTextColor(ORANGE);
     tft.print(file_entry[index]);   // prints out current char in ORANGE that user needs to edit
     tft.setTextColor(WHITE);
-    for (int i = index + 1; i < 6; i++)     // prints out remaining chars in WHITE that user still can change
+    for (int i = index + 1; i < 8; i++)     // prints out remaining chars in WHITE that user still can change
     {
       tft.print(file_entry[i]);
     }
-    tft.setCursor(50, 75);                  // code for the carrot that follows the current char that can be changed
+    tft.setCursor(30, 75);                  // code for the carrot that follows the current char that can be changed
     tft.setTextColor(ORANGE);
     for (int i = 0; i < index; i++)         // prints out spaces unless the carrot needs to be printed
     {
       tft.print(" ");
     }
     tft.print("^");                         // prints the carrot so that it is under the current char
-    for (int i = index + 1; i < 6; i++)
+    for (int i = index + 1; i < 8; i++)
     {
       tft.print(" ");
     }
@@ -136,8 +168,8 @@ void Display::show_test_ready(String file_name, int run_time[])
     tft.fillScreen(ST77XX_BLACK); // clear the screen
 
     // unsigned long min, sec;     // variables needed to show individual mins and secs
-    tft.setCursor(0, 0);        // sets cursor for first line
-    tft.setTextSize(4);         // sets text size for file name and run time
+    tft.setCursor(15, 0);        // sets cursor for first line
+    tft.setTextSize(3);         // sets text size for file name and run time
     tft.setTextColor(ORANGE);   // file name will be orange
     tft.print(file_name);       // prints file name to screen
     // tft.println(".txt");        // adds ".txt" to end of inputted file name on the display screen
@@ -297,7 +329,7 @@ void Display::show_test_ended(String file_name, int min, int sec) // displays te
 
     tft.setTextColor(WHITE);    // changes text color, size, and location on screen
     tft.setTextSize(3);
-    tft.setCursor(35, 25);
+    tft.setCursor(15, 25);
     tft.print(file_name);       // prints file name to screen
     // tft.println(".txt");        // adds ".txt" to end of inputted file name on the display screen
 
@@ -377,7 +409,7 @@ void Display::show_enter_name_overwrite(String file_name) // displays warnning s
 {
     tft.fillScreen(ST77XX_BLACK); // clear the screen
 
-    tft.setCursor(55,0);            // warns user about potential name overwrite
+    tft.setCursor(45,0);            // warns user about potential name overwrite
     tft.setTextSize(3);
     tft.setTextColor(RED);
     tft.print("WARNING:");

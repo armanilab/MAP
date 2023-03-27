@@ -30,6 +30,8 @@ public:
 
     // functions
     void begin(); // initializes the screen
+    void show_LED_stablization(unsigned long time_elapsed); // initial screen
+
     void show_file_name(char file_entry[], int index); // displays the screen to enter the file name
     void show_run_time(int run_time[], int index); // displays the screen to enter the run time wanted
     void show_test_ready(String file_name, int run_time[]); // screen tells user what info they inputted and tells them test is ready to start 
