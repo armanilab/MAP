@@ -20,11 +20,13 @@
 #include "states.h"
 #include "button.h" // use this as a wrapper for the sparkfun library; declare one button object for each red and green button
 
+const int GREEN_I2C_ADDRESS = 0x60;
+
 // Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 Adafruit_TSL2591 tsl = Adafruit_TSL2591(2591); // sensor object
 OpenLog open_log; // datalogger object
 Button red = Button();
-Button green = Button(0x60);
+Button green = Button(GREEN_I2C_ADDRESS);
 Display tft = Display();
 
 States state;
@@ -46,7 +48,7 @@ unsigned long time_elapsed = 0;
 const unsigned long UPDATE_INT = 1000; // [ms] refresh rate of display during test
 unsigned long last_update = -UPDATE_INT;
 bool ended_early = false;
-// avg_slope 
+// avg_slope
 int data_points = 40;
 int slope_index = 0;
 float prev_lux = 1;
@@ -225,7 +227,7 @@ void loop() {
       // decrement current character
       file_entry[current_name_char] = decrement_char(file_entry[current_name_char]);
       updated = true;
-    
+
     }
   }
   /* TIME ENTRY */
@@ -404,9 +406,9 @@ void loop() {
     // }
     // else                                                // finds slope between current lux value and previous lux value
     // {
-      cur_slope = lux - prev_lux;     
+      cur_slope = lux - prev_lux;
       Serial.print("First current slope: ");
-      Serial.println(cur_slope);     
+      Serial.println(cur_slope);
       cur_slope = cur_slope / (float)time_interval;
       Serial.print("Post-division slope: ");
       Serial.println(cur_slope);
@@ -521,7 +523,7 @@ void loop() {
     }
 
   }
-  
+
 }
 
 char increment_char(char c) {
@@ -592,7 +594,7 @@ void logger_error() {
   // TODO: add display messages
   // Serial.println("Error with open log");
   tft.show_error_logger();  // call to display function
-   
+
   // TODO; add test to check for openlog connection
   while (!check_open_log_connection()) {
     delay(RECONNECTION_DELAY);
@@ -607,7 +609,7 @@ void logger_error() {
 }
 
 void sensor_error() {
-  // TODO: add display messages  
+  // TODO: add display messages
   // Serial.println("ERROR: sensor not connected");
   tft.show_error_sensor();  // call to display function
 
