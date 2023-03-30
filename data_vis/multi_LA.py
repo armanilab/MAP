@@ -153,7 +153,7 @@ for i, name in enumerate(fileNames):
 	for k in np.arange(len(t_F)):
 		datFile.write("{}\t{}\t{}\t{}\n".format(t_F[k], T_logF[k], time[k], logT_fit[k]))
 
-
+	datFile.close()
 ##############################################################
 
 
