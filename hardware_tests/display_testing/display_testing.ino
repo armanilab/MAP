@@ -1,4 +1,13 @@
-#include <Wire.h> // needed for open log
+/*
+ * A program to test the Adafruit ESP32-S2 TFT Feather display
+ * with functions written for the MAP.
+
+ * Written by: Vic Nunez
+               Lexie Scholtz
+ * Created: 2022.09.29
+ * Last Updated: 2023.03.31
+*/
+
 #include "display_test.h"
 
 Display screen = Display();
@@ -11,9 +20,6 @@ void setup() {
     delay(10);
   }
   delay(500);
-
-  // set up i2C comms
-  Wire.begin();
 
   // turn on screen
   // turn on backlite
@@ -28,10 +34,14 @@ void setup() {
   screen.begin();
   delay(500);
 
-  screen.show_test_ready("display", [9, 9, 9, 9]);
+  // write a test to the TFT
+  // screen should display the following 3 lines:
+  //      display.txt
+  //         99:99
+  // Hold GREEN to start
+  int test_time[4] = {9, 9, 9, 9};
+  screen.show_test_ready("display", test_time);
 }
-
-
 
 void loop()
 {

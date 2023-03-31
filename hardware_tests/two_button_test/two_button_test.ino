@@ -13,6 +13,11 @@ Button green = Button(0x60);
 void setup() {
   Serial.begin(9600);
   // TODO: add wait statement to allow Serial time to begin
+  while (!Serial) { // wait for Serial port to open
+    delay(10);
+  }
+  delay(500);
+
   Serial.println("Testing Button class");
 
   Wire.begin(); // MUST call this before using any i2c devices (including Button)
