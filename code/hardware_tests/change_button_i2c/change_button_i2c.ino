@@ -1,5 +1,10 @@
-/***
-  script modified from Sparkfun provided example
+/*
+ * Code for MAP hardware tests.
+ * Allows to change button I2C address
+ * Script modified from Sparkfun provided example
+ * Written by: Lexie Scholtz
+ * Created: 2022.09.29
+ * Last Updated: 2023.04.03
 */
 
 

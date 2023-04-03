@@ -1,11 +1,13 @@
 /*
+ * Code for MAP hardware tests.
+ * TFT Screen Display Test
  * A program to test the Adafruit ESP32-S2 TFT Feather display
  * with functions written for the MAP.
-
- * Written by: Vic Nunez
-               Lexie Scholtz
+ * 
+ * Written by: Lexie Scholtz
+ *             Vic Nunez
  * Created: 2022.09.29
- * Last Updated: 2023.03.31
+ * Last Updated: 2023.04.03
 */
 
 #include "display_test.h"

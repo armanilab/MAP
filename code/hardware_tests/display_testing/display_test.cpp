@@ -1,16 +1,18 @@
-/* class definition: Display */
+/*
+ * Code for MAP hardware tests.
+ * TFT Screen Display Test: Functions
+ * Class definition: Display
+ * Written by: Lexie Scholtz
+ *             Vic Nunez
+ * Created: 2022.09.29
+ * Last Updated: 2023.04.03
+*/
+
 #include "Display_test.h"
 
 
 Display::Display()
 {
-    //tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
-
-    // initialize TFT
-    /*tft.init(135, 240); // Init ST7789 240x135
-    tft.setRotation(3); 
-    tft.fillScreen(ST77XX_BLACK); */
-
 }
 
 void Display::begin() {
@@ -134,7 +136,6 @@ void Display::show_test_ready(char file_name[], int run_time[])
 {
     tft.fillScreen(ST77XX_BLACK); // clear the screen
 
-    // unsigned long min, sec;     // variables needed to show individual mins and secs
     tft.setCursor(0, 0);        // sets cursor for first line
     tft.setTextSize(4);         // sets text size for file name and run time
     tft.setTextColor(ORANGE);   // file name will be orange
@@ -241,7 +242,6 @@ void Display::show_test_in_progress(int run_time[], unsigned long time_elapsed, 
     {
         horizontal_end = 0;
         vertical_end = (((-50 * avg_slope) - 50) * (-1));
-        // vertical_end = vertical_end + 100;
     }
     else if (avg_slope < -1)                        // if slope is less than negative one, this is how line end points will be calculated
     {
@@ -270,7 +270,6 @@ void Display::show_test_in_progress(int run_time[], unsigned long time_elapsed, 
     tft.drawLine(50 + horizontal_shift, 50 + vertical_shift, two_horizontal_end + horizontal_shift, two_vertical_end + vertical_shift, CYAN); // draws line
 
     tft.drawRect(120 ,10 , 100 , 100, DARKGREY); // draws grey rectangle to outline area where line can be displayed on the screen
-// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 }
 

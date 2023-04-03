@@ -1,9 +1,11 @@
 /*
- * Test the Button class files
- * Lexie Scholtz
+ * Code for MAP hardware tests.
+ * A program to test the Button Class Files
+ * 
+ * Written by: Lexie Scholtz
  * Created: 2022.10.02
- * Last updated: 2022.10.03
- */
+ * Last Updated: 2023.04.03
+*/
 
 #include "Button.h"
 

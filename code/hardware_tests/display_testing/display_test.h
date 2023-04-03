@@ -1,4 +1,12 @@
-// header class for display class
+/*
+ * Code for MAP hardware tests.
+ * TFT Screen Display Test: Header File
+ * Header class for display class
+ * Written by: Lexie Scholtz
+ *             Vic Nunez
+ * Created: 2022.09.29
+ * Last Updated: 2023.04.03
+*/
 
 #ifndef DISPLAY_H
 #define DISPLAY_H
@@ -22,7 +30,6 @@
 class Display
 {
 private:
-    // tft(TFT_CS, TFT_DC, TFT_RST);
     Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 
 public:

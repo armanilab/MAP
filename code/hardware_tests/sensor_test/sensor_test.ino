@@ -1,3 +1,12 @@
+/*
+ * Code for MAP hardware tests.
+ * A program to test the Adafruit TSL2591 Light-to-Digital Converter (Light Sensor)
+ * 
+ * Written by: Lexie Scholtz
+ * Created: 2022.09.29
+ * Last Updated: 2023.04.03
+*/
+
 #include <Wire.h> // needed for open log
 #include <Adafruit_Sensor.h>
 #include "Adafruit_TSL2591.h" // light sensor library
