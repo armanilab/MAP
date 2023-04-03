@@ -1,17 +1,13 @@
-/* class definition: Display */
-#include "Display.h"
-
 /*
-Display::Display()
-{
-    Adafruit_ST7789 tft = Adafruit_ST7789::Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
-
-    // initialize TFT
-    tft.init(135, 240); // Init ST7789 240x135
-    tft.setRotation(3);
-    tft.fillScreen(ST77XX_BLACK);
-}
+ * Code for the magnetophotometer (MAP).
+ * Class Definition: Display
+ * Written by: Lexie Scholtz
+ *             Vic Nunez
+ * Created: 2022.09.29
+ * Last Updated: 2023.04.03
 */
+
+#include "Display.h"
 
 void Display::begin() {
   Serial.println("in Display::begin()");
@@ -36,14 +32,12 @@ void Display::show_LED_stablization(unsigned long time_elapsed) {
   int min, sec;         // variables needed to show individual mins and secs
   min = (time_elapsed / 1000) / 60; // need these variables for display function
   sec = (time_elapsed / 1000) % 60;
-  // min = time_elapsed / 100;       // finds the values that will go in front of the colon (mins)
   if (min < 10)                   // if min value is below 10, it will add a placeholder 0
   {
       tft.print("0");
   }
   tft.print(min);
   tft.print(":");
-  // sec = time_elapsed % 100;       // operation to find seconds of elapsed-time
   if (sec < 10)                   // if sec value is below 10, it will add a placeholder 0
   {
       tft.print("0");
@@ -167,12 +161,10 @@ void Display::show_test_ready(String file_name, int run_time[])
 {
     tft.fillScreen(ST77XX_BLACK); // clear the screen
 
-    // unsigned long min, sec;     // variables needed to show individual mins and secs
     tft.setCursor(15, 0);        // sets cursor for first line
     tft.setTextSize(3);         // sets text size for file name and run time
     tft.setTextColor(ORANGE);   // file name will be orange
     tft.print(file_name);       // prints file name to screen
-    // tft.println(".txt");        // adds ".txt" to end of inputted file name on the display screen
     tft.setCursor(70,55);       // sets cursor for run time
     tft.setTextColor(DARKCYAN); // sets run time color to DarkCyan
 
@@ -207,14 +199,12 @@ void Display::show_test_in_progress(int run_time[], unsigned long time_elapsed, 
     int min, sec;         // variables needed to show individual mins and secs
     min = (time_elapsed / 1000) / 60; // need these variables for display function
     sec = (time_elapsed / 1000) % 60;
-    // min = time_elapsed / 100;       // finds the values that will go in front of the colon (mins)
     if (min < 10)                   // if min value is below 10, it will add a placeholder 0
     {
         tft.print("0");
     }
     tft.print(min);
     tft.print(":");
-    // sec = time_elapsed % 100;       // operation to find seconds of elapsed-time
     if (sec < 10)                   // if sec value is below 10, it will add a placeholder 0
     {
         tft.print("0");
@@ -285,7 +275,6 @@ void Display::show_test_in_progress(int run_time[], unsigned long time_elapsed, 
     {
         horizontal_end = 0;
         vertical_end = (((-50 * avg_slope) - 50) * (-1));
-        // vertical_end = vertical_end + 100;
     }
     else if (avg_slope < -1)                        // if slope is less than negative one, this is how line end points will be calculated
     {
@@ -314,7 +303,6 @@ void Display::show_test_in_progress(int run_time[], unsigned long time_elapsed, 
     tft.drawLine(50 + horizontal_shift, 50 + vertical_shift, two_horizontal_end + horizontal_shift, two_vertical_end + vertical_shift, CYAN); // draws line
 
     tft.drawRect(120 ,10 , 100 , 100, DARKGREY); // draws grey rectangle to outline area where line can be displayed on the screen
-// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 }
 
@@ -331,7 +319,6 @@ void Display::show_test_ended(String file_name, int min, int sec) // displays te
     tft.setTextSize(3);
     tft.setCursor(15, 25);
     tft.print(file_name);       // prints file name to screen
-    // tft.println(".txt");        // adds ".txt" to end of inputted file name on the display screen
 
     tft.setCursor(35,65);       // sets cursor for run time
     tft.setTextSize(2);
@@ -377,9 +364,6 @@ void Display::show_error_logger()
     tft.println("and open log");
     tft.setCursor(0,85);
     tft.println("connection.");
-    // tft.setTextColor(DARKGREY);
-    // tft.setCursor(0, 115);
-    // tft.println("Micro SD card/open log not detected");
 }
 
 void Display::show_error_sensor()
@@ -421,8 +405,6 @@ void Display::show_enter_name_overwrite(String file_name) // displays warnning s
     tft.setTextSize(3);
     tft.setCursor(25, 60);
     tft.print(file_name);       // prints file name to screen
-    // tft.println(".txt");        // adds ".txt" to end of inputted file name on the display screen
-
     tft.setCursor(0,100);
     tft.setTextSize(2);
     tft.setTextColor(GREEN);
@@ -451,7 +433,6 @@ void Display::show_error_button()
     tft.println("connection.");
     tft.setTextColor(DARKGREEN);
     tft.setCursor(0, 115);
-    // tft.println("Press GREEN to reset");
 
 }
 

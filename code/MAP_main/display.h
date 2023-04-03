@@ -1,4 +1,11 @@
-// header class for display class
+/*
+ * Code for the magnetophotometer (MAP).
+ * Header class for display class
+ * Written by: Lexie Scholtz
+ *             Vic Nunez
+ * Created: 2022.09.29
+ * Last Updated: 2023.04.03
+*/
 
 #ifndef DISPLAY_H
 #define DISPLAY_H

@@ -1,5 +1,12 @@
-// header class for Button class
-// [a wrapper class for the SparkFun Qwiic button]
+/*
+ * Code for the magnetophotometer (MAP).
+ * Header class for Button class
+ * [a wrapper class for the SparkFun Qwiic button]
+ * Written by: Lexie Scholtz
+ *             Vic Nunez
+ * Created: 2022.09.29
+ * Last Updated: 2023.04.03
+*/
 
 #ifndef BUTTON_H
 #define BUTTON_H

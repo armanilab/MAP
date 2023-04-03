@@ -1,4 +1,12 @@
-/* class definition: Button */
+/*
+ * Code for the magnetophotometer (MAP).
+ * class definition: Button
+ * Written by: Lexie Scholtz
+ *             Vic Nunez
+ * Created: 2022.09.29
+ * Last Updated: 2023.04.03
+*/
+
 #include "Button.h"
 
 // TODO: comment file
