@@ -10,6 +10,9 @@
  * Last Updated: 2023.04.03
 */
 
+#include "Arduino.h"
+#include <Adafruit_GFX.h>    // Core graphics library
+#include <Adafruit_ST7789.h> // Hardware-specific library for ST7789
 #include "display_test.h"
 
 Display screen = Display();
@@ -18,9 +21,9 @@ void setup() {
   /* HARDWARE SETUP */
   // set up serial communication
   Serial.begin(9600);
-  while (!Serial) { // wait for Serial port to open
-    delay(10);
-  }
+  // while (!Serial) { // wait for Serial port to open
+  //   delay(10);
+  // }
   delay(500);
 
   // turn on screen
@@ -43,6 +46,9 @@ void setup() {
   // Hold GREEN to start
   int test_time[4] = {9, 9, 9, 9};
   screen.show_test_ready("display", test_time);
+
+  // Serial.println("We made it to here.");
+  // screen.show_error_logger();
 }
 
 void loop()

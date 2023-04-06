@@ -136,12 +136,13 @@ void Display::show_test_ready(char file_name[], int run_time[])
 {
     tft.fillScreen(ST77XX_BLACK); // clear the screen
 
-    tft.setCursor(0, 0);        // sets cursor for first line
-    tft.setTextSize(4);         // sets text size for file name and run time
+    tft.setCursor(30, 0);        // sets cursor for first line
+    tft.setTextSize(3);         // sets text size for file name and run time
     tft.setTextColor(ORANGE);   // file name will be orange
     tft.print(file_name);       // prints file name to screen
     tft.println(".txt");        // adds ".txt" to end of inputted file name on the display screen
     tft.setCursor(70,55);       // sets cursor for run time
+    tft.setTextSize(4); 
     tft.setTextColor(DARKCYAN); // sets run time color to DarkCyan
     
     for (int i = 0; i < 4; i++) // for loop prints out the run time that the user inputted

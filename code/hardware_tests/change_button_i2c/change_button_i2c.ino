@@ -7,6 +7,10 @@
  * Last Updated: 2023.04.03
 */
 
+/*
+ * Make sure you only connect the green Qwiic button to the Feather! 
+ * All other I2C devices must be disconnected.
+*/
 
 #include <SparkFun_Qwiic_Button.h>
 QwiicButton button;
@@ -21,7 +25,7 @@ void setup() {
 
   Wire.begin(); //Join I2C bus
 
-  if (button.begin() == false) {
+  if (button.begin(0x60) == false) {
     Serial.println("Device did not acknowledge! Running scanner.");
   }
   else{
@@ -72,7 +76,7 @@ void setup() {
         }
   
         else {
-          Serial.println("Address out of range! Try an adress between 0x08 and 0x77");
+          Serial.println("Address out of range! Try an address between 0x08 and 0x77");
         }
       }
   
