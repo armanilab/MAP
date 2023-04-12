@@ -3,7 +3,7 @@
  * Written by: Lexie Scholtz
  *             Vic Nunez
  * Created: 2022.09.29
- * Last Updated: 2023.04.03
+ * Last Updated: 2023.04.12
 */
 
 #include "Arduino.h"
@@ -62,7 +62,7 @@ bool updated = false; // indicates if data for display/serial has been updated
 
 const int RECONNECTION_DELAY = 1000;
 const int MSG_TIME = 2000;
-const float LIGHT_THRESHOLD = 0.1;
+const float LIGHT_THRESHOLD = 0.0;
 
 /* NEW FXNS */
 char increment_char(char c);
@@ -274,7 +274,6 @@ void loop() {
     if (green_status > LONG_HOLD) {
       // if confirmed ready, prep & move on to actual test
 
-      // TODO: add in try-catch statements + error handling
       // if file_name already exists in the directory, remove it
       open_log.removeFile(file_name);
       // create a new file file_name.txt
@@ -330,8 +329,6 @@ void loop() {
     if (full == 0 && ir == 0) { // sensor cannot detect any light
       lux = 0; // otherwise this will write nan to file
     }
-
-    // TODO: save a measurement to an array of recent values (for display of data)
 
     // write measurement to file, including time stamp, separated by tab
     int bytes_written = 0;
