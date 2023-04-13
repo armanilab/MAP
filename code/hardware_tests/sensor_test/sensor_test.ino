@@ -70,7 +70,7 @@ void loop() {
   uint16_t ir = lum >> 16;
   uint16_t full = lum & 0xFFFF;
   float lux = tsl.calculateLux(full, ir);
-  if (lux < 0.1) { // sensor is not connected
+  /*if (lux < 0.1) { // sensor is not connected
     Serial.println("caught sensor error");
 
     while(!check_sensor_connection()) {
@@ -79,7 +79,7 @@ void loop() {
 
     Serial.println("sensor connection restablished");
     delay(MSG_TIME);
-  }
+  }*/
   Serial.println(lux);
 
 }
