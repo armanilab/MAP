@@ -16,7 +16,7 @@ void Display::begin() {
   tft.fillScreen(ST77XX_BLACK);
 }
 
-void Display::show_LED_stablization(unsigned long time_elapsed) {
+void Display::show_LED_stablization(unsigned long time_elapsed, float lux) {
   Serial.println("In LED Stabilization screen");
   tft.fillScreen(ST77XX_BLACK); // clear the screen
 
@@ -43,6 +43,19 @@ void Display::show_LED_stablization(unsigned long time_elapsed) {
       tft.print("0");
   }
   tft.println(sec);
+
+  tft.setTextColor(DARKGREY);
+  tft.setTextSize(2);
+  tft.setCursor(35, 110);
+  tft.print("Curr Lux: ");
+  if (lux >= 1000) 
+  {
+      tft.println(lux,0);      // cuts off decimal values if current lux value is larger than 1000   
+  }
+  else 
+  {
+      tft.println(lux);        // prints out current lux
+  }
 
 }
 

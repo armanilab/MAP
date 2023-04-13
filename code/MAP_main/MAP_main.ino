@@ -125,11 +125,21 @@ void setup() {
       int setup_green_status = green.update_status();
       time_elapsed = millis() - LED_start_time;
 
+      uint32_t lum = tsl.getFullLuminosity();
+      uint16_t ir = lum >> 16;
+      uint16_t full = lum & 0xFFFF;
+      float lux = tsl.calculateLux(full, ir);
+
+      if (full == 0 && ir == 0) 
+      { // sensor cannot detect any light
+        lux = 0; // otherwise this will write nan to file
+      }
 
       if (time_elapsed - LED_last_update > UPDATE_INT) { // in place of the if (updated) statement
 
       LED_last_update = time_elapsed;
-      tft.show_LED_stablization(time_elapsed);
+      Serial.println(lux);
+      tft.show_LED_stablization(time_elapsed, lux);
     }
     if (setup_green_status > LONG_HOLD) { // user cancelled test
         break;
