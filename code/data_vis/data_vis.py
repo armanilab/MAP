@@ -6,19 +6,21 @@ import sys
 from os import path
 import numpy as np
 from matplotlib import pyplot as plt
+import matplotlib as mpl
+from matplotlib.patches import Rectangle
 import pandas as pd
 import math
 
 
 # IMPORTANT VARIABLES
-DATA_DIR = "../../../test_data/"
+DATA_DIR = "../../../../test_data/"
 # in the log of data files, the first two columns MUST be the file name and
 # relative path to file (from the location of the log file).
 file_col = 1
 directory_col = 2
 
-trial_col = 7
-conc_col = 14
+trial_col = 8
+conc_col = 12
 
 MEAS_PERIOD = 10 # number of seconds to average to get light transmission measurement
 
@@ -34,7 +36,7 @@ def main():
     # parse arguments
     file = sys.argv[1]
 
-    df = pd.read_excel(file)
+    df = pd.read_excel(file, dtype='str')
     df = pre_process(df)
     print(df.shape)
 
@@ -51,6 +53,9 @@ def main():
             print("[" + str(i + 1) + "] " + str(df.columns[i]))
         print("[q] to quit")
         print("[r] to reset all filters")
+        print("Optional flags:")
+        print("-add to add to previous selection")
+        print("-rm to remove from previous selection")
         filter_input = input("Enter filter number: ")
         try:
             filter_num = int(filter_input) - 1
@@ -71,10 +76,6 @@ def main():
         # check the range of the filter
         if filter_num < 0 or filter_num > len(df.columns):
             print("Selected filter is out of range. Try again.")
-
-        if filter_num == 5:
-            to_plot, filter_label = filter_by_series(to_plot)
-            current_filters.append(filter_label)
 
         # apply the filter
         found, filtered_df, filter_label = apply_filter(to_plot, filter_num)
@@ -97,35 +98,54 @@ def main():
     while True:
         print("Select a plot type:")
         print("[1] Time vs. light")
+        print("  [-bc] baseline correction")
+        print("  [-nl] no legend")
+        print("  [-xbig] extra big text")
         print("[2] Concentration vs. change in light")
+        print("[3] Light change vs. file number")
+        print("  [-stats] add average and standard deviation")
         print("[b] to go back")
         print("Any other key to end program")
 
-        try:
-            plot_num = int(input("Enter plot number: "))
-        except ValueError:
+        user_selection = input("Enter plot number with flags, if any: ")
+
+        # parse output
+        user_selection = user_selection.split()
+        if user_selection[0] == 'q':
             break
 
-        # TODO: add customizations
+        # if user_selection[0] == 'b':
+        #     break
+
+        try:
+            plot_num = int(user_selection[0])
+        except:
+            print("Could not determine plot number. Please enter an int.")
+            continue
 
         if plot_num == 1:
-            print("")
-            print("Add additional options? Include all letters at once")
-            print("[n] Normalize curve")
-            # add value to specify legend entries and/or plot markers/colors, etc.
-            print("any other key or just enter to continue")
+            baseline_correction = False
+            if '-bc' in user_selection:
+                baseline_correction = True
+            no_legend = False
+            if '-nl' in user_selection:
+                no_legend = True
+            extra_big = False
+            if '-xbig' in user_selection:
+                extra_big = True
 
-            options = input("Enter options [multiple okay]: ")
-            normalize = False
-            if 'n' in options:
-                normalize = True
-
-            plot_light_curve(to_plot, normalize)
+            plot_light_curve(to_plot, baseline_correction, no_legend, extra_big)
         elif plot_num == 2:
-            print("")
             plot_concentration_curve(to_plot)
+        elif plot_num == 3:
+            extra_stats = False
+            if '-stats' in user_selection:
+                extra_stats = True
+
+            plot_reproducible(to_plot, extra_stats)
         else:
-            break
+            print("Could not parse input. Please try again.")
+
 
 def apply_filter(df, filter_num):
     print("")
@@ -192,7 +212,7 @@ def apply_filter(df, filter_num):
 
 
 # TODO: add title label
-def plot_light_curve(df, normalized=False):
+def plot_light_curve(df, baseline_correction=False, no_legend=False, extra_big=False):
     # make plot fig
     fig, ax = plt.subplots()
 
@@ -210,36 +230,59 @@ def plot_light_curve(df, normalized=False):
         file_path = path.join(DATA_DIR, directory, file_name)
         if file_path[:-4] != '.txt':
             file_path += '.txt'
+        print("plotting " + file_name)
         data = np.genfromtxt(file_path)
 
         # TODO: change this out of hard coded later
-        magnet = row[13]
-        trial_num = row[6]
-        row_label = str(magnet) + '\" magnet, trial #' + str(trial_num)[:-2]
+        magnet = row[6]
+        trial_num = row[7]
+        #row_label = str(magnet) + '\" magnet, trial #' + str(trial_num)
+        row_label = file_name
 
         x = data[:, 0]
         y = data[:, 1]
 
-        if normalized:
+        if baseline_correction:
             total_l = 0
             total_pts = 0
             for i in range(len(data[:, 0])):
                 t = data[i, 0]
-                if t >= 5 and t <= 10:
-                    total_l += data[i, 1]
+                if t >= 0 and t <= 15:
+                    if np.isnan(data[i, 1]):
+                        total_l += 0
+                    else:
+                        total_l += data[i, 1]
                     total_pts += 1
             baseline = total_l / total_pts
             y = y - baseline
             # add label to title
-            title_str += 'normalized'
 
-        plt.plot(x, y, label=row_label)
+        if extra_big:
+            plt.plot(x, y, label=row_label, linewidth=5)
+        else:
+            plt.plot(x, y, label=row_label)
 
-    ax.set_title(title_str)
-    ax.set_xlabel("Time (s)")
-    ax.set_ylabel("Lux")
-    ax.legend(bbox_to_anchor=(1.05, 1.0), loc="upper left")
-    #ax.legend(ncol = 2, bbox_to_anchor=(0.5, -0.5), loc="upper center")
+    if baseline_correction:
+        title_str += "baseline corrected"
+
+    if extra_big:
+        ax.xaxis.label.set_size(20)
+        ax.xaxis.set_tick_params(width=3.5, length=8)
+        ax.yaxis.label.set_size(20)
+        ax.yaxis.set_tick_params(width=3.5, length=8)
+        [x.set_linewidth(3.5) for x in ax.spines.values()]
+
+        #mpl.rcParams['axes.linewidth'] = 5
+        plt.xticks([0, 100, 200, 300, 400, 500, 600], labels=[], fontsize=16)
+        plt.yticks([0, 10000, 20000, 30000, 40000], labels = [], fontsize=16)
+    else:
+        ax.set_title(title_str)
+        ax.set_xlabel("Time (s)")
+        ax.set_ylabel("Lux")
+
+    if not no_legend:
+        ax.legend(bbox_to_anchor=(1.05, 1.0), loc="upper left")
+        #ax.legend(ncol = 2, bbox_to_anchor=(0.5, -0.5), loc="upper center")
     plt.tight_layout()
     plt.show()
 
@@ -271,7 +314,7 @@ def plot_concentration_curve(df):
 
         # [color, marker type, marker size]
         trial_num = row[trial_col]
-        plot_style = styles[(trial_num - 1) % len(styles)]
+        plot_style = styles[(int(trial_num) - 1) % len(styles)]
 
         # read and process data
         init_tot_lux = 0
@@ -316,6 +359,110 @@ def plot_concentration_curve(df):
     plt.tight_layout()
     plt.show()
 
+def plot_reproducible(df, extra_stats=False):
+    df_data = []
+
+    # process files
+    for row in df.itertuples():
+        # get the directory and file name from the dataframe
+        directory = row[directory_col]
+        file_name = row[file_col]
+        conc = row[conc_col]
+        trial_num = row[trial_col]
+
+        # create file path
+        file_path = path.join(DATA_DIR, directory, file_name)
+
+        # append .txt if necessary
+        if file_path[:-4] != 'txt':
+            file_path += '.txt'
+
+        # read text file
+        print("processing file: " + file_name)
+        data = np.genfromtxt(file_path)
+        # read and process data
+        delta_lux, start_lux, end_lux = calculate_concentration(data)
+
+        df_data.append([trial_num, delta_lux, start_lux, end_lux])
+
+    print(df_data) #to do make this nicer
+
+    if extra_stats:
+        # calculate mean and standard deviation of deltas
+        sum_deltas = 0
+        deltas = []
+        num_deltas = len(df_data)
+        for data_pt in df_data:
+            delta = data_pt[1]
+            deltas.append(delta)
+            sum_deltas += delta
+        avg_delta = sum_deltas / num_deltas
+
+        sum_dev = 0
+        for d in deltas:
+            sum_dev += (avg_delta - d) ** 2
+        std_dev_delta = (sum_dev / num_deltas) ** (0.5)
+
+        print("Mean: %f" % avg_delta)
+        print("Std. dev: %f" % std_dev_delta)
+
+    # make plot
+    fig, ax = plt.subplots()
+    try:
+        title_str = "Reproducibility plot\nConcentration: %0.6f mg/mL" % conc
+    except:
+        title_str = "Reproducibility plot"
+    # TODO: plot mean as line and std dev as faded rectangle
+    if extra_stats:
+        rec_bottom = avg_delta - std_dev_delta
+        rec_top = avg_delta + std_dev_delta
+
+        plt.plot([0, len(df_data)+1], [avg_delta, avg_delta], color='orangered', label="Average change in lux")
+        ax.add_patch(Rectangle((0, rec_bottom), len(df_data)+1, 2*std_dev_delta,
+            fill=True, color='orangered', alpha=0.3))
+
+    for file in df_data:
+        [trial_num, delta_lux, start_lux, end_lux] = file
+        plt.plot([trial_num, trial_num], [start_lux, end_lux], color='gainsboro')
+        plt.plot(trial_num, delta_lux, marker='o', color='dodgerblue')
+
+    # make legend entries
+    plt.plot([], [], color='gainsboro', label="Range of lux values")
+    plt.plot([], [], color='dodgerblue', marker='o', label="Change in lux")
+    ax.legend()
+
+    ax.set_title(title_str)
+    ax.set_xlabel("Trial number")
+    ax.set_ylabel("Change in lux")
+
+    # TODO: FIX THE AXES LIMITS
+    ax.set_xlim([0, len(df)+1])
+    plt.show()
+
+def calculate_concentration(data):
+    init_tot_lux = 0
+    init_tot_pts = 0
+    fin_tot_lux = 0
+    fin_tot_pts = 0
+
+    start_time = data[0, 0]
+    end_time = data[-1, 0]
+
+    for i in range(len(data[:, 0])):
+        t = float(data[i, 0]) # time stamp
+
+        if t <= (start_time + MEAS_PERIOD):
+            init_tot_lux += data[i, 1]
+            init_tot_pts += 1
+        if t >= (end_time - MEAS_PERIOD):
+            fin_tot_lux += data[i, 1]
+            fin_tot_pts += 1
+
+    init_lux_avg = init_tot_lux / init_tot_pts
+    fin_lux_avg = fin_tot_lux / fin_tot_pts
+    delta_lux = fin_lux_avg - init_lux_avg
+    return delta_lux, init_lux_avg, fin_lux_avg
+
 # Filter the selected data by a series ID
 #   input:
 def filter_by_series(df):
@@ -354,13 +501,21 @@ def filter_by_series(df):
 
 def pre_process(df):
     for ci in range(len(df.columns)):
-        if isinstance(df.iloc[0, ci], str):
-            df[df.columns[ci]] = df[df.columns[ci]].fillna("")
-        if isinstance(df.iloc[0, ci], float) or isinstance(df.iloc[0, ci], int):
-            df[df.columns[ci]] = df[df.columns[ci]].fillna(0)
+        df[df.columns[ci]] = df[df.columns[ci]].fillna("")
+        # if isinstance(df.iloc[0, ci], str):
+        #     df[df.columns[ci]] = df[df.columns[ci]].fillna("")
+        # if isinstance(df.iloc[0, ci], float) or isinstance(df.iloc[0, ci], int):
+        #     df[df.columns[ci]] = df[df.columns[ci]].fillna(0)
         # if there is a column of dates, convert it to a string of format YYYY.MM.DD
         if isinstance(df.iloc[0, ci], pd.Timestamp):
             df[df.columns[ci]] = [date.strftime('%Y.%m.%d') for date in df[df.columns[ci]]]
+
+    # make label column strings (fix out of hardcoding later)
+    if 'Label' in df.columns:
+        df['Label'] = [str(x) for x in df['Label']]
+    elif 'Sample' in df.columns:
+        df['Sample'] = [str(x) for x in df['Sample']]
+    df.fillna("")
     return df
 
 main()
