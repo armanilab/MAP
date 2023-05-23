@@ -10,10 +10,13 @@ import matplotlib as mpl
 from matplotlib.patches import Rectangle
 import pandas as pd
 import math
+from statistics import mean
 
 
 # IMPORTANT VARIABLES
 DATA_DIR = "../../../../test_data/"
+BASELINE_PTS = 100 # number of datapoints used for baseline
+CONC_PTS = 100 # number of datapoints averaged to calculate change in light transmission for concentration curve
 # in the log of data files, the first two columns MUST be the file name and
 # relative path to file (from the location of the log file).
 file_col = 1
@@ -24,25 +27,65 @@ conc_col = 12
 
 MEAS_PERIOD = 10 # number of seconds to average to get light transmission measurement
 
+colors_list = ['#67217e',   # purple
+               '#3e3e90',   # dark blue
+               '#4e65ae',   # mid blue
+               '#6088be',   # blue
+               '#709eaf',   # teal blue
+               '#7eac99',   # teal
+               '#92b875',   # green
+               '#b6bc55',   # lime green
+               '#ccab47',   # yellow
+               '#d08d3e',   # yellow orange
+               '#cb6433',   # orange
+               '#ba2625',   # red
+               '#945200',   # brown
+               '#7f7f7f',   # grey`
+               '#000000']   # black
+
+markers_list = ['o', '^', 's', 'P']
 
 def main():
+    ### SETUP ###
+    # read in test log and sample key
+
     # check for correct number of arguments
     if len(sys.argv) < 2:
         print("ERROR: Not enough arguments.")
         print("Correct usage:")
         print("$ python3 data_vis.py <xlsx_file_path>")
-        sys.exit()
+        print("")
+        file = input("Please enter the file path for the log file: ")
+    else:
+        # parse arguments
+        file = sys.argv[1]
 
-    # parse arguments
-    file = sys.argv[1]
-
+    # read test log in to dataframe
     df = pd.read_excel(file, dtype='str')
-    df = pre_process(df)
+
+    # read sample key
+    # dictionary will contain sample info where the key is a sample label/name
+    sample_dict = {}
+    try:
+        # assume that the sample key will be named 'sample-key'
+        df_samples = pd.read_excel(file, sheet_name='sample-key', dtype='str')
+        # set index to sample label (will be keys in sample_dict)
+        df_samples.set_index('Label', inplace=True)
+        sample_dict = df_samples.to_dict(orient='index') # make the dict
+    except:
+        print("Failed to find a sample key.")
+        # TODO: actually handle this
+
+    # process data
+    df = pre_process(df, sample_dict)
     print(df.shape)
 
-    to_plot = df
+    to_plot = df.index.to_list() # track indices in the original dataframe of the files to plot
     current_filters = []
 
+
+    #### FILE SELECTION STEP ###
+    # apply filter to select specific files
     while True:
         # print selection options for filters
         # all columns are possible filters
@@ -53,9 +96,9 @@ def main():
             print("[" + str(i + 1) + "] " + str(df.columns[i]))
         print("[q] to quit")
         print("[r] to reset all filters")
-        print("Optional flags:")
-        print("-add to add to previous selection")
-        print("-rm to remove from previous selection")
+        #print("Optional flags:")
+        #print("-add to add to previous selection")
+        #print("-rm to remove from previous selection")
         filter_input = input("Enter filter number: ")
         try:
             filter_num = int(filter_input) - 1
@@ -78,7 +121,7 @@ def main():
             print("Selected filter is out of range. Try again.")
 
         # apply the filter
-        found, filtered_df, filter_label = apply_filter(to_plot, filter_num)
+        found, filtered_df, filter_label = apply_filter(df, to_plot, filter_num)
 
         if found:
             current_filters.append(filter_label)
@@ -94,7 +137,7 @@ def main():
         if again == 'n':
             break
 
-    # now actually plot these
+    ### PLOT SELECTION###
     while True:
         print("Select a plot type:")
         print("[1] Time vs. light")
@@ -134,9 +177,9 @@ def main():
             if '-xbig' in user_selection:
                 extra_big = True
 
-            plot_light_curve(to_plot, baseline_correction, no_legend, extra_big)
+            plot_light_curve(df, sample_dict, to_plot, baseline_correction, no_legend, extra_big)
         elif plot_num == 2:
-            plot_concentration_curve(to_plot)
+            plot_concentration_curve(df, sample_dict, to_plot)
         elif plot_num == 3:
             extra_stats = False
             if '-stats' in user_selection:
@@ -147,7 +190,10 @@ def main():
             print("Could not parse input. Please try again.")
 
 
-def apply_filter(df, filter_num):
+def apply_filter(df, indices, filter_num):
+    # create dataframe of current selection
+    df = df.iloc[indices]
+
     print("")
     print("Filtering by ", end="")
 
@@ -183,14 +229,17 @@ def apply_filter(df, filter_num):
         # check if the entered id is in the list. if so, show the selected rows
         if selection in sorted_options:
             # find entries that fit this filter
-            entries = df.loc[df[filter_type] == selection]
+            entries = df.loc[df[filter_type] == selection].index.to_list()
 
         else:
             try:
                 selection_num = int(selection)
                 options_index = options.index(sorted_options[selection_num])
 
-                entries = df.loc[df[filter_type] == options[options_index]]
+                # get indices of the selected values where the selected filter
+                # (filter_type) matches the selected value from the shown
+                # list (options[options_index])
+                entries = df.loc[df[filter_type] == options[options_index]].index.to_list()
                 selection = options[options_index]
             except ValueError:
                 # if the selection could not be found, prompt user again
@@ -212,7 +261,14 @@ def apply_filter(df, filter_num):
 
 
 # TODO: add title label
-def plot_light_curve(df, baseline_correction=False, no_legend=False, extra_big=False):
+def old_plot_light_curve(df, sample_dict, baseline_correction=False, no_legend=False, extra_big=False):
+    #print("Select property for color coding: ")
+    #print("[1] Concentration")
+    #print("[2] Trial")
+    #print("[3] System")
+    #print("[4] Magnet")
+    #color_property = input("Enter property number: ")
+
     # make plot fig
     fig, ax = plt.subplots()
 
@@ -224,6 +280,15 @@ def plot_light_curve(df, baseline_correction=False, no_legend=False, extra_big=F
     # always include trial number
 
     # plot each curve
+    curve_index = 0
+    num_rows = df.shape[0]
+    print("num rows: " + str(num_rows))
+
+    df = df.sort_values(by=['System', 'Concentration', 'Magnet', 'Trial-num'])
+
+    num_concentrations = len(df['Concentration'].unique())
+    print('num of concentrations: ' + str(num_concentrations))
+
     for row in df.itertuples():
         directory = str(row[directory_col])
         file_name = str(row[file_col])
@@ -236,6 +301,7 @@ def plot_light_curve(df, baseline_correction=False, no_legend=False, extra_big=F
         # TODO: change this out of hard coded later
         magnet = row[6]
         trial_num = row[7]
+        concentration = row[11]
         #row_label = str(magnet) + '\" magnet, trial #' + str(trial_num)
         row_label = file_name
 
@@ -257,10 +323,19 @@ def plot_light_curve(df, baseline_correction=False, no_legend=False, extra_big=F
             y = y - baseline
             # add label to title
 
+        line_width = 1
         if extra_big:
-            plt.plot(x, y, label=row_label, linewidth=5)
-        else:
-            plt.plot(x, y, label=row_label)
+            line_width = 5
+
+        # TODO: change plot graphics
+        # color: based on concentration / magnet
+        # marker: based on trial number / magnet number
+        # line color needs to be changed based on the concentration
+        line_color = colors_list[curve_index * int(len(colors_list) / num_rows) % len(colors_list)]
+        plot_marker = markers_list[curve_index % len(markers_list)]
+        plt.plot(x, y, label=row_label, linewidth=line_width, linestyle="None", markerfacecolor='none', color=line_color, marker=plot_marker, markersize=1)
+
+        curve_index += 1
 
     if baseline_correction:
         title_str += "baseline corrected"
@@ -286,7 +361,7 @@ def plot_light_curve(df, baseline_correction=False, no_legend=False, extra_big=F
     plt.tight_layout()
     plt.show()
 
-def plot_concentration_curve(df):
+def old_plot_concentration_curve(df):
     # make plot fig
     fig, ax = plt.subplots()
 
@@ -301,7 +376,7 @@ def plot_concentration_curve(df):
         # get the directory and file name from the dataframe
         directory = row[directory_col]
         file_name = row[file_col]
-        conc = row[conc_col]
+        conc = float(row[conc_col])
 
         # create file path
         file_path = path.join(DATA_DIR, directory, file_name)
@@ -325,8 +400,6 @@ def plot_concentration_curve(df):
         start_time = data[0, 0]
         end_time = data[-1, 0]
         print("processing file: " + file_name)
-        print("start: " + str(start_time))
-        print("end: " + str(end_time))
         print("num of data points: " + str(len(data[:, 0])))
 
         for i in range(len(data[:, 0])):
@@ -336,7 +409,6 @@ def plot_concentration_curve(df):
                 init_tot_lux += data[i, 1]
                 init_tot_pts += 1
             if t >= (end_time - MEAS_PERIOD):
-                print(t)
                 fin_tot_lux += data[i, 1]
                 fin_tot_pts += 1
 
@@ -344,6 +416,7 @@ def plot_concentration_curve(df):
         fin_lux_avg = fin_tot_lux / fin_tot_pts
         delta_lux = fin_lux_avg - init_lux_avg
         print(str(conc) + ": " + str(delta_lux))
+        print("")
 
         plt.plot(conc, delta_lux, color=plot_style[0], marker=plot_style[1])
 
@@ -499,7 +572,7 @@ def filter_by_series(df):
 
     return series, filter_id
 
-def pre_process(df):
+def pre_process(df, sample_dict):
     for ci in range(len(df.columns)):
         df[df.columns[ci]] = df[df.columns[ci]].fillna("")
         # if isinstance(df.iloc[0, ci], str):
@@ -517,5 +590,194 @@ def pre_process(df):
         df['Sample'] = [str(x) for x in df['Sample']]
     df.fillna("")
     return df
+
+def load_data(df, sample_dict, selection):
+    data_dict = {} # the dict with all file data that will be returned
+    #DEBUG
+    print("in load data")
+    print("selection: ")
+    print(selection)
+    for i in selection:
+        print("i: " + str(i))
+        file_dict = {}
+
+        # select row from the original log/dataframe
+        row = df.iloc[i]
+        print(row)
+        print("")
+
+        # get directory and file name info
+        directory = row['File-location']
+        file_name = row['File-name']
+
+        # create file path
+        file_path = path.join(DATA_DIR, directory, file_name)
+
+        # add .txt if not already at end of file path
+        if file_path[:-4] != '.txt':
+            file_path += '.txt'
+
+        # read data file
+        data = np.genfromtxt(file_path)
+
+        # create dictionary for this file
+        file_dict['file-path'] = file_path
+        file_dict['time_data'] = data[:, 0]
+        file_dict['lux_data'] = data[:, 1]
+
+        # get info from the log
+        file_dict['trial'] = row['Trial-num']
+        file_dict['system'] = row['System']
+        file_dict['magnet'] = row['Magnet']
+        file_dict['sample'] = row['Sample'] # sample label
+
+        # get info about the sample
+        sample = sample_dict[file_dict['sample']] # get info for this sample
+
+        # store sample info
+        file_dict['concentration'] = sample['Concentration']
+        file_dict['mnp'] = sample['MNP']
+        file_dict['batch-date'] = sample['Batch-date']
+        file_dict['solvent'] = sample['Solvent']
+
+        # add to full data_dict using file name as key
+        data_dict[file_name] = file_dict
+        print("loaded i = " + str(i) + ": "+ file_name)
+
+    return data_dict
+
+def plot_light_curve(df, sample_dict, selection, baseline_correction=False, no_legend=False, extra_big=False):
+    #fig = plt.figure()
+    fig, ax = plt.subplots()
+
+    # TOOD: sort values (is this necessary though?)
+
+    # load selected data from dataframe
+    data_dict = load_data(df, sample_dict, selection)
+
+    # set title of plot
+    title = input("Enter plot title (leave blank for default): ")
+    if title == '':
+        # default title
+        title = "Light curves"
+        if baseline_correction:
+            title += "\nbaseline corrected"
+
+    # set line properties
+    line_width = 1
+    if extra_big:
+        line_width = 5
+
+    # define variables used to set color of lines
+    curve_index = 0
+    num_rows = len(data_dict.keys())
+
+    for file in data_dict.keys():
+        file_data = data_dict[file]
+        print(str(curve_index) + ": " + file)
+
+        # load data
+        t = file_data['time_data']
+        l = file_data['lux_data']
+
+        if baseline_correction:
+            # get average of first BASELINE_PTS number of points
+            baseline_average = mean(l[0:BASELINE_PTS])
+            # subtract average from all datapoints to offset data
+            l = l - baseline_average
+
+        # TODO: fix line label somehow?
+        line_label = file_data['concentration'] + " mg/mL, " + 'trial #' + file_data['trial']
+        line_color = colors_list[curve_index * int(len(colors_list) / num_rows) % len(colors_list)]
+        plt.plot(t, l, label=line_label, linewidth=line_width, color=line_color) # TODO: add label
+
+        curve_index += 1
+
+    ax.set_title(title)
+
+    # set axes label
+    ax.set_xlabel("Time [s]")
+    ax.set_ylabel("Light [lux]")
+
+    # TODO: add legend
+
+    plt.show()
+
+# TODO: a work in progress but do i like this setup? questionable
+def set_legend_format():
+    print("What should be in the legend?")
+    print("Use short form [captial letter] options for shorter entries")
+    print("  [sys/S] System")
+    print("  [con/C] Concentration")
+    print("  [mag/M] Magnet")
+    print("  [tri/T] Trial number")
+    legend_format = input("Enter selection(s) separated by spaces: ")
+
+    legend = ['', '', '', '', '', '', '', '']
+
+    legend_splits = legend_format.split()
+    i = 0
+    for li in legend_splits:
+        if li == 'sys':
+            legend[i] = 'System: '
+            legend[i + 1] = 'system'
+        elif li == 'S':
+            legend[i + 1] = 'system'
+        elif li == 'con':
+            legend[i] = 'Concentration [mg/mL]: '
+            legend[i + 1] = 'concentration'
+        elif li == 'C':
+            legend[i + 1] = 'concentration'
+        elif li == 'mag':
+            legend[i] = 'Magnet: '
+            legend[i + 1] = 'magnet'
+        elif li == 'M':
+            legend[i + 1] = 'magnet'
+        elif li == 'tri':
+            legend[i] = 'Trial #'
+
+def plot_concentration_curve(df, sample_dict, selection):
+    # make figure
+    fig, ax = plt.subplots()
+
+    # load selected data from dataframe
+    data_dict = load_data(df, sample_dict, selection)
+
+    colors = [colors_list[1], colors_list[6], colors_list[11]]
+    markers = ['o', 'v', 's']
+
+    # set title of plot
+    title = input("Enter plot title (leave blank for default): ")
+    if title == '':
+        # default title
+        title = "Sensor response curve"
+
+    for file in data_dict.keys():
+        file_data = data_dict[file]
+
+        # load data
+        t = file_data['time_data']
+        l = file_data['lux_data']
+
+        # use first and last CONC_PTS to calculate the change in lux
+        init_lux = mean(l[:CONC_PTS])
+        final_lux = mean(l[-CONC_PTS:])
+        delta_lux = final_lux - init_lux
+
+        trial = int(file_data['trial'])
+        conc = float(file_data['concentration'])
+
+        f_color = colors[trial - 1]
+        f_marker = markers[trial - 1]
+
+        plt.plot(conc, delta_lux, color=f_color, marker=f_marker)
+
+    # set up legend
+    for si in range(len(colors)):
+        plt.plot([], [], color=colors[si], marker=markers[si], label=("Trial " + str(si + 1)))
+
+    ax.legend()
+    plt.show()
+
 
 main()
