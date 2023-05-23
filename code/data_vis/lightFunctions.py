@@ -38,13 +38,15 @@ def transm(t, eps, S1, S2, omega):
 
    return eps*(-(S1/S2)*np.exp(S2*t)+np.exp(S1*t)) + omega
 
-def transm2(t, eps, S1):
-   '''funtion that models log(1/T) and includes fit params
-   that will give suseptability'''
-   del_z = -0.0012
+def transm2(t, S1, S2, omega):
+   '''funtion that models log(1/T) and uses taylor expansion of exp'''
 
-   return eps*(del_z*(np.exp(-S1*t)-1))
+   return omega/(S1-S2)*(S2*np.exp(S1*t)-S1*np.exp(S2*t))
 
+def der_transm(t, eps, S1, S2):
+   '''Derivative of transm function'''
+
+   return S1*(eps*np.exp(S1*t) + np.exp(S2*t))
 
 def alpha(S1, S2):
    '''A ratio between drag constant and mass C_D/m
@@ -68,9 +70,9 @@ def mag_sus(p, mfs, S1, S2):
 
 #Data adjustment##############################################
 def matchEXP(T):
-   T_alt = T*1.44e-6
+   # T_alt = T*1.44e-6
    
-   return np.log10(max(T_alt)/T_alt)
+   return np.log(1/T)   #np.log10(max(T_alt)/T_alt)
 
 def trunc(low, high, x, y):
    '''Takes high and low inputs and truncates an array
@@ -100,4 +102,7 @@ def dataAdj(x, y):
    y_new = y-y_trans
 
    return x_new, y_new
+
+def column(matrix, i):
+    return [row[i] for row in matrix]
 #######
