@@ -405,6 +405,12 @@ def filter_by_series(df):
     return series, filter_id
 
 def pre_process(df, sample_dict):
+    # sort data by date, system, sample, magnet, trial number
+    df = df.sort_values(by=['Date', 'System', 'Sample', 'Magnet', 'Trial-num'])
+
+    # ignore two columns (daily-num and user which are just record-keeping)
+    df = df.drop(columns=['Daily-num', 'User'])
+
     for ci in range(len(df.columns)):
         df[df.columns[ci]] = df[df.columns[ci]].fillna("")
         # if isinstance(df.iloc[0, ci], str):
@@ -481,8 +487,6 @@ def load_data(df, sample_dict, selection):
 def plot_light_curve(df, sample_dict, selection, baseline_correction=False, no_legend=False, extra_big=False):
     #fig = plt.figure()
     fig, ax = plt.subplots()
-
-    # TOOD: sort values (is this necessary though?)
 
     # load selected data from dataframe
     data_dict = load_data(df, sample_dict, selection)
@@ -618,4 +622,4 @@ def plot_concentration_curve(df, sample_dict, selection):
     plt.show()
 
 
-main()
+#main()
