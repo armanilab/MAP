@@ -60,29 +60,10 @@ def main():
         # parse arguments
         file = sys.argv[1]
 
-    # read test log in to dataframe
-    df = pd.read_excel(file, dtype='str')
-
-    # read sample key
-    # dictionary will contain sample info where the key is a sample label/name
-    sample_dict = {}
-    try:
-        # assume that the sample key will be named 'sample-key'
-        df_samples = pd.read_excel(file, sheet_name='sample-key', dtype='str')
-        # set index to sample label (will be keys in sample_dict)
-        df_samples.set_index('Label', inplace=True)
-        sample_dict = df_samples.to_dict(orient='index') # make the dict
-    except:
-        print("Failed to find a sample key.")
-        # TODO: actually handle this
-
-    # process data
-    df = pre_process(df, sample_dict)
-    print(df.shape)
+    df, sample_dict = load_data_log(file)
 
     to_plot = df.index.to_list() # track indices in the original dataframe of the files to plot
     current_filters = []
-
 
     #### FILE SELECTION STEP ###
     # apply filter to select specific files
@@ -259,179 +240,30 @@ def apply_filter(df, indices, filter_num):
         # return the selected entries, and the filter string
         return True, entries, filter_id
 
+def load_data_log(file):
+    # read test log in to dataframe
+    df = pd.read_excel(file, dtype='str')
 
-# TODO: add title label
-def old_plot_light_curve(df, sample_dict, baseline_correction=False, no_legend=False, extra_big=False):
-    #print("Select property for color coding: ")
-    #print("[1] Concentration")
-    #print("[2] Trial")
-    #print("[3] System")
-    #print("[4] Magnet")
-    #color_property = input("Enter property number: ")
+    # read sample key
+    # dictionary will contain sample info where the key is a sample label/name
+    sample_dict = {}
+    try:
+        # assume that the sample key will be named 'sample-key'
+        df_samples = pd.read_excel(file, sheet_name='sample-key', dtype='str')
+        # set index to sample label (will be keys in sample_dict)
+        df_samples.set_index('Label', inplace=True)
+        sample_dict = df_samples.to_dict(orient='index') # make the dict
+    except:
+        print("Failed to find a sample key.")
+        # TODO: actually handle this
 
-    # make plot fig
-    fig, ax = plt.subplots()
+    # process data
+    df = pre_process(df, sample_dict)
 
-    title_str = "Light curves\n"
+    return df, sample_dict
 
-    # TODO: add code to determine which variable to use as a label (the one that changes)
-    # ignore the category that stays the same.
-    # these could be: MNP, solvent, concentration, magnet
-    # always include trial number
 
-    # plot each curve
-    curve_index = 0
-    num_rows = df.shape[0]
-    print("num rows: " + str(num_rows))
-
-    df = df.sort_values(by=['System', 'Concentration', 'Magnet', 'Trial-num'])
-
-    num_concentrations = len(df['Concentration'].unique())
-    print('num of concentrations: ' + str(num_concentrations))
-
-    for row in df.itertuples():
-        directory = str(row[directory_col])
-        file_name = str(row[file_col])
-        file_path = path.join(DATA_DIR, directory, file_name)
-        if file_path[:-4] != '.txt':
-            file_path += '.txt'
-        print("plotting " + file_name)
-        data = np.genfromtxt(file_path)
-
-        # TODO: change this out of hard coded later
-        magnet = row[6]
-        trial_num = row[7]
-        concentration = row[11]
-        #row_label = str(magnet) + '\" magnet, trial #' + str(trial_num)
-        row_label = file_name
-
-        x = data[:, 0]
-        y = data[:, 1]
-
-        if baseline_correction:
-            total_l = 0
-            total_pts = 0
-            for i in range(len(data[:, 0])):
-                t = data[i, 0]
-                if t >= 0 and t <= 15:
-                    if np.isnan(data[i, 1]):
-                        total_l += 0
-                    else:
-                        total_l += data[i, 1]
-                    total_pts += 1
-            baseline = total_l / total_pts
-            y = y - baseline
-            # add label to title
-
-        line_width = 1
-        if extra_big:
-            line_width = 5
-
-        # TODO: change plot graphics
-        # color: based on concentration / magnet
-        # marker: based on trial number / magnet number
-        # line color needs to be changed based on the concentration
-        line_color = colors_list[curve_index * int(len(colors_list) / num_rows) % len(colors_list)]
-        plot_marker = markers_list[curve_index % len(markers_list)]
-        plt.plot(x, y, label=row_label, linewidth=line_width, linestyle="None", markerfacecolor='none', color=line_color, marker=plot_marker, markersize=1)
-
-        curve_index += 1
-
-    if baseline_correction:
-        title_str += "baseline corrected"
-
-    if extra_big:
-        ax.xaxis.label.set_size(20)
-        ax.xaxis.set_tick_params(width=3.5, length=8)
-        ax.yaxis.label.set_size(20)
-        ax.yaxis.set_tick_params(width=3.5, length=8)
-        [x.set_linewidth(3.5) for x in ax.spines.values()]
-
-        #mpl.rcParams['axes.linewidth'] = 5
-        plt.xticks([0, 100, 200, 300, 400, 500, 600], labels=[], fontsize=16)
-        plt.yticks([0, 10000, 20000, 30000, 40000], labels = [], fontsize=16)
-    else:
-        ax.set_title(title_str)
-        ax.set_xlabel("Time (s)")
-        ax.set_ylabel("Lux")
-
-    if not no_legend:
-        ax.legend(bbox_to_anchor=(1.05, 1.0), loc="upper left")
-        #ax.legend(ncol = 2, bbox_to_anchor=(0.5, -0.5), loc="upper center")
-    plt.tight_layout()
-    plt.show()
-
-def old_plot_concentration_curve(df):
-    # make plot fig
-    fig, ax = plt.subplots()
-
-    title_str = "Concentration curve\n"
-
-    styles = [['r', 'o', 'Trial 1'],
-              ['g', 'v', 'Trial 2'],
-              ['b', 's', 'Trial 3'],
-              ['k', '.', '']]
-
-    for row in df.itertuples():
-        # get the directory and file name from the dataframe
-        directory = row[directory_col]
-        file_name = row[file_col]
-        conc = float(row[conc_col])
-
-        # create file path
-        file_path = path.join(DATA_DIR, directory, file_name)
-
-        if file_path[:-4] != '.txt':
-            file_path += '.txt'
-
-        # read text file
-        data = np.genfromtxt(file_path)
-
-        # [color, marker type, marker size]
-        trial_num = row[trial_col]
-        plot_style = styles[(int(trial_num) - 1) % len(styles)]
-
-        # read and process data
-        init_tot_lux = 0
-        init_tot_pts = 0
-        fin_tot_lux = 0
-        fin_tot_pts = 0
-
-        start_time = data[0, 0]
-        end_time = data[-1, 0]
-        print("processing file: " + file_name)
-        print("num of data points: " + str(len(data[:, 0])))
-
-        for i in range(len(data[:, 0])):
-            t = float(data[i, 0]) # time stamp
-
-            if t <= (start_time + MEAS_PERIOD):
-                init_tot_lux += data[i, 1]
-                init_tot_pts += 1
-            if t >= (end_time - MEAS_PERIOD):
-                fin_tot_lux += data[i, 1]
-                fin_tot_pts += 1
-
-        init_lux_avg = init_tot_lux / init_tot_pts
-        fin_lux_avg = fin_tot_lux / fin_tot_pts
-        delta_lux = fin_lux_avg - init_lux_avg
-        print(str(conc) + ": " + str(delta_lux))
-        print("")
-
-        plt.plot(conc, delta_lux, color=plot_style[0], marker=plot_style[1])
-
-    ax.set_title(title_str)
-    ax.set_xlabel("Concentration [mg/mL]")
-    ax.set_ylabel("Change in lux")
-
-    # set up legend
-    for si in range(len(styles)-1):
-        plt.plot([], [], color=styles[si][0], marker=styles[si][1], label=styles[si][2])
-
-    ax.legend()
-    plt.tight_layout()
-    plt.show()
-
+#TODO: needs to be fixed since load_data was written
 def plot_reproducible(df, extra_stats=False):
     df_data = []
 
@@ -689,7 +521,7 @@ def plot_light_curve(df, sample_dict, selection, baseline_correction=False, no_l
         # TODO: fix line label somehow?
         line_label = file_data['concentration'] + " mg/mL, " + 'trial #' + file_data['trial']
         line_color = colors_list[curve_index * int(len(colors_list) / num_rows) % len(colors_list)]
-        plt.plot(t, l, label=line_label, linewidth=line_width, color=line_color) # TODO: add label
+        plt.plot(t, l, label=file, linewidth=line_width, color=line_color) # TODO: add label
 
         curve_index += 1
 
@@ -700,7 +532,9 @@ def plot_light_curve(df, sample_dict, selection, baseline_correction=False, no_l
     ax.set_ylabel("Light [lux]")
 
     # TODO: add legend
-
+    if not no_legend:
+        ax.legend()
+    plt.tight_layout()
     plt.show()
 
 # TODO: a work in progress but do i like this setup? questionable
@@ -775,6 +609,10 @@ def plot_concentration_curve(df, sample_dict, selection):
     # set up legend
     for si in range(len(colors)):
         plt.plot([], [], color=colors[si], marker=markers[si], label=("Trial " + str(si + 1)))
+
+    ax.set_title(title)
+    ax.set_xlabel("Concentration [mg/mL]")
+    ax.set_ylabel("Change in light [lux]")
 
     ax.legend()
     plt.show()
