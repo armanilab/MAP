@@ -173,7 +173,7 @@ def main():
 
 def apply_filter(df, indices, filter_num):
     # create dataframe of current selection
-    df = df.iloc[indices]
+    df = df.loc[indices]
 
     print("")
     print("Filtering by ", end="")
@@ -232,7 +232,8 @@ def apply_filter(df, indices, filter_num):
         print("")
         print("Number of entries found: " + str(len(entries)))
         print("Preview of selected rows:")
-        print(entries)
+        for e in entries:
+            print(str(e) + ": " + df.loc[e]['File-name'])
 
         # create string indicating what was filtered
         filter_id = filter_type + ": " + selection
@@ -440,7 +441,7 @@ def load_data(df, sample_dict, selection):
         file_dict = {}
 
         # select row from the original log/dataframe
-        row = df.iloc[i]
+        row = df.loc[i]
         print(row)
         print("")
 
@@ -622,4 +623,4 @@ def plot_concentration_curve(df, sample_dict, selection):
     plt.show()
 
 
-#main()
+main()
