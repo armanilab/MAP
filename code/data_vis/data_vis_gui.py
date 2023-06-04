@@ -26,6 +26,8 @@ class MapDA:
         self.file = "../../../../test_data/paper_data/MAP_test_log_data.xlsx"
         self.file_manager = FileManager(self.file)
         self.df = self.file_manager.get_df()
+        self.filtered_list = self.df.index # start with ALL indices
+        self.to_plot_list = [] # start with none
 
     def create_file_selection_screen(self):
         # add a label
@@ -59,7 +61,7 @@ class MapDA:
         self.full_file_tree.grid(row=0, column=0, sticky=tk.NSEW)
 
         # add rows to tree from the dataframe (the file log)
-        self.update_file_tree(self.df.index.to_list())
+        self.update_file_tree(self.filtered_list)
 
         # set appearance for selected items
         self.full_file_tree.tag_configure("selected", background="yellow")
@@ -76,9 +78,17 @@ class MapDA:
             text="Add Selected", command=self.add_selected)
         self.add_selection_button.grid(row=2, column=1)
 
+        self.add_all_button = tk.Button(self.main_frame, text="Add All",
+            command=self.add_all, bg='#2832c2', fg='#000000')
+        self.add_all_button.grid(row=2, column=2)
+
         self.remove_selection_button = ttk.Button(self.main_frame,
             text="Remove Selected", command=self.remove_selected)
         self.remove_selection_button.grid(row=2, column=3)
+
+        self.remove_all_button = tk.Button(self.main_frame, text="Remove All",
+            command=self.remove_all, bg='#2832c2', fg='#000000')
+        self.remove_all_button.grid(row=2, column=4)
 
         ### FILTERING ###
         # add dropdown menu for filtering
@@ -102,9 +112,45 @@ class MapDA:
         self.filteroptions_optionmenu.config(width=15)
         self.filteroptions_optionmenu.grid(row=3, column=2)
 
+        # add button to actually apply selected filter
         self.apply_button = ttk.Button(self.main_frame,
             text="Apply filter", command=self.apply_filter)
         self.apply_button.grid(row=3, column=3)
+
+        # add label for second treeview
+        self.queue_label = ttk.Label(self.main_frame,
+            text='Files to be plotted:')
+        self.queue_label.configure(font=("TkDefaultFont", 20, "bold"))
+        self.queue_label.grid(row=4, column=0, sticky='w')
+
+        # add second treeview with selected files to be plotted
+        self.selection_preview_frame = ttk.Frame(self.main_frame)
+        self.selection_preview_frame.grid(row=5, column=0, columnspan=6,
+            sticky=tk.NSEW, padx=15)
+        self.selection_preview_frame.columnconfigure(0, weight=1)
+        self.selection_preview_frame.rowconfigure(0, weight=1)
+
+        self.selection_preview_tree = ttk.Treeview(self.selection_preview_frame,
+            columns=tuple(cols))
+        self.selection_preview_tree.column('#0', width=120)
+        self.selection_preview_tree.heading('#0', text='File-name')
+
+        # set column widths
+        # first column is file-location and should be longer
+        self.selection_preview_tree.column(self.df.columns[1], width=200,
+            anchor='w')
+        self.selection_preview_tree.heading(self.df.columns[1],
+            text=self.df.columns[1])
+        # set all other columns to width of 100
+        for i in range(len(cols[1:])):
+            i += 1
+            self.selection_preview_tree.column(cols[i], width=100,
+                anchor='center')
+            self.selection_preview_tree.heading(cols[i], text=cols[i])
+        self.selection_preview_tree.grid(row=0, column=0, sticky=tk.NSEW)
+
+        # add rows to tree from the dataframe (the file log)
+        self.update_selection_tree(self.to_plot_list)
 
 
     def run(self):
@@ -120,8 +166,18 @@ class MapDA:
         # add new entries from given dataframe
         for i in indices:
             row = self.df.loc[i]
-            print(str(i) + ": " + row['File-name'])
             self.full_file_tree.insert('', 'end', id=i, text=row['File-name'],
+                value=tuple(row[1:-2]))
+
+    def update_selection_tree(self, indices):
+        # clear old tree
+        for item in self.selection_preview_tree.get_children():
+            self.selection_preview_tree.delete(item)
+
+        # add new entries from given dataframe
+        for i in indices:
+            row = self.df.loc[i]
+            self.selection_preview_tree.insert('', 'end', id=i, text=row['File-name'],
                 value=tuple(row[1:-2]))
 
     def add_selected(self):
@@ -136,6 +192,16 @@ class MapDA:
         for item in selected_items:
             self.full_file_tree.item(item, tags=())
 
+    def add_all(self):
+        for i in self.filtered_list:
+            if i not in self.to_plot_list:
+                self.to_plot_list.append(i)
+
+    def remove_all(self):
+        for i in self.filtered_list:
+            if i in self.to_plot_list:
+                self.to_plot_list.remove(i)
+
     #TODO: fix the sort so that if they're numerical, then the sort by numbers
     def display_filter_options(self, event):
         # get options from dataframe for this filter type
@@ -143,7 +209,8 @@ class MapDA:
         filter_options = self.df[filter_type].fillna("")
         self.filter_options = filter_options.unique().tolist()
         self.filter_options.sort()
-        self.filter_options.append("<None>") # for empty cells. #TODO: rename this?
+        self.filter_options.append("<Blank>") # for empty cells. #TODO: rename this?
+
         # remove 'extra' options
         if 'nan' in self.filter_options:
             self.filter_options.remove('nan')
@@ -158,6 +225,9 @@ class MapDA:
             menu.add_command(label=s,
                 command=lambda value=s: self.filter_option_var.set(value))
 
+    def apply_filter(self, event):
+        self.apply_filter()
+
     def apply_filter(self):
         print("applying filter:")
         # get the two selected filter variables
@@ -168,9 +238,9 @@ class MapDA:
 
         # select the subset of the dataframe
         entries = self.df.loc[self.df[filter_type] == filter_selected]
-        entries_indices = entries.index.to_list()
+        self.filtered_list = entries.index.to_list()
         print(entries)
-        self.update_file_tree(entries_indices)
+        self.update_file_tree(self.filtered_list)
 
 
 app = MapDA()
