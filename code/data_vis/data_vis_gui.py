@@ -59,10 +59,7 @@ class MapDA:
         self.full_file_tree.grid(row=0, column=0, sticky=tk.NSEW)
 
         # add rows to tree from the dataframe (the file log)
-        for i in range(self.df.shape[0]):
-            row = self.df.loc[i]
-            self.full_file_tree.insert('', 'end', id=i, text=row['File-name'],
-                value=tuple(row[1:-2]))
+        self.update_file_tree(self.df.index.to_list())
 
         # set appearance for selected items
         self.full_file_tree.tag_configure("selected", background="yellow")
@@ -86,32 +83,95 @@ class MapDA:
         ### FILTERING ###
         # add dropdown menu for filtering
         # filter options are from the columns of the df
-        filter_options = [''] + cols.to_list()
+        self.filter_list = [''] + cols.to_list()
         #filter_options.insert(0, ' ') # TODO: what is going on here?
-        print(filter_options)
-        self.filter_option_selected = tk.StringVar()
+        print(self.filter_list)
+        self.filter_var = tk.StringVar()
         self.filter_optionmenu = ttk.OptionMenu(self.main_frame,
-            self.filter_option_selected, filter_options[0], *filter_options) #TODO: set command , command=None)
+            self.filter_var, self.filter_list[0], *self.filter_list,
+            command=self.display_filter_options) #TODO: set command , command=None)
         self.filter_optionmenu.config(width=10)
         self.filter_optionmenu.grid(row=3, column=1)
+
+        # get actual options for filter
+        self.filter_options = ['']
+        self.filter_option_var = tk.StringVar()
+        self.filteroptions_optionmenu = ttk.OptionMenu(self.main_frame,
+            self.filter_option_var, self.filter_options[0],
+            *self.filter_options, command=self.apply_filter) # TODO: set command to actually show the filtered files
+        self.filteroptions_optionmenu.config(width=15)
+        self.filteroptions_optionmenu.grid(row=3, column=2)
+
+        self.apply_button = ttk.Button(self.main_frame,
+            text="Apply filter", command=self.apply_filter)
+        self.apply_button.grid(row=3, column=3)
+
 
     def run(self):
         self.root.mainloop()
 
+    # TODO: might need to change the row slicing values eventually, esp
+    # if i add in feature to view/hide certain columns
+    def update_file_tree(self, indices):
+        # clear old tree
+        for item in self.full_file_tree.get_children():
+            self.full_file_tree.delete(item)
+
+        # add new entries from given dataframe
+        for i in indices:
+            row = self.df.loc[i]
+            print(str(i) + ": " + row['File-name'])
+            self.full_file_tree.insert('', 'end', id=i, text=row['File-name'],
+                value=tuple(row[1:-2]))
+
     def add_selected(self):
-        selected_items = full_file_tree.selection()
+        selected_items = self.full_file_tree.selection()
         # TODO: tag these items as selected and change appearance in tree
         for item in selected_items:
-            full_file_tree.item(item, tags=("selected"))
+            self.full_file_tree.item(item, tags=("selected"))
 
     def remove_selected(self):
-        selected_items = full_file_tree.selection()
+        selected_items = self.full_file_tree.selection()
         # remove the 'selected' tag and change appearance in tree
         for item in selected_items:
-            full_file_tree.item(item, tags=())
+            self.full_file_tree.item(item, tags=())
 
-    def select_filter(self):
-        pass
+    #TODO: fix the sort so that if they're numerical, then the sort by numbers
+    def display_filter_options(self, event):
+        # get options from dataframe for this filter type
+        filter_type = self.filter_var.get()
+        filter_options = self.df[filter_type].fillna("")
+        self.filter_options = filter_options.unique().tolist()
+        self.filter_options.sort()
+        self.filter_options.append("<None>") # for empty cells. #TODO: rename this?
+        # remove 'extra' options
+        if 'nan' in self.filter_options:
+            self.filter_options.remove('nan')
+        if 'none' in self.filter_options:
+            self.filter_options.remove('none')
+
+        # now actually update the option menu
+        menu = self.filteroptions_optionmenu['menu']
+        menu.delete(0, "end")
+        # add new options to the mneu
+        for s in self.filter_options:
+            menu.add_command(label=s,
+                command=lambda value=s: self.filter_option_var.set(value))
+
+    def apply_filter(self):
+        print("applying filter:")
+        # get the two selected filter variables
+        filter_type = self.filter_var.get()
+        filter_selected = self.filter_option_var.get()
+        print("col: " + filter_type)
+        print("value: " + filter_selected)
+
+        # select the subset of the dataframe
+        entries = self.df.loc[self.df[filter_type] == filter_selected]
+        entries_indices = entries.index.to_list()
+        print(entries)
+        self.update_file_tree(entries_indices)
+
 
 app = MapDA()
 app.create_file_selection_screen()
