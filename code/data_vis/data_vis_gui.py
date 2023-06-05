@@ -45,23 +45,11 @@ class MapDA:
 
         # view files from treeview
         cols = self.df.columns[1:-2]
-        self.full_file_tree = ttk.Treeview(self.file_preview_frame,
-            columns=tuple(cols))
-        self.full_file_tree.column('#0', width=120)
-        self.full_file_tree.heading('#0', text='File-name')
-        # set column widths
-        # first "column" is file-location - should be longer
-        self.full_file_tree.column(self.df.columns[1], width=200, anchor='w')
-        self.full_file_tree.heading(self.df.columns[1], text=self.df.columns[1])
-        # set all other columns to width of 100
-        for i in (range(len(cols[1:]))):
-            i += 1
-            self.full_file_tree.column(cols[i], width=100, anchor='center')
-            self.full_file_tree.heading(cols[i], text=cols[i])
-        self.full_file_tree.grid(row=0, column=0, sticky=tk.NSEW)
+        self.full_file_tree = self.create_tree(self.file_preview_frame)
 
         # add rows to tree from the dataframe (the file log)
-        self.update_file_tree(self.filtered_list)
+        self.update_tree(self.full_file_tree, self.filtered_list,
+            highlight=True)
 
         # set appearance for selected items
         self.full_file_tree.tag_configure("selected", background="yellow")
@@ -94,8 +82,7 @@ class MapDA:
         # add dropdown menu for filtering
         # filter options are from the columns of the df
         self.filter_list = [''] + cols.to_list()
-        #filter_options.insert(0, ' ') # TODO: what is going on here?
-        print(self.filter_list)
+
         self.filter_var = tk.StringVar()
         self.filter_optionmenu = ttk.OptionMenu(self.main_frame,
             self.filter_var, self.filter_list[0], *self.filter_list,
@@ -130,77 +117,112 @@ class MapDA:
         self.selection_preview_frame.columnconfigure(0, weight=1)
         self.selection_preview_frame.rowconfigure(0, weight=1)
 
-        self.selection_preview_tree = ttk.Treeview(self.selection_preview_frame,
-            columns=tuple(cols))
-        self.selection_preview_tree.column('#0', width=120)
-        self.selection_preview_tree.heading('#0', text='File-name')
-
-        # set column widths
-        # first column is file-location and should be longer
-        self.selection_preview_tree.column(self.df.columns[1], width=200,
-            anchor='w')
-        self.selection_preview_tree.heading(self.df.columns[1],
-            text=self.df.columns[1])
-        # set all other columns to width of 100
-        for i in range(len(cols[1:])):
-            i += 1
-            self.selection_preview_tree.column(cols[i], width=100,
-                anchor='center')
-            self.selection_preview_tree.heading(cols[i], text=cols[i])
-        self.selection_preview_tree.grid(row=0, column=0, sticky=tk.NSEW)
+        # create treeview to see selected files
+        self.selection_preview_tree = self.create_tree(
+            self.selection_preview_frame)
 
         # add rows to tree from the dataframe (the file log)
-        self.update_selection_tree(self.to_plot_list)
+        self.update_tree(self.selection_preview_tree, self.to_plot_list)
 
 
     def run(self):
         self.root.mainloop()
 
+    def create_tree(self, frame):
+        cols = self.df.columns[1:-2]
+        tree = ttk.Treeview(frame, columns=tuple(cols))
+        tree.column('#0', width=120)
+        tree.heading('#0', text='File-name')
+
+        # set column widths
+        # first "column" is file-location - should be longer
+        tree.column(self.df.columns[1], width=200, anchor='w')
+        tree.heading(self.df.columns[1], text=self.df.columns[1])
+
+        # set all other columns to width of 100
+        for i in (range(len(cols[1:]))):
+            i += 1
+            tree.column(cols[i], width=100, anchor='center')
+            tree.heading(cols[i], text=cols[i])
+
+        # add to grid and fill space in frame
+        tree.grid(row=0, column=0, sticky=tk.NSEW)
+
+        return tree
+
     # TODO: might need to change the row slicing values eventually, esp
     # if i add in feature to view/hide certain columns
-    def update_file_tree(self, indices):
+    def update_tree(self, tree, indices, highlight=False):
         # clear old tree
-        for item in self.full_file_tree.get_children():
-            self.full_file_tree.delete(item)
+        for item in tree.get_children():
+            tree.delete(item)
 
         # add new entries from given dataframe
         for i in indices:
             row = self.df.loc[i]
-            self.full_file_tree.insert('', 'end', id=i, text=row['File-name'],
+            tree.insert('', 'end', id=i, text=row['File-name'],
                 value=tuple(row[1:-2]))
 
-    def update_selection_tree(self, indices):
-        # clear old tree
-        for item in self.selection_preview_tree.get_children():
-            self.selection_preview_tree.delete(item)
-
-        # add new entries from given dataframe
-        for i in indices:
-            row = self.df.loc[i]
-            self.selection_preview_tree.insert('', 'end', id=i, text=row['File-name'],
-                value=tuple(row[1:-2]))
+            if highlight:
+                if i in self.to_plot_list:
+                    tree.item(i, tags=('selected'))
 
     def add_selected(self):
         selected_items = self.full_file_tree.selection()
-        # TODO: tag these items as selected and change appearance in tree
+
         for item in selected_items:
+            # change appearance of selected item via 'selected' tag
             self.full_file_tree.item(item, tags=("selected"))
+
+            item_index = int(item)# convert item id to the index
+
+            # add index from the list of files to be plotted
+            if item_index not in self.to_plot_list:
+                self.to_plot_list.append(item_index)
+
+        # update the selection preview tree
+        self.update_tree(self.selection_preview_tree, self.to_plot_list)
+
 
     def remove_selected(self):
         selected_items = self.full_file_tree.selection()
-        # remove the 'selected' tag and change appearance in tree
+
         for item in selected_items:
+            # remove the 'selected' tag and change appearance in tree
             self.full_file_tree.item(item, tags=())
 
+            item_index = int(item) # convert item id to the index
+
+            # remove index from the list of files to be plotted
+            if item_index in self.to_plot_list:
+                self.to_plot_list.remove(item_index)
+
+        # update the selection preview tree
+        self.update_tree(self.selection_preview_tree, self.to_plot_list)
+
+    # TODO: update appearance of these files
     def add_all(self):
+        # add all shown files to the to_plot_list
         for i in self.filtered_list:
             if i not in self.to_plot_list:
                 self.to_plot_list.append(i)
+            # add highlight to file in full_file_tree
+            self.full_file_tree.item(i, tags=('selected'))
+
+        # update the selection preview tree
+        self.update_tree(self.selection_preview_tree, self.to_plot_list)
+
 
     def remove_all(self):
+        # remove all shown files from the to_plot_list
         for i in self.filtered_list:
             if i in self.to_plot_list:
                 self.to_plot_list.remove(i)
+            # remove highlight of file in full_file_tree
+            self.full_file_tree.item(i, tags=())
+
+        # update the selection preview tree
+        self.update_tree(self.selection_preview_tree, self.to_plot_list)
 
     #TODO: fix the sort so that if they're numerical, then the sort by numbers
     def display_filter_options(self, event):
@@ -240,7 +262,8 @@ class MapDA:
         entries = self.df.loc[self.df[filter_type] == filter_selected]
         self.filtered_list = entries.index.to_list()
         print(entries)
-        self.update_file_tree(self.filtered_list)
+        self.update_tree(self.full_file_tree, self.filtered_list,
+            highlight=True)
 
 
 app = MapDA()
