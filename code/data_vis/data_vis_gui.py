@@ -14,11 +14,25 @@ class MapDA:
         self.root.columnconfigure(0, weight=1) # vertical rescaling
         self.root.rowconfigure(0, weight=1) # horizontal rescaling
 
+        # set up the notebook (tabs)
+        self.notebook = ttk.Notebook(self.root)
+
         # set up a main frame to integrate themed widgets (esp. bkgd color)
         # add some padding
-        self.main_frame = ttk.Frame(self.root, padding="3 3 12 12")
+        self.main_frame = ttk.Frame(self.notebook, padding="3 3 12 12")
+        self.notebook.add(self.main_frame, text="Selection")
+
+        # TODO: fix second frame
+        # add second dummy tab right now
+        self.second_frame = ttk.Frame(self.notebook, padding="3 3 12 12")
+        b1 = tk.Button(self.second_frame, text="hello!")
+        b1.pack()
+        self.notebook.add(self.second_frame, text="Plotter")
+
+        self.notebook.pack(expand=1, fill="both")
+
         # stick to all sides
-        self.main_frame.grid(column=0, row=0, sticky=(tk.N, tk.W, tk.E, tk.S))
+        #self.main_frame.grid(column=0, row=0, sticky=(tk.N, tk.W, tk.E, tk.S))
 
         # TODO: fix this so it actually takes an input
         # save the data file
@@ -28,6 +42,12 @@ class MapDA:
         self.df = self.file_manager.get_df()
         self.filtered_list = self.df.index # start with ALL indices
         self.to_plot_list = [] # start with none
+
+        # create things
+        self.create_file_selection_screen()
+
+    def run(self):
+        self.root.mainloop()
 
     def create_file_selection_screen(self):
         # add a label
@@ -79,6 +99,11 @@ class MapDA:
         self.remove_all_button.grid(row=2, column=4)
 
         ### FILTERING ###
+        # add a button to remove all filtering
+        self.reset_filter_button = ttk.Button(self.main_frame,
+            text="Reset filters", command=self.reset_filter)
+        self.reset_filter_button.grid(row=3, column=4)
+
         # add dropdown menu for filtering
         # filter options are from the columns of the df
         self.filter_list = [''] + cols.to_list()
@@ -95,7 +120,7 @@ class MapDA:
         self.filter_option_var = tk.StringVar()
         self.filteroptions_optionmenu = ttk.OptionMenu(self.main_frame,
             self.filter_option_var, self.filter_options[0],
-            *self.filter_options, command=self.apply_filter) # TODO: set command to actually show the filtered files
+            *self.filter_options, command=self.apply_filter) # TODO: fix command to actually show the filtered files (why doesn't this work?)
         self.filteroptions_optionmenu.config(width=15)
         self.filteroptions_optionmenu.grid(row=3, column=2)
 
@@ -123,10 +148,6 @@ class MapDA:
 
         # add rows to tree from the dataframe (the file log)
         self.update_tree(self.selection_preview_tree, self.to_plot_list)
-
-
-    def run(self):
-        self.root.mainloop()
 
     def create_tree(self, frame):
         cols = self.df.columns[1:-2]
@@ -200,7 +221,6 @@ class MapDA:
         # update the selection preview tree
         self.update_tree(self.selection_preview_tree, self.to_plot_list)
 
-    # TODO: update appearance of these files
     def add_all(self):
         # add all shown files to the to_plot_list
         for i in self.filtered_list:
@@ -265,7 +285,11 @@ class MapDA:
         self.update_tree(self.full_file_tree, self.filtered_list,
             highlight=True)
 
+    def reset_filter(self):
+        self.filtered_list = self.df.index
+        self.update_tree(self.full_file_tree, self.filtered_list,
+            highlight=True)
+
 
 app = MapDA()
-app.create_file_selection_screen()
 app.run()
