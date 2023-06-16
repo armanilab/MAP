@@ -349,6 +349,7 @@ void loop() {
     bytes_written += open_log.syncFile();
 
     if (bytes_written == 0) {
+      Serial.println("bytes written = 0");
       updated = true;
       state = ERROR_LOGGER;
     }
