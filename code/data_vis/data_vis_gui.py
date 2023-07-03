@@ -4,6 +4,7 @@ import pandas as pd
 from data_vis import *
 import numpy as np
 from FileManagerClass import FileManager
+from MAPPlotter import Plotter
 
 import matplotlib
 matplotlib.use('TkAgg')
@@ -46,6 +47,7 @@ class MapDAP:
 
         self.file = "../../../../test_data/paper_data/MAP_test_log_data.xlsx"
         self.fm = FileManager(self.file)
+
         self.df = self.fm.get_df()
         #self.filtered_list = self.df.index # start with ALL indices
         #self.to_plot_list = [] # start with none
@@ -57,6 +59,9 @@ class MapDAP:
         # create things
         self.create_file_selection_page()
         self.create_plot_page()
+
+        self.plot_type = 'Time vs. Lux'
+        self.plotter = Plotter(self.fig)
 
     def run(self):
         self.root.mainloop()
@@ -162,9 +167,9 @@ class MapDAP:
         self.update_tree(self.selection_preview_tree, self.fm.get_plot_list())
 
         # TODO: connect command to navigate to plot screen
-        self.plot_button = ttk.Button(self.selection_page, text="Plot",
+        self.plotter_button = ttk.Button(self.selection_page, text="Plot",
             style="main.TButton")
-        self.plot_button.grid(row=6, column=3, rowspan=2, columnspan=2)
+        self.plotter_button.grid(row=6, column=3, rowspan=2, columnspan=2)
 
     def create_tree(self, frame, ht=10):
         cols = self.fm.get_tree_cols()
@@ -301,9 +306,7 @@ class MapDAP:
 
         # select the subset of the dataframe
         self.fm.filter_df(filter_type, filter_selected)
-        #entries = self.df.loc[self.df[filter_type] == filter_selected]
-        #self.filtered_list = entries.index.to_list()
-        #print(entries)
+
         self.update_tree(self.full_file_tree, self.fm.get_filtered_list(),
             highlight=True)
 
@@ -342,8 +345,16 @@ class MapDAP:
         self.update_tree(self.file_list_tree, self.fm.get_plot_list())
 
         # TODO: add scrollbar to treeview
+        self.file_list_scrollbar = ttk.Scrollbar(self.file_list_frame,
+            orient=tk.VERTICAL, command=self.file_list_tree.yview)
+        self.file_list_tree.configure(
+            yscrollcommand=self.file_list_scrollbar.set)
+        self.file_list_scrollbar.grid(row=0, column=1, sticky='nse')
 
-
+        # create button to plot things
+        self.plot_button = ttk.Button(self.plot_page, text="Plot!",
+            command=self.generate_plot)
+        self.plot_button.grid(row=2, column=0, columnspan=2)
 
         # create frame for plot
         self.canvas_frame = ttk.Frame(self.plot_page)
@@ -352,23 +363,23 @@ class MapDAP:
         #self.canvas_frame.columnconfigure(0, weight=1)
         #self.canvas_frame.rowconfigure(0, weight=1)
 
-        fig = Figure(figsize=(3, 3), dpi=100)
+        self.fig = Figure(figsize=(4, 3), dpi=150)
 
         # create FigureCanvasTkAgg object
-        figure_canvas = FigureCanvasTkAgg(fig, self.canvas_frame)
+        self.figure_canvas = FigureCanvasTkAgg(self.fig, self.canvas_frame)
 
         # create the toolbar
         #toolbar = NavigationToolbar2Tk(figure_canvas, self.canvas_frame)
         #toolbar.update()
 
-        axes = fig.add_subplot()
+        self.axes = self.fig.add_subplot()
 
         # create the barchart
-        axes.plot([0, 1, 2, 3, 4, 5], [5, 4, 3, 2, 1, 0])
-        axes.set_title('test')
-        axes.set_ylabel('y axis')
+        self.axes.plot([0, 1, 2, 3, 4, 5], [5, 4, 3, 2, 1, 0])
+        self.axes.set_title('test')
+        self.axes.set_ylabel('y axis')
 
-        figure_canvas.get_tk_widget().pack(side=tk.LEFT, fill=tk.BOTH,
+        self.figure_canvas.get_tk_widget().pack(side=tk.LEFT, fill=tk.BOTH,
             expand=True)
         #pack(side=tk.TOP, fill=tk.BOTH, expand=1)
         #grid(row=0, column=2, sticky="nsew")#
@@ -378,6 +389,13 @@ class MapDAP:
     def set_plot_type(self, event):
         self.plot_type = self.plot_type_var.get()
 
+    def generate_plot(self):
+        #self.axes.clear()
+        if self.plot_type == 'Time vs. Lux':
+            self.fig = self.plotter.plot_light_curve(self.fm,
+                baseline_correction=True)
+        self.figure_canvas.draw()
+        print("canvas redrawn")
 
 app = MapDAP()
 app.run()

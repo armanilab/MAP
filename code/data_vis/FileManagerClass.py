@@ -1,5 +1,9 @@
 import pandas as pd
 import numpy as np
+import sys
+from os import path
+
+DATA_DIR = "../../../../test_data/"
 
 class FileManager:
     def __init__(self, file, preprocess=True):
@@ -42,6 +46,9 @@ class FileManager:
     def get_df(self):
         return self.df
 
+    def get_sample_dict(self):
+        return self.sample_dict
+
     #TODO: does this actually need the sample dict?
     def pre_process(self, df):
         # sort data by date, system, sample, magnet, trial number
@@ -67,6 +74,59 @@ class FileManager:
             df['Sample'] = [str(x) for x in df['Sample']]
         df.fillna("")
         return df
+
+    def load_data(self):
+        data_dict = {} # the dict with all file data that will be returned
+        #DEBUG
+        print("in load data")
+        for i in self.plot_list:
+            print("i: " + str(i))
+            file_dict = {}
+
+            # select row from the original log/dataframe
+            row = self.df.loc[i]
+            print(row)
+            print("")
+
+            # get directory and file name info
+            directory = row['File-location']
+            file_name = row['File-name']
+
+            # create file path
+            file_path = path.join(DATA_DIR, directory, file_name)
+
+            # add .txt if not already at end of file path
+            if file_path[:-4] != '.txt':
+                file_path += '.txt'
+
+            # read data file
+            data = np.genfromtxt(file_path)
+
+            # create dictionary for this file
+            file_dict['file-path'] = file_path
+            file_dict['time_data'] = data[:, 0]
+            file_dict['lux_data'] = data[:, 1]
+
+            # get info from the log
+            file_dict['trial'] = row['Trial-num']
+            file_dict['system'] = row['System']
+            file_dict['magnet'] = row['Magnet']
+            file_dict['sample'] = row['Sample'] # sample label
+
+            # get info about the sample
+            sample = self.sample_dict[file_dict['sample']] # get info for this sample
+
+            # store sample info
+            file_dict['concentration'] = sample['Concentration']
+            file_dict['mnp'] = sample['MNP']
+            file_dict['batch-date'] = sample['Batch-date']
+            file_dict['solvent'] = sample['Solvent']
+
+            # add to full data_dict using file name as key
+            data_dict[file_name] = file_dict
+            print("loaded i = " + str(i) + ": "+ file_name)
+
+        return data_dict
 
     # arguments:
     #  [int] file_index - the index of a file to be added to the plot_list
