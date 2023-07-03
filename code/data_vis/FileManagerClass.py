@@ -74,3 +74,6 @@ class FileManager:
         for f in files:
             if f in self.plot_list:
                 self.plot_list.remove(int(f))
+
+    def get_plot_list(self):
+        return self.plot_list

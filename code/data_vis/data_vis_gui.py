@@ -2,11 +2,20 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import pandas as pd
 from data_vis import *
+import numpy as np
 from FileManagerClass import FileManager
 
+import matplotlib
+matplotlib.use('TkAgg')
+# to embed the plot
+from matplotlib.backends.backend_tkagg import (
+    FigureCanvasTkAgg, NavigationToolbar2Tk)
+# default Matplotlib key bindings
+from matplotlib.backend_bases import key_press_handler
+from matplotlib.figure import Figure
 
 
-class MapDA:
+class MapDAP:
     def __init__(self):
         # create the main window
         self.root = tk.Tk()
@@ -19,20 +28,18 @@ class MapDA:
 
         # set up a main frame to integrate themed widgets (esp. bkgd color)
         # add some padding
-        self.main_frame = ttk.Frame(self.notebook, padding="3 3 12 12")
-        self.notebook.add(self.main_frame, text="Selection")
+        self.selection_page = ttk.Frame(self.notebook, padding="3 3 12 12")
+        self.notebook.add(self.selection_page, text="Selection")
 
         # TODO: fix second frame
         # add second dummy tab right now
-        self.second_frame = ttk.Frame(self.notebook, padding="3 3 12 12")
-        b1 = tk.Button(self.second_frame, text="hello!")
-        b1.pack()
-        self.notebook.add(self.second_frame, text="Plotter")
+        self.plot_page = ttk.Frame(self.notebook, padding="3 3 12 12")
+        self.notebook.add(self.plot_page, text="Plotter")
 
         self.notebook.pack(expand=1, fill="both")
 
         # stick to all sides
-        #self.main_frame.grid(column=0, row=0, sticky=(tk.N, tk.W, tk.E, tk.S))
+        #self.selection_page.grid(column=0, row=0, sticky=(tk.N, tk.W, tk.E, tk.S))
 
         # TODO: fix this so it actually takes an input
         # save the data file
@@ -43,21 +50,26 @@ class MapDA:
         self.filtered_list = self.df.index # start with ALL indices
         self.to_plot_list = [] # start with none
 
+        # TODO: did this even do anything?? set button styles
+        s = ttk.Style()
+        s.configure('main.TButtton', font=('Calibri', 20))
+
         # create things
-        self.create_file_selection_screen()
+        self.create_file_selection_page()
+        self.create_plot_page()
 
     def run(self):
         self.root.mainloop()
 
-    def create_file_selection_screen(self):
+    def create_file_selection_page(self):
         # add a label
-        self.tree_label = ttk.Label(self.main_frame, text='Log files:')
+        self.tree_label = ttk.Label(self.selection_page, text='Log files:')
         self.tree_label.configure(font=("TkDefaultFont", 20, "bold"))
         self.tree_label.grid(row=0, column=0, sticky='w')
 
         ### SETUP FILE PREVIEW ###
         # set up file preview frame
-        self.file_preview_frame = ttk.Frame(self.main_frame)
+        self.file_preview_frame = ttk.Frame(self.selection_page)
         self.file_preview_frame.grid(row=1, column=0, columnspan=6,
             sticky=tk.NSEW, padx=15)
         self.file_preview_frame.columnconfigure(0, weight=1)
@@ -82,25 +94,25 @@ class MapDA:
         self.full_file_scrollbar.grid(row=0, column=1, sticky='nse')
 
         ### ADD BUTTONS ###
-        self.add_selection_button = ttk.Button(self.main_frame,
+        self.add_selection_button = ttk.Button(self.selection_page,
             text="Add Selected", command=self.add_selected)
         self.add_selection_button.grid(row=2, column=1)
 
-        self.add_all_button = tk.Button(self.main_frame, text="Add All",
+        self.add_all_button = tk.Button(self.selection_page, text="Add All",
             command=self.add_all, bg='#2832c2', fg='#000000')
         self.add_all_button.grid(row=2, column=2)
 
-        self.remove_selection_button = ttk.Button(self.main_frame,
+        self.remove_selection_button = ttk.Button(self.selection_page,
             text="Remove Selected", command=self.remove_selected)
         self.remove_selection_button.grid(row=2, column=3)
 
-        self.remove_all_button = tk.Button(self.main_frame, text="Remove All",
+        self.remove_all_button = tk.Button(self.selection_page, text="Remove All",
             command=self.remove_all, bg='#2832c2', fg='#000000')
         self.remove_all_button.grid(row=2, column=4)
 
         ### FILTERING ###
         # add a button to remove all filtering
-        self.reset_filter_button = ttk.Button(self.main_frame,
+        self.reset_filter_button = ttk.Button(self.selection_page,
             text="Reset filters", command=self.reset_filter)
         self.reset_filter_button.grid(row=3, column=4)
 
@@ -109,7 +121,7 @@ class MapDA:
         self.filter_list = [''] + cols.to_list()
 
         self.filter_var = tk.StringVar()
-        self.filter_optionmenu = ttk.OptionMenu(self.main_frame,
+        self.filter_optionmenu = ttk.OptionMenu(self.selection_page,
             self.filter_var, self.filter_list[0], *self.filter_list,
             command=self.display_filter_options) #TODO: set command , command=None)
         self.filter_optionmenu.config(width=10)
@@ -118,25 +130,25 @@ class MapDA:
         # get actual options for filter
         self.filter_options = ['']
         self.filter_option_var = tk.StringVar()
-        self.filteroptions_optionmenu = ttk.OptionMenu(self.main_frame,
+        self.filteroptions_optionmenu = ttk.OptionMenu(self.selection_page,
             self.filter_option_var, self.filter_options[0],
             *self.filter_options, command=self.apply_filter) # TODO: fix command to actually show the filtered files (why doesn't this work?)
         self.filteroptions_optionmenu.config(width=15)
         self.filteroptions_optionmenu.grid(row=3, column=2)
 
         # add button to actually apply selected filter
-        self.apply_button = ttk.Button(self.main_frame,
+        self.apply_button = ttk.Button(self.selection_page,
             text="Apply filter", command=self.apply_filter)
         self.apply_button.grid(row=3, column=3)
 
         # add label for second treeview
-        self.queue_label = ttk.Label(self.main_frame,
+        self.queue_label = ttk.Label(self.selection_page,
             text='Files to be plotted:')
         self.queue_label.configure(font=("TkDefaultFont", 20, "bold"))
         self.queue_label.grid(row=4, column=0, sticky='w')
 
         # add second treeview with selected files to be plotted
-        self.selection_preview_frame = ttk.Frame(self.main_frame)
+        self.selection_preview_frame = ttk.Frame(self.selection_page)
         self.selection_preview_frame.grid(row=5, column=0, columnspan=6,
             sticky=tk.NSEW, padx=15)
         self.selection_preview_frame.columnconfigure(0, weight=1)
@@ -149,9 +161,14 @@ class MapDA:
         # add rows to tree from the dataframe (the file log)
         self.update_tree(self.selection_preview_tree, self.to_plot_list)
 
-    def create_tree(self, frame):
+        # TODO: connect command to navigate to plot screen
+        self.plot_button = ttk.Button(self.selection_page, text="Plot",
+            style="main.TButton")
+        self.plot_button.grid(row=6, column=3, rowspan=2, columnspan=2)
+
+    def create_tree(self, frame, ht=10):
         cols = self.df.columns[1:-2]
-        tree = ttk.Treeview(frame, columns=tuple(cols))
+        tree = ttk.Treeview(frame, columns=tuple(cols), height=ht)
         tree.column('#0', width=120)
         tree.heading('#0', text='File-name')
 
@@ -203,7 +220,7 @@ class MapDA:
 
         # update the selection preview tree
         self.update_tree(self.selection_preview_tree, self.to_plot_list)
-
+        self.update_tree(self.file_list_tree, self.to_plot_list)
 
     def remove_selected(self):
         selected_items = self.full_file_tree.selection()
@@ -220,6 +237,7 @@ class MapDA:
 
         # update the selection preview tree
         self.update_tree(self.selection_preview_tree, self.to_plot_list)
+        self.update_tree(self.file_list_tree, self.to_plot_list)
 
     def add_all(self):
         # add all shown files to the to_plot_list
@@ -231,7 +249,7 @@ class MapDA:
 
         # update the selection preview tree
         self.update_tree(self.selection_preview_tree, self.to_plot_list)
-
+        self.update_tree(self.file_list_tree, self.to_plot_list)
 
     def remove_all(self):
         # remove all shown files from the to_plot_list
@@ -243,6 +261,7 @@ class MapDA:
 
         # update the selection preview tree
         self.update_tree(self.selection_preview_tree, self.to_plot_list)
+        self.update_tree(self.file_list_tree, self.to_plot_list)
 
     #TODO: fix the sort so that if they're numerical, then the sort by numbers
     def display_filter_options(self, event):
@@ -290,6 +309,72 @@ class MapDA:
         self.update_tree(self.full_file_tree, self.filtered_list,
             highlight=True)
 
+    def create_plot_page(self):
+        # add a label
+        self.plot_label = ttk.Label(self.plot_page, text="Magic Plotter")
+        self.plot_label.configure(font=("TkDefaultFont", 20, "bold"))
+        self.plot_label.grid(row=0, column=0, sticky='w')
 
-app = MapDA()
+        self.plot_type_label = ttk.Label(self.plot_page, text="Select plot type:")
+        self.plot_type_label.grid(row=0, column=3, sticky='e')
+
+        # TODO: create dropdown menu to select plot type
+        self.plot_types = ['Time vs. Lux', 'Concentration vs. Change in lux',
+            'Trial Number vs. Lux range']
+        self.plot_type_var = tk.StringVar()
+        self.plot_type_menu = ttk.OptionMenu(self.plot_page, self.plot_type_var,
+            self.plot_types[0], *self.plot_types, command=self.set_plot_type)
+        self.plot_type_menu.config(width=20)
+        self.plot_type_menu.grid(row=0, column=4, columnspan=2)
+
+        # add treeview with selected files to be plotted
+        self.file_list_frame = ttk.Frame(self.plot_page)
+        self.file_list_frame.grid(row=1, column=0, columnspan=6,
+            sticky=tk.NSEW, padx=15)
+        self.file_list_frame.columnconfigure(0, weight=1)
+        self.file_list_frame.rowconfigure(0, weight=1)
+
+        # create treeview to see selected files
+        self.file_list_tree = self.create_tree(self.file_list_frame, ht=5)
+        self.update_tree(self.file_list_tree, self.to_plot_list)
+
+        # TODO: add scrollbar to treeview
+
+
+
+        # create frame for plot
+        self.canvas_frame = ttk.Frame(self.plot_page)
+        self.canvas_frame.grid(row = 2, column=2, rowspan=6, columnspan=5,
+            sticky=tk.NSEW, pady=15, padx=15)
+        #self.canvas_frame.columnconfigure(0, weight=1)
+        #self.canvas_frame.rowconfigure(0, weight=1)
+
+        fig = Figure(figsize=(3, 3), dpi=100)
+
+        # create FigureCanvasTkAgg object
+        figure_canvas = FigureCanvasTkAgg(fig, self.canvas_frame)
+
+        # create the toolbar
+        #toolbar = NavigationToolbar2Tk(figure_canvas, self.canvas_frame)
+        #toolbar.update()
+
+        axes = fig.add_subplot()
+
+        # create the barchart
+        axes.plot([0, 1, 2, 3, 4, 5], [5, 4, 3, 2, 1, 0])
+        axes.set_title('test')
+        axes.set_ylabel('y axis')
+
+        figure_canvas.get_tk_widget().pack(side=tk.LEFT, fill=tk.BOTH,
+            expand=True)
+        #pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        #grid(row=0, column=2, sticky="nsew")#
+        #figure_canvas.columnconfigure(0, weight=1)
+        #figure_canvas.rowconfigure(0, weight=1)
+
+    def set_plot_type(self, event):
+        self.plot_type = self.plot_type_var.get()
+
+
+app = MapDAP()
 app.run()
