@@ -32,10 +32,13 @@ class MapDAP:
         self.selection_page = ttk.Frame(self.notebook, padding="3 3 12 12")
         self.notebook.add(self.selection_page, text="Selection")
 
-        # TODO: fix second frame
-        # add second dummy tab right now
+        # TODO: finish plotting frame
         self.plot_page = ttk.Frame(self.notebook, padding="3 3 12 12")
         self.notebook.add(self.plot_page, text="Plotter")
+
+        # TODO: fnish analysis code
+        self.mag_page = ttk.Frame(self.notebook, padding="3 3 12 12")
+        self.notebook.add(self.mag_page, text="Analysis")
 
         self.notebook.pack(expand=1, fill="both")
 
@@ -59,6 +62,7 @@ class MapDAP:
         # create things
         self.create_file_selection_page()
         self.create_plot_page()
+        self.create_mag_page()
 
         self.plot_type = 'Time vs. Lux'
         self.plotter = Plotter(self.fig)
@@ -168,7 +172,7 @@ class MapDAP:
 
         # TODO: connect command to navigate to plot screen
         self.plotter_button = ttk.Button(self.selection_page, text="Plot",
-            style="main.TButton")
+            style="main.TButton", command=self.change_to_plot_page)
         self.plotter_button.grid(row=6, column=3, rowspan=2, columnspan=2)
 
     def create_tree(self, frame, ht=10):
@@ -322,7 +326,7 @@ class MapDAP:
         self.plot_label.grid(row=0, column=0, sticky='w')
 
         self.plot_type_label = ttk.Label(self.plot_page, text="Select plot type:")
-        self.plot_type_label.grid(row=0, column=3, sticky='e')
+        self.plot_type_label.grid(row=0, column=2, sticky='e')
 
         # TODO: create dropdown menu to select plot type
         self.plot_types = ['Time vs. Lux', 'Concentration vs. Change in lux',
@@ -331,7 +335,7 @@ class MapDAP:
         self.plot_type_menu = ttk.OptionMenu(self.plot_page, self.plot_type_var,
             self.plot_types[0], *self.plot_types, command=self.set_plot_type)
         self.plot_type_menu.config(width=20)
-        self.plot_type_menu.grid(row=0, column=4, columnspan=2)
+        self.plot_type_menu.grid(row=0, column=3, columnspan=2)
 
         # add treeview with selected files to be plotted
         self.file_list_frame = ttk.Frame(self.plot_page)
@@ -354,7 +358,7 @@ class MapDAP:
         # create button to plot things
         self.plot_button = ttk.Button(self.plot_page, text="Plot!",
             command=self.generate_plot)
-        self.plot_button.grid(row=2, column=0, columnspan=2)
+        self.plot_button.grid(row=0, column=5, columnspan=2)
 
         # create frame for plot
         self.canvas_frame = ttk.Frame(self.plot_page)
@@ -363,6 +367,7 @@ class MapDAP:
         #self.canvas_frame.columnconfigure(0, weight=1)
         #self.canvas_frame.rowconfigure(0, weight=1)
 
+        #TODO: fix why won't this show the whole plot??
         self.fig = Figure(figsize=(4, 3), dpi=150)
 
         # create FigureCanvasTkAgg object
@@ -381,21 +386,56 @@ class MapDAP:
 
         self.figure_canvas.get_tk_widget().pack(side=tk.LEFT, fill=tk.BOTH,
             expand=True)
-        #pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        #grid(row=0, column=2, sticky="nsew")#
-        #figure_canvas.columnconfigure(0, weight=1)
-        #figure_canvas.rowconfigure(0, weight=1)
+
+        self.save_button = ttk.Button(self.plot_page, text="Save",
+            command = self.save_fig)
+        self.save_button.grid(row=2, column=0)
+
+    def change_to_plot_page(self):
+        self.generate_plot() # generate plot for selected files
+        self.notebook.select(1) # actually change notebook tab
 
     def set_plot_type(self, event):
         self.plot_type = self.plot_type_var.get()
+        print("changed plot type to " + self.plot_type)
 
     def generate_plot(self):
-        #self.axes.clear()
         if self.plot_type == 'Time vs. Lux':
             self.fig = self.plotter.plot_light_curve(self.fm,
                 baseline_correction=True)
         self.figure_canvas.draw()
         print("canvas redrawn")
+
+    def save_fig(self):
+        self.fig.savefig('plot.svg', format='svg', dpi=1200)
+
+    def create_mag_page(self):
+        # add a label
+        self.analysis_label = ttk.Label(self.mag_page,
+            text="Magnetic Analysis")
+        self.analysis_label.configure(font=("TkDefaultFont", 20, "bold"))
+        self.analysis_label.grid(row=0, column=0, sticky='w')
+
+        self.magnet_label = ttk.Label(self.mag_page,
+            text="Select magnet size:")
+        self.magnet_label.grid(row=1, column=0, sticky='w')
+
+        self.mag_types = ['3/8th inch: THE BIG KAHUNA',
+            '1/4th inch: The Kahuna',
+            '3/16th inch: the little kahuna']
+        self.mag_type_var = tk.StringVar()
+        self.mag_type_menu = ttk.OptionMenu(self.mag_page,
+            self.mag_type_var, self.mag_types[0], *self.mag_types,
+            command=self.set_mag_type)
+        self.mag_type_menu.config(width=20)
+        self.mag_type_menu.grid(row=1, column=1, columnspan=2)
+
+    # TODO: write this function
+    def set_mag_type(self, event):
+        pass
+        self.magnet_type = self.mag_type_var.get()
+        # TODO: magnetic field fit
+
 
 app = MapDAP()
 app.run()

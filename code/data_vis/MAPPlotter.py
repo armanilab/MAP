@@ -6,6 +6,9 @@ from matplotlib.figure import Figure
 import pandas as pd
 import math
 from statistics import mean
+from matplotlib import rcParams
+
+rcParams.update({'figure.autolayout': True})
 
 BASELINE_PTS = 100 # number of datapoints used for baseline
 CONC_PTS = 100 # number of datapoints averaged to calculate change in light transmission for concentration curve
@@ -42,6 +45,7 @@ class Plotter:
         selection = file_manager.get_plot_list()
         ax = self.fig.axes[0]
         ax.clear()
+        plt.tight_layout()
 
         # load selected data from dataframe
         data_dict = file_manager.load_data()
@@ -95,4 +99,4 @@ class Plotter:
             ax.legend()
 
         print("Plotted!")
-        return self.fig
+        plt.tight_layout()
