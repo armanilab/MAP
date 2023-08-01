@@ -623,4 +623,4 @@ def plot_concentration_curve(df, sample_dict, selection):
     plt.show()
 
 
-#main()
+main()

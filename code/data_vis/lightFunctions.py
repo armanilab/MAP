@@ -15,7 +15,7 @@ import numpy as np
 
    4) Create a funciton which, given some input values produces
    	  a light curve that matches the shape of log(1/T)
-	
+
    5) use a fit to determine fit params of the fit function
 
    6) From the fit params, determine alpha, beta, and supsequently
@@ -57,7 +57,7 @@ def alpha(S1, S2):
 def beta(S1, S2):
    '''Holds the value of magnetic suseptability. Comprised
    of fit params S1/S2'''
-   
+
    return S1*S2
 
 def mag_sus(p, mfs, S1, S2):
@@ -71,8 +71,12 @@ def mag_sus(p, mfs, S1, S2):
 #Data adjustment##############################################
 def matchEXP(T):
    # T_alt = T*1.44e-6
-   
+
    return np.log(1/T)   #np.log10(max(T_alt)/T_alt)
+
+def trunc_low(low, x, y):
+    high = x[-1]
+    return trunc(low, high, x, y)
 
 def trunc(low, high, x, y):
    '''Takes high and low inputs and truncates an array
@@ -88,14 +92,14 @@ def trunc(low, high, x, y):
 
    return x[indx], y[indx]
 
-def dataAdj(x, y):
-   '''takes the starting points and adusts it at point 
+def set_data_origin(x, y):
+   '''takes the starting points and adjusts it at point
       (0,0)'''
 
    if len(x)!=len(y):
-      print("Array sizes do not match")   
+      print("Array sizes do not match")
 
-   x_trans = x[0] 
+   x_trans = x[0]
    y_trans = y[0]
 
    x_new = x-x_trans

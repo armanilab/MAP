@@ -23,13 +23,13 @@ class MagFieldFit:
         self.W = 0.0254 #1 inch in m
         self.T = 0.009525 #3/8th inch in m (thickness)
         self.density = 5240 #Intrinsic material density
-        
+
     def get_sensor_pos(self):
         return self.sensor_pos
-    
+
     def get_magnet_Dim(self):
         return "Length: {} Width: {} Thickness: {}".format(self.L, self.W, self.T)
-    
+
     def get_magFitParams(self):
         #Creating mag field based on K&J Magnets, Inc. specs.
         B_s = lf.B_field(self.z, self.B_r, self.L, self.W, self.T)
@@ -63,6 +63,7 @@ class ParamGuesser:
 
         total_iters = len(s1_iter)*len(s2_iter)
         testFile = self.fileNames[random.randint(0, len(self.fileNames)-1)]
+        print("parameters picked based on: " + testFile)
 
         #Determine fit params for light curves#########
         filecp = codecs.open(self.path+"/{}".format(testFile), encoding = 'cp1252')
@@ -72,9 +73,9 @@ class ParamGuesser:
 
         if np.any(T_T <= 0):
             print("Negative values detected in a dataset! Thats no good, mate.\nHere is the problem child: "+name)
-    
+
         T_RAWlog = lf.matchEXP(T_T)
-        t_F, T_logF = lf.dataAdj(t_T, T_RAWlog)
+        t_F, T_logF = lf.set_data_origin(t_T, T_RAWlog)
 
         def transmOmega(t, eps, S1, S2):
             Omega = T_logF[-1]
@@ -94,7 +95,7 @@ class ParamGuesser:
                 guesses = eps, s1, s2
 
                 (poptG, pcovG) = curve_fit(transmOmega, t_F, T_logF, p0=guesses, maxfev=10000, bounds=(-np.inf,np.inf))
-            
+
                 meanVar = np.mean(np.diag(pcovG))
                 meanMatrix[count] = [j, k, abs(meanVar)]
 
@@ -128,10 +129,10 @@ class ParamGuesser:
         plots_folder = "Fits"
         datatxt_folder = "Fits_txt_data"
         if os.path.exists(plots_folder) != True:
-            os.mkdir(plots_folder) 
+            os.mkdir(plots_folder)
 
         if os.path.exists(datatxt_folder) != True:
-            os.mkdir(datatxt_folder) 
+            os.mkdir(datatxt_folder)
         ###################################################################
 
         #allocating arrays to store data later
@@ -151,15 +152,19 @@ class ParamGuesser:
 
             #Determine fit params for light curves#########
             filecp = codecs.open(self.path+"/{}".format(name), encoding = 'cp1252')
-            t_raw, T_raw = np.loadtxt(filecp, skiprows=3, delimiter=None,unpack=True)
+            print(self.path+"/{}".format(name))
+            #t_raw, T_raw = np.loadtxt(filecp, skiprows=3, delimiter=None,unpack=True)
+            data = np.genfromtxt(self.path+"/{}".format(name))
+            t_raw = data[:, 0]
+            T_raw = data[:, 1]
 
             t_T, T_T = lf.trunc(minTrunc, maxTrunc, t_raw, T_raw)
-    
+
             if np.any(T_T <= 0):
                 print("Negative values detected in a dataset! Thats no good, mate.\nHere is the problem child: "+name)
-            
+
             T_RAWlog = lf.matchEXP(T_T)
-            t_F, T_logF = lf.dataAdj(t_T, T_RAWlog)
+            t_F, T_logF = lf.set_data_origin(t_T, T_RAWlog)
 
             def transmOmega(t, eps, S1, S2):
                 Omega = T_logF[-1]
@@ -245,18 +250,4 @@ class ParamGuesser:
         plt.show()
         ################################################
 
-        return None   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        return None

@@ -1,10 +1,11 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 import pandas as pd
-from data_vis import *
+#from data_vis import *
 import numpy as np
 from FileManagerClass import FileManager
 from MAPPlotter import Plotter
+from MAPAnalyzer import Analyzer
 
 import matplotlib
 matplotlib.use('TkAgg')
@@ -20,7 +21,7 @@ class MapDAP:
     def __init__(self):
         # create the main window
         self.root = tk.Tk()
-        self.root.title("MAPDA")
+        self.root.title("MAP-DAP")
         self.root.columnconfigure(0, weight=1) # vertical rescaling
         self.root.rowconfigure(0, weight=1) # horizontal rescaling
 
@@ -62,10 +63,14 @@ class MapDAP:
         # create things
         self.create_file_selection_page()
         self.create_plot_page()
+
+        self.analyzer = Analyzer()
         self.create_mag_page()
 
         self.plot_type = 'Time vs. Lux'
         self.plotter = Plotter(self.fig)
+
+
 
     def run(self):
         self.root.mainloop()
@@ -402,7 +407,9 @@ class MapDAP:
     def generate_plot(self):
         if self.plot_type == 'Time vs. Lux':
             self.fig = self.plotter.plot_light_curve(self.fm,
-                baseline_correction=True)
+                baseline_correction=False)
+        elif self.plot_type == 'Concentration vs. Change in lux':
+            self.fig = self.plotter.plot_concentration_curve(self.fm)
         self.figure_canvas.draw()
         print("canvas redrawn")
 
@@ -430,11 +437,17 @@ class MapDAP:
         self.mag_type_menu.config(width=20)
         self.mag_type_menu.grid(row=1, column=1, columnspan=2)
 
+        self.analyze_button = ttk.Button(self.mag_page, text="Analyze!", command=self.start_analysis)
+        self.analyze_button.grid(row=2, column=0, columnspan=2)
+
     # TODO: write this function
     def set_mag_type(self, event):
         pass
         self.magnet_type = self.mag_type_var.get()
         # TODO: magnetic field fit
+
+    def start_analysis(self):
+        self.analyzer.analyze(self.fm)
 
 
 app = MapDAP()

@@ -103,7 +103,7 @@ class FileManager:
             data = np.genfromtxt(file_path)
 
             # create dictionary for this file
-            file_dict['file-path'] = file_path
+            file_dict['file_path'] = file_path
             file_dict['time_data'] = data[:, 0]
             file_dict['lux_data'] = data[:, 1]
 
@@ -112,6 +112,7 @@ class FileManager:
             file_dict['system'] = row['System']
             file_dict['magnet'] = row['Magnet']
             file_dict['sample'] = row['Sample'] # sample label
+            file_dict['date'] = row['Date']
 
             # get info about the sample
             sample = self.sample_dict[file_dict['sample']] # get info for this sample
