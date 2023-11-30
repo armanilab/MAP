@@ -71,7 +71,8 @@ def mag_sus(p, mfs, S1, S2):
 #Data adjustment##############################################
 def matchEXP(T):
    # T_alt = T*1.44e-6
-
+   # todo: change 1 to avg value for the water to account for sensor units
+   # T is the illuminance (lumens/unit area)
    return np.log(1/T)   #np.log10(max(T_alt)/T_alt)
 
 def trunc_low(low, x, y):

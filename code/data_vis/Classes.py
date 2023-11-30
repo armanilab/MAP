@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 class MagFieldFit:
 
-    def __init__(self, B_r):
+    def __init__(self, B_r, t):
         self.B_r = B_r
         self.sensor_pos = 0.015115
         self.sensor_w = 0.001
@@ -21,7 +21,7 @@ class MagFieldFit:
         #magnet dimensions in meters
         self.L = 0.0254 #1 inch in m
         self.W = 0.0254 #1 inch in m
-        self.T = 0.009525 #3/8th inch in m (thickness)
+        self.T = t
         self.density = 5240 #Intrinsic material density
 
     def get_sensor_pos(self):
@@ -67,10 +67,14 @@ class ParamGuesser:
 
         #Determine fit params for light curves#########
         filecp = codecs.open(self.path+"/{}".format(testFile), encoding = 'cp1252')
-        t_raw, T_raw = np.loadtxt(filecp, skiprows=3, delimiter=None,unpack=True)
+        #t_raw, T_raw = np.loadtxt(filecp, skiprows=3, delimiter=None,unpack=True)
+        data = np.genfromtxt(self.path+"/{}".format(testFile))
+        t_raw = data[:, 0]
+        T_raw = data[:, 1]
 
         t_T, T_T = lf.trunc(minTrunc, maxTrunc, t_raw, T_raw)
 
+        print('last lux: ' + str(T_T[-1]))
         if np.any(T_T <= 0):
             print("Negative values detected in a dataset! Thats no good, mate.\nHere is the problem child: "+name)
 
@@ -84,6 +88,7 @@ class ParamGuesser:
         # meanVarArray = np.zeros(total_iters)
         meanMatrix = np.zeros((total_iters, 3))
         omega = T_logF[-1]
+        print("omega: " + str(omega))
 
         print("\n")
         j=0
@@ -110,6 +115,8 @@ class ParamGuesser:
         S2g = s2_iter[int(S2_gIndx)]
         epsg = S2g*omega/(S1g-S2g)
         guessArray = [epsg, S1g, S2g]
+
+        print("guessArray")
 
         return guessArray
 
@@ -186,6 +193,11 @@ class ParamGuesser:
             X_array[i] = X
             S1_array[i] = S1
             S2_array[i] = S2
+            print("X: " + str(X))
+            print("eps: " + str(eps))
+            print("delta 1: " + str(S1))
+            print("delta 2: " + str(S2))
+            print("omega: " + str(omega))
 
             file.write(name+"\t{:.2}\t\t{:.2}\t\t{:.2}\t\t{:.2}\t\t{:.2}\n".format(X, *popt, omega))
 

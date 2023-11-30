@@ -3,7 +3,7 @@ from Classes import MagFieldFit, ParamGuesser
 
 
 
-'''This code is to be run by students running the iron oxide 
+'''This code is to be run by students running the iron oxide
 nanoparticle characterization lab. The structure of the code is as follows:
 	1) Commandline prompt asking for sized magnet used in anaysis
 	2) name of the folder containing the data
@@ -17,22 +17,25 @@ magSize = input("Please select the size magnet used in the analysis:\n[a]\t3/8 i
 
 if magSize == 'a':
 	print("You selected the 3/8th inch magnet: The BIG KAHUNA.\n")
-	B_r = 1.48 #Tesla
+	B_r = 1.32 #Tesla
+	t = 3 / 8 * 0.0254 # in -> m
 	magnet = "3/8"
 elif magSize == 'b':
 	print("You selected the 1/4th inch magnet: The KAHUNA.\n")
-	B_r = 1.48 #Tesla
+	B_r = 1.32 #Tesla
+	t = 1 / 4 * 0.0254 # in -> m
 	magnet = "1/4"
 elif magSize == 'c':
 	print("You slected the 3/16th inch magnet: The Little Kahuna.\n")
 	B_r = 1.32 #Tesla
+	t = 3 / 16 * 0.0254 # in -> m
 	magnet = "3/16"
 else:
 	print("ERROR: Invalid entry. Please enter either 'a', 'b', or 'c'.")
 	print("Rerun the program and try again.\n")
 
 
-B_fieldFit = MagFieldFit(B_r)
+B_fieldFit = MagFieldFit(B_r, t)
 magFieldParams = B_fieldFit.get_magFitParams()
 
 # print("Magnetic Fit Parameters: A = {}\tb = {}".format(*magFieldParams))
@@ -51,7 +54,7 @@ if trunctionNeed == "a":
 	minTrunc = truncation_min
 	maxTrunc = truncation_max
 
-else: 
+else:
 	print("Alrighty then... Mr. 'Perfect data'. No wonder why mother loved you more.\n")
 	timeLenData = float(input("Atleast tell me how much time you ran your samples (seconds):\n"))
 	minTrunc = 0
@@ -66,10 +69,3 @@ print(g)
 # guessesTest = np.array([-1.3e-06, -4e+03, -0.0039])
 
 results = paramGuesses.analyze(minTrunc, maxTrunc, g, magFieldParams)
-
-
-
-
-
-
-

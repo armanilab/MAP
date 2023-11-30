@@ -50,6 +50,7 @@ class MapDAP:
         # save the data file
 
         self.file = "../../../../test_data/paper_data/MAP_test_log_data.xlsx"
+        #self.file = "../../../../test_data/MAP_test_log_slit.xlsx"
         self.fm = FileManager(self.file)
 
         self.df = self.fm.get_df()

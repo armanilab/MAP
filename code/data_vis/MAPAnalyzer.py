@@ -14,13 +14,13 @@ from tqdm import tqdm
 
 # res - data resolution
 class Analyzer:
-    def __init__(self, res=1000, baseline_time = 15):
+    def __init__(self, res=1000, start_time=15):
         self.sensor_pos = 0.015115
         self.sensor_w = 0.001
         self.res = res
         self.z = np.linspace(self.sensor_pos-self.sensor_w,
             self.sensor_pos+self.sensor_w, self.res)
-        self.start_time = baseline_time
+        self.start_time = start_time
 
         # TODO: this doesn't really belong here like this
         self.density = 5240 # intrinsic material density of the nanomaterial being analyzed
@@ -43,9 +43,9 @@ class Analyzer:
 
         # default magnets - from K&J magnets
         #TODO: add part numbers
-        self.add_magnet('3', '3/8" - THE BIG KAHUNA', 1.48,
+        self.add_magnet('3', '3/8" - THE BIG KAHUNA', 1.32,
             [0.0254, 0.0254, 0.009525])
-        self.add_magnet('2', '1/4" - The Kahuna', 1.48,
+        self.add_magnet('2', '1/4" - The Kahuna', 1.32,
             [0.0254, 0.0254, 0.006350])
         self.add_magnet('1', '3/16" - the little kahuna', 1.32,
             [0.0254, 0.0254, 0.0047625])
@@ -124,7 +124,7 @@ class Analyzer:
     def print_groups(self, fg_keys, file_groups):
         for ki in range(len(fg_keys)):
             k = fg_keys[ki]
-            print(k[0] + ", " + k[1] + ": " + str(file_groups[ki]))
+            print(k[0] + ", " + k[1] + ", " + k[2] + ": " + str(file_groups[ki]))
 
     # fg = list of file names
     def fit_file_group(self, data_dict, fg_k, fg):
@@ -184,6 +184,7 @@ class Analyzer:
 
         # define omega as the final lux value
         omega = lux[-1]
+        print("omega: " + str(omega))
 
         # keep track of the mean values
         mean_matrix = np.zeros((total_iters, 3))
@@ -203,7 +204,7 @@ class Analyzer:
 
                 # fit the curve
                 (poptG, pcovG) = curve_fit(transmOmega, time, lux,
-                    p0=guesses, maxfev=10000, bounds=(-np.inf,np.inf))
+                    p0=guesses, maxfev=10000, bounds=(-np.inf, np.inf))
 
                 # save the values
                 mean_var = np.mean(np.diag(pcovG))
@@ -212,7 +213,10 @@ class Analyzer:
                 # increment counting variables
                 k += 1
                 count += 1
+            print(".", end="")
             j += 1
+
+        print("\niterated " + str(count) + " times")
 
         # extract just the means from the saved data
         mean_var_array = lf.column(mean_matrix, 2)
@@ -227,6 +231,7 @@ class Analyzer:
         epsg = s2g * omega / (s1g - s2g) # calculate epsilon
 
         guess_array = [epsg, s1g, s2g] # compile guesses
+        print(guess_array)
         return guess_array
 
     def analyze_file(self, time_raw, lux_raw, guesses, A, b, density):
