@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 class MagFieldFit:
 
-    def __init__(self, B_r):
+    def __init__(self, B_r, t=0.009525):
         self.B_r = B_r
         self.sensor_pos = 0.015115
         self.sensor_w = 0.001
@@ -23,8 +23,10 @@ class MagFieldFit:
         #magnet dimensions in meters
         self.L = 0.0254 #1 inch in m
         self.W = 0.0254 #1 inch in m
-        self.T = 0.009525 #3/8th inch in m (thickness)
+        #self.T = 0.009525
+        self.T = t #3/8th inch in m (thickness)
         #self.density = 5150 #Intrinsic material density
+        print("magnet thickness: " + str(self.T))
 
     def get_sensor_pos(self):
         return self.sensor_pos
@@ -79,12 +81,12 @@ class ParamGuesser:
         t_F, T_logF = lf.dataAdj(t_T, T_RAWlog)
 
         def transmOmega(t, eps, S1, S2):
-            Omega = T_logF[-1]
+            Omega = np.mean(T_logF[-101:-1])
             return lf.transm(t, eps, S1, S2, Omega)
 
         # meanVarArray = np.zeros(total_iters)
         meanMatrix = np.zeros((total_iters, 3))
-        omega = np.mean(T_logF[-100:-1])
+        omega = np.mean(T_logF[-101:-1])
 
         print("\n")
         j=0
@@ -150,6 +152,7 @@ class ParamGuesser:
         for i, name in enumerate(self.fileNames):
             fileCount+=1
             print("File {}/{}".format(fileCount, numFiles))
+            print(name)
 
             #Determine fit params for light curves#########
             filecp = codecs.open(self.path+"/{}".format(name), encoding = 'cp1252')
@@ -164,10 +167,10 @@ class ParamGuesser:
             t_F, T_logF = lf.dataAdj(t_T, T_RAWlog)
 
             def transmOmega(t, eps, S1, S2):
-                Omega = T_logF[-1]
+                Omega = np.mean(T_logF[-101:-1])
                 return lf.transm(t, eps, S1, S2, Omega)
 
-            omega = np.mean(T_logF[-100:-1])
+            omega = np.mean(T_logF[-101:-1])
 
 
             (popt, pcov) = curve_fit(transmOmega, t_F, T_logF, p0=guesses, maxfev=10000, bounds=(-np.inf,np.inf))
@@ -183,6 +186,8 @@ class ParamGuesser:
             X_array[i] = X
             S1_array[i] = S1
             S2_array[i] = S2
+
+            print(str(X) + "\t" + str(eps) + "\t" + str(S1) + "\t" + str(S2) + "\t" + str(omega))
 
             file.write(name+"\t{:.2}\t\t{:.2}\t\t{:.2}\t\t{:.2}\t\t{:.2}\n".format(X, *popt, omega))
 
@@ -244,7 +249,7 @@ class ParamGuesser:
         plt.plot(x, normDist/max(normDist), color="purple", label="χ = {:.3}\nσ = {:.3}".format(mu, sigma))
         plt.legend()
         plt.savefig('magSus.png', dpi=100)
-        plt.show()
+        #plt.show()
         ################################################
 
         return None
