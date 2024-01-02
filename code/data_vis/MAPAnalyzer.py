@@ -43,23 +43,56 @@ class Analyzer:
 
         # default magnets - from K&J magnets
         #TODO: add part numbers
-        self.add_magnet('3', '3/8" - THE BIG KAHUNA', 1.32,
-            [0.0254, 0.0254, 0.009525])
-        self.add_magnet('2', '1/4" - The Kahuna', 1.32,
-            [0.0254, 0.0254, 0.006350])
-        self.add_magnet('1', '3/16" - the little kahuna', 1.32,
-            [0.0254, 0.0254, 0.0047625])
+        # self.add_magnet('3', '3/8" - THE BIG KAHUNA', 1.32,
+        #     [0.0254, 0.0254, 0.009525])
+        # self.add_magnet('2', '1/4" - The Kahuna', 1.32,
+        #     [0.0254, 0.0254, 0.006350])
+        # self.add_magnet('1', '3/16" - the little kahuna', 1.32,
+        #     [0.0254, 0.0254, 0.0047625])
+        print("Importing magnets...")
+        path = 'magnets/'
+        for file in os.listdir(path):
+            magnet_dict = self.import_magnet_file(path + file)
+
         print(self.magnets)
 
-    def add_magnet(self, id, name, B_r, dims):
+    def add_magnet(self, id, name, B_r, length, width, thickness):
         # create the magnet object
-        mag = Magnet(name, B_r, dims)
+        mag = Magnet(name, B_r, length, width, thickness)
 
         # calculate magnet fit parameters
         [A, b] = mag.calculate_mag_fit(self.z)
 
         # add the magnet to the dictionary
         self.magnets[id] = {'mag': mag, 'name': name, 'A': A, 'b': b}
+
+    # TODO: finish magnet import
+
+    def import_magnet_file(self, file_name):
+        """Import a single magnet file as a magnet dictionary
+
+        Keyword arguments
+        file_name - string, the name of the file
+          - Any lines without a ':' in the line is ignored as a comment
+        Returns: a dictionary representing the magnet
+        """
+        magnet = {}
+        with open(file_name) as f:
+            for line in f:
+                # check if line is missing a colon - if so, ignore as a comment
+                if ':' not in line:
+                    continue
+
+                (key, val) = line.split(":")
+                # some post processing to remove any extra whitespace
+                key = key.strip()
+                val = val.strip()
+                # add attributes to magnet dictionary
+                magnet[key] = val
+
+        self.add_magnet(magnet['id'], magnet['name'], magnet['B_r'],
+            magnet['length'], magnet['width'], magnet['thickness'])
+
 
     #TODO: write function lol
     def analyze(self, file_manager):
@@ -274,12 +307,12 @@ class Analyzer:
 # B_r in T
 # dims - (length, width, thickness) in [m]
 class Magnet:
-    def __init__(self, name, B_r, dims):
+    def __init__(self, name, B_r, length, width, thickness):
         self.name = name
-        self.B_r = B_r
-        self.L = dims[0]
-        self.W = dims[1]
-        self.T = dims[2]
+        self.B_r = float(B_r)
+        self.L = float(length)
+        self.W = float(width)
+        self.T = float(thickness)
 
     def get_dims_str(self):
         return "Length: {} Width: {} Thickness: {}".format(self.L, self.W,
