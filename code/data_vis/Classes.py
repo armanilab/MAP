@@ -31,6 +31,14 @@ class MagFieldFit:
         return "Length: {} Width: {} Thickness: {}".format(self.L, self.W, self.T)
 
     def get_magFitParams(self):
+        # print test values
+        self.print_mag_field_pt(self.T/2)
+        self.print_mag_field_pt(0.010 - self.T/2)
+        self.print_mag_field_pt(0.015 - self.T/2)
+        self.print_mag_field_pt(0.020 - self.T/2)
+        self.print_mag_field_pt(0.025 - self.T/2)
+        self.print_mag_field_pt(0.030 - self.T/2)
+
         #Creating mag field based on K&J Magnets, Inc. specs.
         B_s = lf.B_field(self.z, self.B_r, self.L, self.W, self.T)
         #Linear curve fit of magnetic field in sampling region
@@ -40,13 +48,16 @@ class MagFieldFit:
 
         return [A, b]
 
+    def print_mag_field_pt(self, point):
+        print("z = " + str(point) + ": " + str(lf.B_field(point, self.B_r, self.L, self.W, self.T)))
+
 
 class ParamGuesser:
 
     def __init__ (self, path):
         self.path = path
         self.fileNames = os.listdir(self.path)
-        self.density = 5240 #5240 #Intrinsic material density
+        self.density = 5240 #5170 #5240 #Intrinsic material density
 
     def get_paramGuesses(self, minTrunc, maxTrunc):
 

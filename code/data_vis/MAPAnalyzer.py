@@ -23,7 +23,7 @@ class Analyzer:
         self.start_time = start_time
 
         # TODO: this doesn't really belong here like this
-        self.density = 5240 # intrinsic material density of the nanomaterial being analyzed
+        self.density = 5150 # intrinsic material density of the nanomaterial being analyzed
 
         # create dict of magnets
         self.magnets = {}
@@ -56,7 +56,15 @@ class Analyzer:
 
         print(self.magnets)
 
+
     def add_magnet(self, id, name, B_r, length, width, thickness):
+        """Add magnet to usable magnet dictionary
+
+        - All keyword arguments are strings representing magnet attributes
+        - Perform linear magnet field fit for the z values representing
+          the sensing window
+        - Add resulting magnet and fit parameters to self.magnets dictionary
+        """
         # create the magnet object
         mag = Magnet(name, B_r, length, width, thickness)
 
@@ -66,7 +74,6 @@ class Analyzer:
         # add the magnet to the dictionary
         self.magnets[id] = {'mag': mag, 'name': name, 'A': A, 'b': b}
 
-    # TODO: finish magnet import
 
     def import_magnet_file(self, file_name):
         """Import a single magnet file as a magnet dictionary
@@ -126,7 +133,10 @@ class Analyzer:
 
 
     def group_files(self, data_dict):
-        print('sorted data:')
+        """Sort and group the files based on sample, concentration, and magnet
+        """
+
+        print('Sorting and grouping data files...')
         # Q: do i actually need to do this step??
         # sort the data given
         sorted_data_dict = sorted(data_dict.items(),
@@ -157,7 +167,8 @@ class Analyzer:
     def print_groups(self, fg_keys, file_groups):
         for ki in range(len(fg_keys)):
             k = fg_keys[ki]
-            print(k[0] + ", " + k[1] + ", " + k[2] + ": " + str(file_groups[ki]))
+            print(k[0] + ", " + k[1] + ", " + k[2] + ": "
+                + str(file_groups[ki]))
 
     # fg = list of file names
     def fit_file_group(self, data_dict, fg_k, fg):
@@ -173,7 +184,7 @@ class Analyzer:
             time = data_dict[file_name]['time_data']
             lux = data_dict[file_name]['lux_data']
             print(file_name)
-            print(self.analyze_file(time, lux, guesses, A, b, self.density))
+            print(self.analyze_file(time, lux, guesses, A, b))
 
 
     def preprocess_data(self, time_raw, lux_raw):
@@ -212,18 +223,19 @@ class Analyzer:
 
         # dimensionality reduction function to help with fitting
         def transmOmega(t, eps, S1, S2):
-            Omega = lux[-1]
+            # set omega as avg of last 100 data points to account for noise
+            Omega = np.mean(lux[-100:])
             return lf.transm(t, eps, S1, S2, Omega)
 
         # define omega as the final lux value
-        omega = lux[-1]
+        omega = np.mean(lux[-100:])
         print("omega: " + str(omega))
 
         # keep track of the mean values
         mean_matrix = np.zeros((total_iters, 3))
 
         print("\n")
-        print("Scanning parameters")
+        print("Scanning parameters...")
         j = 0
         count = 0
         for s1 in s1_iter:
@@ -267,17 +279,17 @@ class Analyzer:
         print(guess_array)
         return guess_array
 
-    def analyze_file(self, time_raw, lux_raw, guesses, A, b, density):
+    def analyze_file(self, time_raw, lux_raw, guesses, A, b):
         # get processed data
         time, lux = self.preprocess_data(time_raw, lux_raw)
 
         # dimensionality reduction function to help with fitting
         def transmOmega(t, eps, S1, S2):
-            Omega = lux[-1]
+            Omega = np.mean(lux[-100:])
             return lf.transm(t, eps, S1, S2, Omega)
 
         # define omega as the final lux value
-        omega = lux[-1]
+        omega = np.mean(lux[-100:])
 
         # fit the curve
         (popt, pcov) = curve_fit(transmOmega, time, lux, p0=guesses,
@@ -289,7 +301,7 @@ class Analyzer:
         # calculate additional model parameters
         alpha = lf.alpha(s1, s2)
         beta = lf.beta(s1, s2)
-        X = lf.mag_sus(density, A, s1, s2)
+        X = lf.mag_sus(self.density, A, s1, s2)
 
         # create a dictionary with the results
         results = {}
