@@ -493,7 +493,7 @@ class MapDAP:
         self.files_frame = self.create_files_frame()
 
     # TODO: create this function
-    def create_analyzed_files_tree(self):
+    def create_files_frame(self):
         # for each file group
             # list the group attributes: magnet, concentration, etc.
             # for each file within the file group
@@ -503,8 +503,15 @@ class MapDAP:
                 # list the chi value
             # or maybe I should essentially make this as a grid of labels and
             # checkboxes?
+        # file keys format: f_key = (f_sample, f_conc, f_magnet)
+        fg_keys = self.analyzer.get_fg_keys()
 
+        # file_groups is a nested list of files - why didn't I make this a dictionary...? I literally have the keys labeled as KEYS smh
+        file_groups = self.analyzer.get_file_groups()
 
+        if fg_keys is not None:
+            for key in fg_keys:
+                pass
 
         return None
 

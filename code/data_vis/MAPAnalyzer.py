@@ -29,15 +29,25 @@ class Analyzer:
         self.magnets = {}
         self.create_magnets_dict()
 
+        # TODO: write a function to retrieve these
+        self.fg_keys = None
+        self.file_groups = None
+
     def update_start_time(self, new_time):
         print("Previous start time: " + str(self.start_time))
-        self.start_time = new_time
+        self.start_time = float(new_time)
         print("New start time: " + str(self.start_time))
 
     def update_density(self, new_density):
         print("Previous density: " + str(self.density))
-        self.density = new_density
+        self.density = float(new_density)
         print("New density: " + str(self.density))
+
+    def get_fg_keys(self):
+        return self.fg_keys
+
+    def get_file_groups(self):
+        return self.file_groups
 
     def create_magnets_dict(self):
         '''Adds the magnets to the Analyzer's dictionary.
@@ -50,14 +60,6 @@ class Analyzer:
                 (order of arguments: Length, Width, Height)
         '''
 
-        # default magnets - from K&J magnets
-        #TODO: add part numbers
-        # self.add_magnet('3', '3/8" - THE BIG KAHUNA', 1.32,
-        #     [0.0254, 0.0254, 0.009525])
-        # self.add_magnet('2', '1/4" - The Kahuna', 1.32,
-        #     [0.0254, 0.0254, 0.006350])
-        # self.add_magnet('1', '3/16" - the little kahuna', 1.32,
-        #     [0.0254, 0.0254, 0.0047625])
         print("Importing magnets...")
         path = 'magnets/'
         for file in os.listdir(path):
@@ -81,8 +83,9 @@ class Analyzer:
         [A, b] = mag.calculate_mag_fit(self.z)
 
         # add the magnet to the dictionary
+        print("mag id: " + str(id))
         self.magnets[id] = {'mag': mag, 'name': name, 'A': A, 'b': b}
-
+        print("Added " + str(self.magnets[id]))
 
     def import_magnet_file(self, file_name):
         """Import a single magnet file as a magnet dictionary
@@ -112,6 +115,9 @@ class Analyzer:
 
     #TODO: write function lol
     def analyze(self, file_manager):
+        #TODO: restructure the file grouping part into a separate function
+        # so that it can be accessed to display files to be analyzed
+
         # get relevant variables from the file manager
         df = file_manager.get_df()
         sample_dict = file_manager.get_sample_dict()
@@ -124,11 +130,16 @@ class Analyzer:
         fg_keys, file_groups = self.group_files(data_dict)
         print("file groups:")
         self.print_groups(fg_keys, file_groups)
-
+        self.fg_keys = fg_keys
+        self.file_groups = file_groups
         # now for each group, actually analyze the samples
-        for ki in range(len(fg_keys)):
-            fg_k = fg_keys[ki]
-            fg = file_groups[ki]
+        # for ki in range(len(fg_keys)):
+        #     fg_k = fg_keys[ki]
+        #     fg = file_groups[ki]
+        for fg_k in fg_keys:
+            fg = file_groups[fg_k]
+            print("key: " + str(fg_k))
+            print("file group: " + str(fg))
 
             #TODO: need to add status updates
             self.fit_file_group(data_dict, fg_k, fg)
@@ -155,7 +166,8 @@ class Analyzer:
         #print(sorted_data_dict)
         # a list where is each entry is a tuple: (file_name, dict)
 
-        file_groups = []
+        #TODO: fix this so that the file_groups is an actual dictionary with KEYS smh
+        file_groups = {}
         fg_keys = []
         fi = -1
         for f in sorted_data_dict:
@@ -167,9 +179,9 @@ class Analyzer:
             if f_key not in fg_keys:
                 fi += 1
                 fg_keys.append(f_key)
-                file_groups.append([])
-                #TODO: fix the line below this
-            file_groups[fi].append(file_name)
+                file_groups[f_key] = []
+
+            file_groups[f_key].append(file_name)
 
         return fg_keys, file_groups
 
@@ -177,12 +189,14 @@ class Analyzer:
         for ki in range(len(fg_keys)):
             k = fg_keys[ki]
             print(k[0] + ", " + k[1] + ", " + k[2] + ": "
-                + str(file_groups[ki]))
+                + str(file_groups[k]))
 
     # fg = list of file names
     def fit_file_group(self, data_dict, fg_k, fg):
         # get the linear fits from the magnet
         mag_id = fg_k[2]
+        print("mag_id: " + str(mag_id))
+        print(type(mag_id))
         A = self.magnets[mag_id]['A']
         b = self.magnets[mag_id]['b']
 
@@ -190,6 +204,7 @@ class Analyzer:
 
         # analyze one file at a time
         for file_name in fg:
+            print(file_name)
             time = data_dict[file_name]['time_data']
             lux = data_dict[file_name]['lux_data']
             print(file_name)

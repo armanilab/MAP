@@ -78,15 +78,14 @@ class FileManager:
     def load_data(self):
         data_dict = {} # the dict with all file data that will be returned
         #DEBUG
-        print("in load data")
         for i in self.plot_list:
-            print("i: " + str(i))
+            #print("i: " + str(i))
             file_dict = {}
 
             # select row from the original log/dataframe
             row = self.df.loc[i]
-            print(row)
-            print("")
+            #print(row)
+            #print("")
 
             # get directory and file name info
             directory = row['File-location']
