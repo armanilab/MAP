@@ -128,7 +128,7 @@ class Plotter:
 
             # use first and last CONC_PTS to calculate the change in lux
             init_lux = mean(l[:CONC_PTS])
-            final_lux = mean(l[-CONC_PTS:])
+            final_lux = mean(l[-(CONC_PTS+1):])
             delta_lux = final_lux - init_lux
 
             trial = int(file_data['trial'])

@@ -16,6 +16,12 @@ from matplotlib.backends.backend_tkagg import (
 from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
 
+# TODO: consider creating each notebook page as a separate class that inherits
+# from the Notebook class??
+# similiar to this maybe? https://stackoverflow.com/questions/31680357/update-frame-on-tab-switch-in-ttk-notebook?rq=4
+# https://stackoverflow.com/questions/44745297/adding-notebook-tabs-in-tkinter-how-do-i-do-it-with-a-class-based-structure
+# each notebook really includes a different frame, so they coul dactually inherit
+# from tk.Frame I think (ex. class SelectionPage(tk.Frame): ...)
 
 class MapDAP:
     def __init__(self):
@@ -424,30 +430,88 @@ class MapDAP:
         self.analysis_label.configure(font=("TkDefaultFont", 20, "bold"))
         self.analysis_label.grid(row=0, column=0, sticky='w')
 
-        self.magnet_label = ttk.Label(self.mag_page,
-            text="Select magnet size:")
-        self.magnet_label.grid(row=1, column=0, sticky='w')
+        self.analysis_frame_label = ttk.Label(self.mag_page,
+            text="Analysis Options")
+        self.analysis_frame_label.configure(font=("TkDefaultFont", 16, "bold"))
+        self.analysis_frame_label.grid(row=1, column=0, columnspan=3, sticky=tk.W)
 
-        self.mag_types = ['3/8th inch: THE BIG KAHUNA',
-            '1/4th inch: The Kahuna',
-            '3/16th inch: the little kahuna']
-        self.mag_type_var = tk.StringVar()
-        self.mag_type_menu = ttk.OptionMenu(self.mag_page,
-            self.mag_type_var, self.mag_types[0], *self.mag_types,
-            command=self.set_mag_type)
-        self.mag_type_menu.config(width=20)
-        self.mag_type_menu.grid(row=1, column=1, columnspan=2)
+        self.analysis_frame = ttk.Frame(self.mag_page, padding="3 3 12 12")
+        #    text="Analysis Options")#, font=("TkDefaultFont", 16, "bold"))
+        self.analysis_frame.grid(row=2, column=0, rowspan=4, columnspan=5,
+            sticky=tk.EW)
 
-        self.analyze_button = ttk.Button(self.mag_page, text="Analyze!", command=self.start_analysis)
-        self.analyze_button.grid(row=2, column=0, columnspan=2)
+        self.analysis_type_label = ttk.Label(self.analysis_frame,
+            text="Analysis Type")
+        self.analysis_type_label.grid(row=0, column=0, columnspan=2)
+        self.analysis_type_var = tk.IntVar()
 
-    # TODO: write this function
-    def set_mag_type(self, event):
-        pass
-        self.magnet_type = self.mag_type_var.get()
-        # TODO: magnetic field fit
+        # individual analysis button
+        self.analysis_type_indiv = ttk.Radiobutton(self.analysis_frame,
+            text="Individual", variable=self.analysis_type_var,
+            value=0)
+        self.analysis_type_indiv.grid(row=0, column=3)
+        # grouped analysis button
+        self.analysis_type_group = ttk.Radiobutton(self.analysis_frame,
+            text="Grouped", variable=self.analysis_type_var,
+            value=1)
+        self.analysis_type_group.grid(row=0, column=4)
+
+        self.density_label = ttk.Label(self.analysis_frame,
+            text="Intrinsic Material Density:")
+        self.density_label.grid(row=1, column=0, columnspan=3)
+
+        # TODO: add validation function to entry
+        self.density_var = tk.StringVar(self.root, "5150")
+        self.density_entry = ttk.Entry(self.analysis_frame,
+            textvariable=self.density_var, justify=tk.LEFT)
+        self.density_entry.grid(row=1, column=3)
+
+        self.density_units_label = ttk.Label(self.analysis_frame,
+            text = "mg/cm^3")
+        self.density_units_label.grid(row=1, column=4, sticky=tk.W)
+
+        # TODO: add validation function to entry
+        self.start_time_label = ttk.Label(self.analysis_frame,
+            text = "Start time:")
+        self.start_time_label.grid(row=2, column=0, columnspan=3)
+
+        self.start_time_var = tk.StringVar(self.root, "0")
+        self.start_time_entry = ttk.Entry(self.analysis_frame,
+            textvariable=self.start_time_var, justify=tk.LEFT)
+        self.start_time_entry.grid(row=2, column=3)
+
+        self.start_time_units_label = ttk.Label(self.analysis_frame,
+            text = "sec")
+        self.start_time_units_label.grid(row=2, column=4, sticky=tk.W)
+
+        self.analyze_button = ttk.Button(self.mag_page, text="Analyze!",
+            command=self.start_analysis)
+        self.analyze_button.grid(row=6, column=0, columnspan=2)
+
+        #TODO: create file list from file groups
+        # use check mark char: u'\u2713' to indicate file selection
+        self.files_frame = self.create_files_frame()
+
+    # TODO: create this function
+    def create_analyzed_files_tree(self):
+        # for each file group
+            # list the group attributes: magnet, concentration, etc.
+            # for each file within the file group
+                # have a blank for column for selected
+                # list the file name
+                # list the trial number
+                # list the chi value
+            # or maybe I should essentially make this as a grid of labels and
+            # checkboxes?
+
+
+
+        return None
 
     def start_analysis(self):
+        print("Starting analysis...")
+        self.analyzer.update_start_time(self.start_time_var.get())
+        self.analyzer.update_density(self.density_var.get())
         self.analyzer.analyze(self.fm)
 
 

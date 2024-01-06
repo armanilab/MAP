@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 # res - data resolution
 class Analyzer:
-    def __init__(self, res=1000, start_time=15):
+    def __init__(self, res=1000, start_time=0):
         self.sensor_pos = 0.015115
         self.sensor_w = 0.001
         self.res = res
@@ -29,6 +29,15 @@ class Analyzer:
         self.magnets = {}
         self.create_magnets_dict()
 
+    def update_start_time(self, new_time):
+        print("Previous start time: " + str(self.start_time))
+        self.start_time = new_time
+        print("New start time: " + str(self.start_time))
+
+    def update_density(self, new_density):
+        print("Previous density: " + str(self.density))
+        self.density = new_density
+        print("New density: " + str(self.density))
 
     def create_magnets_dict(self):
         '''Adds the magnets to the Analyzer's dictionary.
@@ -52,9 +61,9 @@ class Analyzer:
         print("Importing magnets...")
         path = 'magnets/'
         for file in os.listdir(path):
-            magnet_dict = self.import_magnet_file(path + file)
-
-        print(self.magnets)
+            self.import_magnet_file(path + file)
+        print("Successfully imported {} magnets!".format(len(self.magnets.keys())))
+        #print(self.magnets)
 
 
     def add_magnet(self, id, name, B_r, length, width, thickness):
