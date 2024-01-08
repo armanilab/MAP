@@ -9,7 +9,7 @@ import codecs
    lightFunctions.py and analyze the data from MULTIPLE experimentally
    produced light curve data. The comparisions and fits should
    be done using the log(1/T), where T is the raw data output
-   from the experiemnt. The process of analyzing would be as 
+   from the experiemnt. The process of analyzing would be as
    follows:
 	1) import the data from n number of data sets located in a
 	   file labeled "lightData"
@@ -19,7 +19,7 @@ import codecs
 	   the truncated and translated experimental data
 	4) Extract the fit params and determine mag. sus.
 	5) plot the fit and the log(1/T) from the experimental data
-	6) write a txt file with all the information regarding particle, 
+	6) write a txt file with all the information regarding particle,
 	   fluid, and magnetit information (particle type, fluid type,
 	   magnet geometry, mag. sus. value)'''
 
@@ -51,7 +51,7 @@ print("A = {}\nb = {}".format(A, b))
 
 
 ## initial guess for fit function (this will be very important to get right)
-eps = -0.0005 
+eps = -0.0005
 S1 = -1000
 S2 = -0.05#-0.001
 omega = -1 #-1.12
@@ -84,10 +84,10 @@ S2_array = np.zeros(len(X_array))
 plots_folder = "plotsTest"
 datatxt_folder = "txt_data"
 if os.path.exists(plots_folder) != True:
-	os.mkdir(plots_folder) 
+	os.mkdir(plots_folder)
 
 if os.path.exists(datatxt_folder) != True:
-	os.mkdir(datatxt_folder) 
+	os.mkdir(datatxt_folder)
 ###################################################################
 
 
@@ -97,14 +97,14 @@ S2g = np.array([-0.02, -0.04, -0.02])
 ###############Fitting and data allocation############################
 for i, name in enumerate(fileNames):
 	#Determine fit params for light curves#########
-	filecp = codecs.open(path+"/{}".format(name), encoding = 'cp1252')
+	#filecp = codecs.open(path+"/{}".format(name), encoding = 'cp1252')
+    filecp = codecs.open(path+"/{}".format(name), encoding = 'us-ascii')
 	t_raw, T_raw = np.loadtxt(filecp, skiprows=3, delimiter=None,unpack=True)
-	
 	t_T, T_T = lf.trunc(17, 60, t_raw, T_raw)
-	
+
 	if np.any(T_T <= 0):
 		print("your fucked\nHere is the problem child: "+name)
-	
+
 	T_RAWlog = lf.matchEXP(T_T)
 	t_F, T_logF = lf.dataAdj(t_T, T_RAWlog)
 
@@ -119,7 +119,7 @@ for i, name in enumerate(fileNames):
 	print("\n"+name+"\n")
 	###Curve fitting trasm function with EXP data##
 	(popt_T, pcov_T) = curve_fit(lf.transm, t_F, T_logF, p0=[eps, S1, S2, omega], maxfev=10000, bounds=(-np.inf,np.inf))
-	
+
 	#variables are redefined here. Ensure this doesnt cause issues later
 	eps, S1, S2, omega = popt_T
 

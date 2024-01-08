@@ -1,0 +1,6 @@
+id: 0
+name: No magnet
+B_r: 0
+length: 0.0254
+width: 0.0254
+thickness: 0.0047625

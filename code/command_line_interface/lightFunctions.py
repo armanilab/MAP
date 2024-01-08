@@ -15,7 +15,7 @@ import numpy as np
 
    4) Create a funciton which, given some input values produces
    	  a light curve that matches the shape of log(1/T)
-
+	
    5) use a fit to determine fit params of the fit function
 
    6) From the fit params, determine alpha, beta, and supsequently
@@ -25,9 +25,7 @@ import numpy as np
 
 #Magnetic Field###########################################
 def B_field(x, B_r, L, W, T):
-   return (B_r/np.pi) \
-          *(np.arctan((L*W)/(2*x*np.sqrt(4*x**2+L**2+W**2)))\
-            -np.arctan((L*W)/(2*(x+T)*np.sqrt(4*(x+T)**2+L**2+W**2))))
+   return (B_r/np.pi)*(np.arctan((L*W)/(2*x*np.sqrt(4*x**2+L**2+W**2)))-np.arctan((L*W)/(2*(x+T)*np.sqrt(4*(x+T)**2+L**2+W**2))))
 
 def B_LinFit(x, A, b):
    return A*x+b
@@ -35,7 +33,7 @@ def B_LinFit(x, A, b):
 
 #Transmittance############################################
 def transm(t, eps, S1, S2, omega):
-   '''function that models log(1/T) and includes fit params
+   '''funtion that models log(1/T) and includes fit params
    that will give suseptability'''
 
    return eps*(-(S1/S2)*np.exp(S2*t)+np.exp(S1*t)) + omega
@@ -59,7 +57,7 @@ def alpha(S1, S2):
 def beta(S1, S2):
    '''Holds the value of magnetic suseptability. Comprised
    of fit params S1/S2'''
-
+   
    return S1*S2
 
 def mag_sus(p, mfs, S1, S2):
@@ -76,10 +74,6 @@ def matchEXP(T):
    T_m = max(T)
    return np.log10(T_m/T)   #np.log10(max(T_alt)/T_alt)
 
-def trunc_low(low, x, y):
-    high = x[-1]
-    return trunc(low, high, x, y)
-
 def trunc(low, high, x, y):
    '''Takes high and low inputs and truncates an array
       between those values. Here it is used to truncate
@@ -94,14 +88,14 @@ def trunc(low, high, x, y):
 
    return x[indx], y[indx]
 
-def set_data_origin(x, y):
-   '''takes the starting points and adjusts it at point
+def dataAdj(x, y):
+   '''takes the starting points and adusts it at point 
       (0,0)'''
 
    if len(x)!=len(y):
-      print("Array sizes do not match")
+      print("Array sizes do not match")   
 
-   x_trans = x[0]
+   x_trans = x[0] 
    y_trans = y[0]
 
    x_new = x-x_trans

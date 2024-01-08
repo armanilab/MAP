@@ -1,0 +1,6 @@
+id: 3
+name: 3/8" - THE BIG KAHUNA
+B_r: 1.32
+length: 0.0254
+width: 0.0254
+thickness: 0.009525

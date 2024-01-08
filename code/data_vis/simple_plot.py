@@ -42,11 +42,11 @@ for file in file_list:
     data = np.genfromtxt(file_path)
 
     # plot data
-    plt.plot(data[:, 0], data[:, 1], label=file[-10:]) #linestyle='None', marker = '+', markersize=0.25)
+    plt.plot(data[:, 0], data[:, 1]-data[0, 1], label=file[-10:]) #linestyle='None', marker = '+', markersize=0.25)
     ax = plt.subplot(111)
     #ax.legend(loc='center left')
 
-plt.title("Light curve")
+plt.title("MAP Light curve")
 plt.xlabel("Time (s)")
 plt.ylabel("Lux")
 plt.legend(loc='lower right')

@@ -8,7 +8,7 @@ import sys
 import codecs
 from tqdm import tqdm
 
-'''This code is to be run by students running the iron oxide 
+'''This code is to be run by students running the iron oxide
 nanoparticle characterization lab. The structure of the code is as follows:
 	1) Commandline prompt asking for sized magnet used in anaysis
 	2) name of the folder containing the data
@@ -87,10 +87,10 @@ S2_array = np.zeros(len(X_array))
 plots_folder = "Fits"
 datatxt_folder = "Fits_txt_data"
 if os.path.exists(plots_folder) != True:
-	os.mkdir(plots_folder) 
+	os.mkdir(plots_folder)
 
 if os.path.exists(datatxt_folder) != True:
-	os.mkdir(datatxt_folder) 
+	os.mkdir(datatxt_folder)
 ###################################################################
 
 def column(matrix, i):
@@ -110,7 +110,7 @@ if trunctionNeed == "a":
 	minTrunc = truncation_min
 	maxTrunc = truncation_max
 
-else: 
+else:
 	print("Alrighty then... Mr. 'Perfect data'. No wonder why mother loved you more.\n")
 	timeLenData = float(input("Atleast tell me how much time you ran your samples (seconds):\n"))
 	minTrunc = 0
@@ -133,13 +133,13 @@ for i, name in enumerate(fileNames):
 	#Determine fit params for light curves#########
 	filecp = codecs.open(path+"/{}".format(name), encoding = 'cp1252')
 	t_raw, T_raw = np.loadtxt(filecp, skiprows=3, delimiter=None,unpack=True)
-	
+
 
 	t_T, T_T = lf.trunc(minTrunc, maxTrunc, t_raw, T_raw)
-	
+
 	if np.any(T_T <= 0):
 		print("Negative values detected in a dataset! Thats no good, mate.\nHere is the problem child: "+name)
-	
+
 	T_RAWlog = lf.matchEXP(T_T)
 	t_F, T_logF = lf.dataAdj(t_T, T_RAWlog)
 
@@ -163,14 +163,14 @@ for i, name in enumerate(fileNames):
 			guesses = eps, s1, s2
 
 			(poptG, pcovG) = curve_fit(transmOmega, t_F, T_logF, p0=guesses, maxfev=10000, method="dogbox", bounds=(-np.inf,np.inf))
-			
+
 			meanVar = np.mean(np.diag(pcovG))
 			meanMatrix[count] = [j, k, abs(meanVar)]
 
 			k+=1
 			count+=1
 		j+=1
-				
+
 
 
 	meanVarArray = column(meanMatrix, 2)
@@ -221,7 +221,7 @@ for i, name in enumerate(fileNames):
 
 	datFile.close()
 
-	#Here, since we have already scanned the large param space for one set, we can use the same findings 
+	#Here, since we have already scanned the large param space for one set, we can use the same findings
 	#as guesses for the next set so we dont have to constantly scan the entire parameter space
 	s1_iter = np.array([S1])
 	s2_iter = np.array([S2])
@@ -266,8 +266,3 @@ plt.legend()
 plt.savefig('magSus.png', dpi=100)
 plt.show()
 ################################################
-
-
-
-
-
