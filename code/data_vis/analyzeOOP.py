@@ -18,17 +18,17 @@ magSize = input("Please select the size magnet used in the analysis:\n[a]\t3/8 i
 if magSize == 'a':
 	print("You selected the 3/8th inch magnet: The BIG KAHUNA.\n")
 	B_r = 1.32 #Tesla
-	t = 3 / 8 * 0.0254 # in -> m
+	t = 0.009525 # thickness [m]
 	magnet = "3/8"
 elif magSize == 'b':
 	print("You selected the 1/4th inch magnet: The KAHUNA.\n")
 	B_r = 1.32 #Tesla
-	t = 1 / 4 * 0.0254 # in -> m
+	t = 0.00635 # [m]
 	magnet = "1/4"
 elif magSize == 'c':
 	print("You slected the 3/16th inch magnet: The Little Kahuna.\n")
 	B_r = 1.32 #Tesla
-	t = 3 / 16 * 0.0254 # in -> m
+	t = 0.0047625 # [m]
 	magnet = "3/16"
 else:
 	print("ERROR: Invalid entry. Please enter either 'a', 'b', or 'c'.")
@@ -38,7 +38,7 @@ else:
 B_fieldFit = MagFieldFit(B_r, t)
 magFieldParams = B_fieldFit.get_magFitParams()
 
-# print("Magnetic Fit Parameters: A = {}\tb = {}".format(*magFieldParams))
+print("Magnetic Fit Parameters: A = {}\tb = {}".format(*magFieldParams))
 
 
 ###############Locating the Magnetometer Data#########################
