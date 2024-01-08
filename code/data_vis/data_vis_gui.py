@@ -55,9 +55,11 @@ class MapDAP:
         # TODO: fix this so it actually takes an input
         # save the data file
 
-        self.file = "../../../../test_data/paper_data/MAP_test_log_data.xlsx"
+        #self.file = "../../../../test_data/paper_data/MAP_test_log_data.xlsx"
+        self.file = "../../../../test_data/paper_data/test_log.xlsx"
         #self.file = "../../../../test_data/MAP_test_log_slit.xlsx"
         self.fm = FileManager(self.file)
+        print("Successfully imported test log: " + self.file)
 
         self.df = self.fm.get_df()
         #self.filtered_list = self.df.index # start with ALL indices
@@ -488,11 +490,18 @@ class MapDAP:
             command=self.start_analysis)
         self.analyze_button.grid(row=6, column=0, columnspan=2)
 
+        self.results_label = ttk.Label(self.mag_page, text="Results")
+        self.results_label.configure(font=("TkDefaultFont", 20, "bold"))
+        self.results_label.grid(row=7, column=0, sticky='w')
         #TODO: create file list from file groups
         # use check mark char: u'\u2713' to indicate file selection
-        self.files_frame = self.create_files_frame()
+        self.files_frame = ttk.Frame(self.mag_page)
+        self.files_frame.grid(row=8, column=0, columnspan=5, rowspan=12,
+            sticky='nswe')
+        self.ff_rows = self.create_files_frame()
 
-    # TODO: create this function
+    # TODO: need a way to populate this with selected files before the chi
+    # values are available
     def create_files_frame(self):
         # for each file group
             # list the group attributes: magnet, concentration, etc.
@@ -508,18 +517,101 @@ class MapDAP:
 
         # file_groups is a nested list of files - why didn't I make this a dictionary...? I literally have the keys labeled as KEYS smh
         file_groups = self.analyzer.get_file_groups()
+        results = self.analyzer.get_analyzed_files()
 
-        if fg_keys is not None:
+        ff_rows = {}
+
+        if "No files" not in ff_rows.keys():
+            ff_rows["No files"] = ttk.Label(self.files_frame,
+                text="No files selected.")
+
+        if fg_keys is None:
+            # only show a label saying "No files selected."
+            ff_rows["No files"].grid(row=0, column=0, sticky='w',
+                padx=20, pady=20)
+            return None
+
+        else:
+            # hide the no files label
+            ff_rows["No files"].grid_forget()
+
+            row_num = 0 # starting row in parent frame
+            # for each file group
             for key in fg_keys:
-                pass
+                # get results correponding to group key
+                fg_results = results[key]
 
-        return None
+                check_box = ttk.Checkbutton(self.files_frame)
+                check_box.grid(row=row_num, column=0)
+
+                group_str = "Sample: " + str(key[0]) \
+                    + "Magnet: " + str(key[2])
+                group_label = ttk.Label(self.files_frame, text=group_str)
+                group_label.grid(row=row_num, column=1, columnspan=3)
+
+                # num_trials_str = "n = " + str(fg_results[2])
+                # num_trials_label = ttk.Label(parent_frame, text=num_trials_str)
+                # num_trials_label.grid(row=row_num, column=5)
+
+                avg_chi_str = str(fg_results[3])
+                avg_chi_label = ttk.Label(self.files_frame, text=avg_chi_str)
+                avg_chi_label.grid(row=row_num, column=5)
+
+                std_chi_str = "(avg., std dev = " + str(fg_results[4]) + ")"
+                std_chi_label = ttk.Label(self.files_frame, text=std_chi_str)
+                std_chi_label.grid(row=row_num, column=6)
+
+                # save the widgets for later access
+                ff_rows[key] = [row_num, check_box, group_label,
+                    avg_chi_label, std_chi_label]
+                    #num_trials_label, avg_chi_label, std_chi_label]
+
+                # increment row number
+                row_num += 1
+
+                # now do each individual file
+                for file in file_groups[key]:
+                    file_results = results[key]
+
+                    check_box = ttk.Checkbutton(self.files_frame)
+                    check_box.grid(row=row_num, column=1)
+
+                    filename_label = ttk.Label(self.files_frame, text=file)
+                    filename_label.grid(row=row_num, column=2)
+
+                    #trial_str = "Trial #" + str(file_results[2])
+                    trial_label = ttk.Label(self.files_frame,
+                        text=str(file_results[2]))
+                    trial_label.grid(row=row_num, column=3)
+
+                    #chi_str = "X = " + str(file_results[3])
+                    chi_label = ttk.Label(self.files_frame,
+                        text=str(file_results[3]))
+                    chi_label.grid(row=row_num, column=4, columnspan=2)
+
+                    ff_rows[file] = [check_box, filename_label, trial_label,
+                        chi_label]
+
+        return ff_rows
 
     def start_analysis(self):
         print("Starting analysis...")
+
         self.analyzer.update_start_time(self.start_time_var.get())
         self.analyzer.update_density(self.density_var.get())
         self.analyzer.analyze(self.fm)
+        #
+        # print("Running psuedo-analysis")
+        # self.analyzer.fg_keys = [('test1', 1.0, '3')]
+        # self.analyzer.fg_groups = {('test1', 1.0, '3'): ['test1a', 'test1b']}
+        # self.analyzer.analyzed_files = {
+        #     ('test1', 1.0, '3'): [True, 0, 2, 2e-5, 2e-6],
+        #     'test1a': [False, 0, 1, 1e-5, ''],
+        #     'test1b': [False, 0, 2, 3e-5, '']
+        # }
+
+        self.ff_rows = self.create_files_frame()
+        print("finished updating mag page")
 
 
 app = MapDAP()

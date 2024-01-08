@@ -25,8 +25,10 @@ class FileManager:
 
     # read in the excel data log file, preprocess it,
     def load_data_log(self, file):
+        print("loading data...")
         # read test log in to dataframe
         df = pd.read_excel(file, dtype='str')
+        print("succesfully excel file...")
 
         # read sample key
         # dictionary will contain sample info where the key is a sample label/name

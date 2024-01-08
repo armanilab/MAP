@@ -21,6 +21,7 @@ class Analyzer:
         self.z = np.linspace(self.sensor_pos-self.sensor_w,
             self.sensor_pos+self.sensor_w, self.res)
         self.start_time = start_time
+        self.grouped = False
 
         # TODO: this doesn't really belong here like this
         self.density = 5150 # intrinsic material density of the nanomaterial being analyzed
@@ -32,6 +33,7 @@ class Analyzer:
         # TODO: write a function to retrieve these
         self.fg_keys = None
         self.file_groups = None
+        self.analyzed_files = {}
 
     def update_start_time(self, new_time):
         print("Previous start time: " + str(self.start_time))
@@ -43,11 +45,22 @@ class Analyzer:
         self.density = float(new_density)
         print("New density: " + str(self.density))
 
+    def update_grouped(self, new_value):
+        if new_value == "Grouped":
+            self.grouped = True
+            print("Grouped analysis selected.")
+        else:
+            self.grouped = False
+            print("Individual analysis selected.")
+
     def get_fg_keys(self):
         return self.fg_keys
 
     def get_file_groups(self):
         return self.file_groups
+
+    def get_analyzed_files(self):
+        return self.analyzed_files
 
     def create_magnets_dict(self):
         '''Adds the magnets to the Analyzer's dictionary.
@@ -117,6 +130,7 @@ class Analyzer:
     def analyze(self, file_manager):
         #TODO: restructure the file grouping part into a separate function
         # so that it can be accessed to display files to be analyzed
+        self.analyzed_files = {}
 
         # get relevant variables from the file manager
         df = file_manager.get_df()
@@ -141,16 +155,47 @@ class Analyzer:
             print("key: " + str(fg_k))
             print("file group: " + str(fg))
 
-            #TODO: need to add status updates
-            self.fit_file_group(data_dict, fg_k, fg)
+            # set up the analyzed results group
+            # for each aggregate group:
+            # [grouped, check=false, num_trials, avg_chi, std_dev_chi]
+            self.analyzed_files[fg_k] = [True, 0, 0, 0, 0, fg]
 
+            # get the linear fits from the magnet
+            mag_id = fg_k[2]
+            print("mag_id: " + str(mag_id))
+            print(type(mag_id))
+            A = self.magnets[mag_id]['A']
+            b = self.magnets[mag_id]['b']
 
+            # TODO: modify to be individual or grouped
+            guesses = self.get_param_guesses(data_dict, fg)
 
+            chis = []
+            # analyze one file at a time
+            for file_name in fg:
+                print(file_name)
+                time = data_dict[file_name]['time_data']
+                lux = data_dict[file_name]['lux_data']
+                print(file_name)
+                full_results = self.analyze_file(time, lux, guesses, A, b)
+                print(full_results)
+                chi = full_results['chi']
 
+                # save results
+                self.analyzed_files[file_name] = [False, 0,
+                    data_dict[file_name]['trial'], chi, full_results]
 
+                # add to list of chis for this file group
+                chis.append(chi)
 
-
-
+            # once all files from a single group are analyzed,
+            # get the aggregate statistics
+            num_trials = len(chis)
+            avg_chi = np.mean(chis)
+            std_chi = np.std(chis)
+            self.analyzed_files[fg_k][2] = num_trials
+            self.analyzed_files[fg_k][3] = avg_chi
+            self.analyzed_files[fg_k][4] = std_chi
 
     def group_files(self, data_dict):
         """Sort and group the files based on sample, concentration, and magnet
@@ -166,7 +211,6 @@ class Analyzer:
         #print(sorted_data_dict)
         # a list where is each entry is a tuple: (file_name, dict)
 
-        #TODO: fix this so that the file_groups is an actual dictionary with KEYS smh
         file_groups = {}
         fg_keys = []
         fi = -1
@@ -190,25 +234,6 @@ class Analyzer:
             k = fg_keys[ki]
             print(k[0] + ", " + k[1] + ", " + k[2] + ": "
                 + str(file_groups[k]))
-
-    # fg = list of file names
-    def fit_file_group(self, data_dict, fg_k, fg):
-        # get the linear fits from the magnet
-        mag_id = fg_k[2]
-        print("mag_id: " + str(mag_id))
-        print(type(mag_id))
-        A = self.magnets[mag_id]['A']
-        b = self.magnets[mag_id]['b']
-
-        guesses = self.get_param_guesses(data_dict, fg)
-
-        # analyze one file at a time
-        for file_name in fg:
-            print(file_name)
-            time = data_dict[file_name]['time_data']
-            lux = data_dict[file_name]['lux_data']
-            print(file_name)
-            print(self.analyze_file(time, lux, guesses, A, b))
 
 
     def preprocess_data(self, time_raw, lux_raw):
@@ -282,7 +307,7 @@ class Analyzer:
                 # increment counting variables
                 k += 1
                 count += 1
-            print(".", end="")
+            print(".", end="", flush=True)
             j += 1
 
         print("\niterated " + str(count) + " times")
