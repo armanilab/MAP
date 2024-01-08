@@ -43,7 +43,14 @@ print("Mag. Field Params: {} \t {}\n".format(*magFieldParams))
 
 
 ###############Locating the Magnetometer Data#########################
-path = input("Please enter the path to the data folder: ")
+file_input = input("Are you analzing...\n[a] a single file?\n[b] all files in a folder?\n")
+if file_input == 'a':
+	path = input("Please enter the path to the data file (not including the file name):\n")
+	file = input("Please enter the file name:\n")
+else:
+	# TODO: change path input here
+	path = input("Please enter the path to the data folder: ")
+	file = None
 
 
 trunctionNeed = input("Do you need to truncate the dataset?\n[a]\tYes\n[b]\tNo\n")
@@ -62,7 +69,7 @@ else:
 	maxTrunc = timeLenData
 
 
-paramGuesses = ParamGuesser(path)
+paramGuesses = ParamGuesser(path, file)
 
 g = paramGuesses.get_paramGuesses(minTrunc, maxTrunc)
 print(g)

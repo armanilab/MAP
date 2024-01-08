@@ -47,9 +47,12 @@ class MagFieldFit:
 
 class ParamGuesser:
 
-    def __init__ (self, path):
+    def __init__ (self, path, file=None):
         self.path = path
-        self.fileNames = os.listdir(self.path)
+        if file is None:
+            self.fileNames = os.listdir(self.path)
+        else:
+            self.fileNames = [file]
         self.density = 5150 #5240 #Intrinsic material density
 
     def get_paramGuesses(self, minTrunc, maxTrunc):
