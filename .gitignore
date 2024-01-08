@@ -1,2 +1,6 @@
 **/.DS_Store
 **/__pycache__
+**/Fits/*
+**/Fits_txt_data/*
+**/MagSusVals.txt
+**/magSus.png
