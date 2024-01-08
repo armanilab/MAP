@@ -69,10 +69,8 @@ def plot_light_curve(file_list, baseline_correction=False, no_legend=False):
             y = y - baseline
             # add label to title
 
-        if extra_big:
-            plt.plot(x, y, label=row_label, linewidth=5)
-        else:
-            plt.plot(x, y, label=row_label)
+
+        plt.plot(x, y, label=row_label)
 
     if baseline_correction:
         title_str += "baseline corrected"

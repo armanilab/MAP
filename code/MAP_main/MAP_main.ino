@@ -1,5 +1,5 @@
 /*
- * Code for the magnetophotometer (MAP).
+ * Driving code for the magnetophotometer (MAP).
  * Written by: Lexie Scholtz
  *             Vic Nunez
  * Created: 2022.09.29
@@ -18,7 +18,7 @@
 
 #include "Display.h"
 #include "states.h"
-#include "button.h" // use this as a wrapper for the sparkfun library; declare one button object for each red and green button
+#include "button.h" // wrapper for the sparkfun library
 
 const int GREEN_I2C_ADDRESS = 0x60;
 
@@ -130,7 +130,7 @@ void setup() {
       uint16_t full = lum & 0xFFFF;
       float lux = tsl.calculateLux(full, ir);
 
-      if (full == 0 && ir == 0) 
+      if (full == 0 && ir == 0)
       { // sensor cannot detect any light
         lux = 0; // otherwise this will write nan to file
       }
