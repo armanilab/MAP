@@ -76,9 +76,9 @@ def matchEXP(T):
    T_m = max(T)
    return np.log10(T_m/T)   #np.log10(max(T_alt)/T_alt)
 
-# def trunc_low(low, x, y):
-#     high = x[-1]
-#     return trunc(low, high, x, y)
+def trunc_low(low, x, y):
+    high = x[-1]
+    return trunc(low, high, x, y)
 
 def trunc(low, high, x, y):
    '''Takes high and low inputs and truncates an array
