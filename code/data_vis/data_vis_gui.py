@@ -493,6 +493,7 @@ class MapDAP:
         self.results_label = ttk.Label(self.mag_page, text="Results")
         self.results_label.configure(font=("TkDefaultFont", 20, "bold"))
         self.results_label.grid(row=7, column=0, sticky='w')
+        
         #TODO: create file list from file groups
         # use check mark char: u'\u2713' to indicate file selection
         self.files_frame = ttk.Frame(self.mag_page)
@@ -538,10 +539,13 @@ class MapDAP:
             row_num = 0 # starting row in parent frame
             # for each file group
             for key in fg_keys:
+                print("showing " + str(key))
                 # get results correponding to group key
                 fg_results = results[key]
 
-                check_box = ttk.Checkbutton(self.files_frame)
+                check_box = ttk.Checkbutton(self.files_frame, onvalue=1,
+                    offvalue=0)
+                check_box.deselect()
                 check_box.grid(row=row_num, column=0)
 
                 group_str = "Sample: " + str(key[0]) \
@@ -560,6 +564,7 @@ class MapDAP:
                 std_chi_str = "(avg., std dev = " + str(fg_results[4]) + ")"
                 std_chi_label = ttk.Label(self.files_frame, text=std_chi_str)
                 std_chi_label.grid(row=row_num, column=6)
+                print("using row number " + str(row_num))
 
                 # save the widgets for later access
                 ff_rows[key] = [row_num, check_box, group_label,
@@ -571,9 +576,12 @@ class MapDAP:
 
                 # now do each individual file
                 for file in file_groups[key]:
+                    print("building " + str(file) + "...")
                     file_results = results[key]
 
-                    check_box = ttk.Checkbutton(self.files_frame)
+                    check_box = ttk.Checkbutton(self.files_frame, onvalue=1,
+                        offvalue=0)
+                    check_box.deselect()
                     check_box.grid(row=row_num, column=1)
 
                     filename_label = ttk.Label(self.files_frame, text=file)
@@ -591,6 +599,9 @@ class MapDAP:
 
                     ff_rows[file] = [check_box, filename_label, trial_label,
                         chi_label]
+                    print("using row number " + str(row_num))
+
+                    row_num += 1
 
         return ff_rows
 
