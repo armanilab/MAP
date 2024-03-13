@@ -55,8 +55,8 @@ class MapDAP:
         # TODO: fix this so it actually takes an input
         # save the data file
 
-        #self.file = "../../../../test_data/paper_data/MAP_test_log_data.xlsx"
-        self.file = "../../../../test_data/paper_data/test_log.xlsx"
+        self.file = "../../../../test_data/paper_data/MAP_test_log_data.xlsx"
+        #self.file = "../../../../test_data/paper_data/test_log.xlsx"
         #self.file = "../../../../test_data/MAP_test_log_slit.xlsx"
         self.fm = FileManager(self.file)
         print("Successfully imported test log: " + self.file)
@@ -427,24 +427,27 @@ class MapDAP:
 
     def create_mag_page(self):
         # add a label
+        self.check_spacer1 = ttk.Checkbutton(self.mag_page)
+        self.check_spacer1.grid(row=10, column=0)
+
         self.analysis_label = ttk.Label(self.mag_page,
             text="Magnetic Analysis")
         self.analysis_label.configure(font=("TkDefaultFont", 20, "bold"))
-        self.analysis_label.grid(row=0, column=0, sticky='w')
+        self.analysis_label.grid(row=0, column=0, columnspan=3, sticky='w')
 
         self.analysis_frame_label = ttk.Label(self.mag_page,
             text="Analysis Options")
         self.analysis_frame_label.configure(font=("TkDefaultFont", 16, "bold"))
-        self.analysis_frame_label.grid(row=1, column=0, columnspan=3, sticky=tk.W)
+        self.analysis_frame_label.grid(row=1, column=0, columnspan=5, sticky=tk.W)
 
         self.analysis_frame = ttk.Frame(self.mag_page, padding="3 3 12 12")
         #    text="Analysis Options")#, font=("TkDefaultFont", 16, "bold"))
-        self.analysis_frame.grid(row=2, column=0, rowspan=4, columnspan=5,
+        self.analysis_frame.grid(row=2, column=0, columnspan=5, rowspan=4,
             sticky=tk.EW)
 
         self.analysis_type_label = ttk.Label(self.analysis_frame,
             text="Analysis Type")
-        self.analysis_type_label.grid(row=0, column=0, columnspan=2)
+        self.analysis_type_label.grid(row=0, column=0, columnspan=3)
         self.analysis_type_var = tk.IntVar()
 
         # individual analysis button
@@ -488,18 +491,37 @@ class MapDAP:
 
         self.analyze_button = ttk.Button(self.mag_page, text="Analyze!",
             command=self.start_analysis)
-        self.analyze_button.grid(row=6, column=0, columnspan=2)
+        self.analyze_button.grid(row=6, column=3, columnspan=2)
 
-        self.results_label = ttk.Label(self.mag_page, text="Results")
-        self.results_label.configure(font=("TkDefaultFont", 20, "bold"))
-        self.results_label.grid(row=7, column=0, sticky='w')
-        
-        #TODO: create file list from file groups
-        # use check mark char: u'\u2713' to indicate file selection
-        self.files_frame = ttk.Frame(self.mag_page)
-        self.files_frame.grid(row=8, column=0, columnspan=5, rowspan=12,
-            sticky='nswe')
-        self.ff_rows = self.create_files_frame()
+        #TODO: add horizontal divider (row 7)
+
+
+        # self.progress_label = ttk.Label(self.mag_page, text="Progress: ")
+        # self.progress_label.configure(font=("TkDefaultFont", 16, "bold"))
+        # self.progress_label.grid(row=8, column=2, columnspan=2)
+        #
+        # # TODO: add this:
+        # #self.progress_canvas = ttk.Canvas()
+        #
+        # # dynamic label that outputs the step of the analysis that the program is on
+        # # TOOD: how do i update this?
+        # self.progress_str = ""
+        # self.progress_str_label = ttk.Label(self.mag_page, text=self.progress_str)
+        # self.progress_str_label.grid(row=9, column=2)
+        #
+        # #TODO: add horizontal divider (row 10)
+        #
+        #
+        # self.results_label = ttk.Label(self.mag_page, text="Results")
+        # self.results_label.configure(font=("TkDefaultFont", 20, "bold"))
+        # self.results_label.grid(row=11, column=0, sticky='w')
+        #
+        # #TODO: create file list from file groups
+        # # use check mark char: u'\u2713' to indicate file selection
+        # self.files_frame = ttk.Frame(self.mag_page)
+        # self.files_frame.grid(row=11, column=0, columnspan=5, rowspan=12,
+        #     sticky='nswe')
+        # self.ff_rows = self.create_files_frame()
 
     # TODO: need a way to populate this with selected files before the chi
     # values are available
@@ -522,19 +544,19 @@ class MapDAP:
 
         ff_rows = {}
 
-        if "No files" not in ff_rows.keys():
-            ff_rows["No files"] = ttk.Label(self.files_frame,
-                text="No files selected.")
+        # if "No files" not in ff_rows.keys():
+        #     ff_rows["No files"] = ttk.Label(self.files_frame,
+        #         text="No files selected.")
 
         if fg_keys is None:
             # only show a label saying "No files selected."
-            ff_rows["No files"].grid(row=0, column=0, sticky='w',
-                padx=20, pady=20)
+            # ff_rows["No files"].grid(row=0, column=0, sticky='w',
+            #     padx=20, pady=20)
             return None
 
         else:
             # hide the no files label
-            ff_rows["No files"].grid_forget()
+            #ff_rows["No files"].grid_forget()
 
             row_num = 0 # starting row in parent frame
             # for each file group
@@ -545,7 +567,6 @@ class MapDAP:
 
                 check_box = ttk.Checkbutton(self.files_frame, onvalue=1,
                     offvalue=0)
-                check_box.deselect()
                 check_box.grid(row=row_num, column=0)
 
                 group_str = "Sample: " + str(key[0]) \
@@ -581,7 +602,7 @@ class MapDAP:
 
                     check_box = ttk.Checkbutton(self.files_frame, onvalue=1,
                         offvalue=0)
-                    check_box.deselect()
+                    #check_box.deselect()
                     check_box.grid(row=row_num, column=1)
 
                     filename_label = ttk.Label(self.files_frame, text=file)
@@ -605,6 +626,27 @@ class MapDAP:
 
         return ff_rows
 
+    # def create_analyzed_files_tree(self, frame, ht=10):
+    #     cols = []
+    #     tree = ttk.Treeview(frame, columns=tuple(cols), height=ht)
+    #     tree.column('#0', width=120)
+    #     tree.heading('#0', text='File-name')
+    #
+    #     # set column widths
+    #     # first "column" is file-location - should be longer
+    #     tree.column(self.fm.get_file_loc_col(), width=200, anchor='w')
+    #     tree.heading(self.fm.get_file_loc_col(),
+    #         text=self.fm.get_file_loc_col())
+    #
+    #     # set all other columns to width of 100
+    #     for i in (range(len(cols[1:]))):
+    #         i += 1
+    #         tree.column(cols[i], width=100, anchor='center')
+    #         tree.heading(cols[i], text=cols[i])
+    #
+    #     # add to grid and fill space in frame
+    #     tree.grid(row=0, column=0, sticky=tk.NSEW)
+
     def start_analysis(self):
         print("Starting analysis...")
 
@@ -623,6 +665,8 @@ class MapDAP:
 
         self.ff_rows = self.create_files_frame()
         print("finished updating mag page")
+
+
 
 
 app = MapDAP()
