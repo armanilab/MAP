@@ -16,13 +16,6 @@ from matplotlib.backends.backend_tkagg import (
 from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
 
-# TODO: consider creating each notebook page as a separate class that inherits
-# from the Notebook class??
-# similiar to this maybe? https://stackoverflow.com/questions/31680357/update-frame-on-tab-switch-in-ttk-notebook?rq=4
-# https://stackoverflow.com/questions/44745297/adding-notebook-tabs-in-tkinter-how-do-i-do-it-with-a-class-based-structure
-# each notebook really includes a different frame, so they coul dactually inherit
-# from tk.Frame I think (ex. class SelectionPage(tk.Frame): ...)
-
 class MapDAP:
     def __init__(self):
         # create the main window
@@ -49,9 +42,6 @@ class MapDAP:
 
         self.notebook.pack(expand=1, fill="both")
 
-        # stick to all sides
-        #self.selection_page.grid(column=0, row=0, sticky=(tk.N, tk.W, tk.E, tk.S))
-
         # TODO: fix this so it actually takes an input
         # save the data file
 
@@ -63,7 +53,7 @@ class MapDAP:
 
         self.df = self.fm.get_df()
         #self.filtered_list = self.df.index # start with ALL indices
-        #self.to_plot_list = [] # start with none
+        #self.to_selected_list = [] # start with none
 
         # TODO: did this even do anything?? set button styles
         s = ttk.Style()
@@ -182,7 +172,7 @@ class MapDAP:
             self.selection_preview_frame)
 
         # add rows to tree from the dataframe (the file log)
-        self.update_tree(self.selection_preview_tree, self.fm.get_plot_list())
+        self.update_tree(self.selection_preview_tree, self.fm.get_selected_list())
 
         # TODO: connect command to navigate to plot screen
         self.plotter_button = ttk.Button(self.selection_page, text="Plot",
@@ -228,7 +218,7 @@ class MapDAP:
             #    value=tuple(row[1:-2]))
 
             if highlight:
-                if i in self.fm.get_plot_list():
+                if i in self.fm.get_selected_list():
                     tree.item(i, tags=('selected'))
 
     def add_selected(self):
@@ -241,13 +231,17 @@ class MapDAP:
             item_index = int(item)# convert item id to the index
 
             # add index from the list of files to be plotted
-            self.fm.add_to_plot_list(item_index)
-            #if item_index not in self.to_plot_list:
-            #    self.to_plot_list.append(item_index)
+            self.fm.add_to_selected_list(item_index)
+            #if item_index not in self.to_selected_list:
+            #    self.to_selected_list.append(item_index)
+            self.update_selected_trees()
 
-        # update the selection preview tree
-        self.update_tree(self.selection_preview_tree, self.fm.get_plot_list())
-        self.update_tree(self.file_list_tree, self.fm.get_plot_list())
+    def update_selected_trees(self):
+        self.update_tree(self.selection_preview_tree, self.fm.get_selected_list())
+        self.update_tree(self.file_list_tree, self.fm.get_selected_list())
+        self.update_tree(self.mag_file_list_tree, self.fm.get_selected_list())
+        self.update_results_tree()
+        # TODO: add updates to the selected files lists on the plot and analysis pages
 
     def remove_selected(self):
         selected_items = self.full_file_tree.selection()
@@ -259,35 +253,32 @@ class MapDAP:
             item_index = int(item) # convert item id to the index
 
             # remove index from the list of files to be plotted
-            self.fm.remove_from_plot_list(item_index)
-            #if item_index in self.to_plot_list:
-            #    self.to_plot_list.remove(item_index)
+            self.fm.remove_from_selected_list(item_index)
+            #if item_index in self.to_selected_list:
+            #    self.to_selected_list.remove(item_index)
 
         # update the selection preview tree
-        self.update_tree(self.selection_preview_tree, self.fm.get_plot_list())
-        self.update_tree(self.file_list_tree, self.fm.get_plot_list())
+        self.update_selected_trees()
 
     def add_all(self):
-        # add all shown files to the to_plot_list
+        # add all shown files to the to_selected_list
         for i in self.fm.get_filtered_list():
-            self.fm.add_to_plot_list(i)
+            self.fm.add_to_selected_list(i)
             # add highlight to file in full_file_tree
             self.full_file_tree.item(i, tags=('selected'))
 
         # update the selection preview tree
-        self.update_tree(self.selection_preview_tree, self.fm.get_plot_list())
-        self.update_tree(self.file_list_tree, self.fm.get_plot_list())
+        self.update_selected_trees()
 
     def remove_all(self):
-        # remove all shown files from the to_plot_list
+        # remove all shown files from the to_selected_list
         for i in self.fm.get_filtered_list():
-            self.fm.remove_from_plot_list(i)
+            self.fm.remove_from_selected_list(i)
             # remove highlight of file in full_file_tree
             self.full_file_tree.item(i, tags=())
 
         # update the selection preview tree
-        self.update_tree(self.selection_preview_tree, self.fm.get_plot_list())
-        self.update_tree(self.file_list_tree, self.fm.get_plot_list())
+        self.update_selected_trees()
 
     #TODO: fix the sort so that if they're numerical, then the sort by numbers
     def display_filter_options(self, event):
@@ -360,7 +351,7 @@ class MapDAP:
 
         # create treeview to see selected files
         self.file_list_tree = self.create_tree(self.file_list_frame, ht=5)
-        self.update_tree(self.file_list_tree, self.fm.get_plot_list())
+        self.update_tree(self.file_list_tree, self.fm.get_selected_list())
 
         # TODO: add scrollbar to treeview
         self.file_list_scrollbar = ttk.Scrollbar(self.file_list_frame,
@@ -427,244 +418,158 @@ class MapDAP:
 
     def create_mag_page(self):
         # add a label
-        self.check_spacer1 = ttk.Checkbutton(self.mag_page)
-        self.check_spacer1.grid(row=10, column=0)
-
         self.analysis_label = ttk.Label(self.mag_page,
             text="Magnetic Analysis")
         self.analysis_label.configure(font=("TkDefaultFont", 20, "bold"))
         self.analysis_label.grid(row=0, column=0, columnspan=3, sticky='w')
 
-        self.analysis_frame_label = ttk.Label(self.mag_page,
+        # add treeview with selected files to be plotted
+        self.mag_file_list_frame = ttk.Frame(self.mag_page)
+        self.mag_file_list_frame.grid(row=1, column=0, columnspan=5,
+            sticky=tk.NSEW, padx=15, pady=(0, 15))
+        self.mag_file_list_frame.columnconfigure(0, weight=1)
+        self.mag_file_list_frame.rowconfigure(0, weight=1)
+
+        # create treeview to see selected files
+        self.mag_file_list_tree = self.create_tree(self.mag_file_list_frame, ht=5)
+        self.update_tree(self.mag_file_list_tree, self.fm.get_selected_list())
+
+        # TODO: add scrollbar to treeview
+        self.mag_file_list_scrollbar = ttk.Scrollbar(self.mag_file_list_frame,
+            orient=tk.VERTICAL, command=self.mag_file_list_tree.yview)
+        self.mag_file_list_tree.configure(
+            yscrollcommand=self.mag_file_list_scrollbar.set)
+        self.mag_file_list_scrollbar.grid(row=0, column=1, sticky='nse')
+
+        # frame for analysis
+        self.analysis_frame = ttk.Frame(self.mag_page, padding="3 3 12 12")
+        self.analysis_frame.grid(row=2, column=0, columnspan=2, rowspan=4,
+            sticky=tk.EW)
+
+        self.analysis_frame_label = ttk.Label(self.analysis_frame,
             text="Analysis Options")
         self.analysis_frame_label.configure(font=("TkDefaultFont", 16, "bold"))
-        self.analysis_frame_label.grid(row=1, column=0, columnspan=5, sticky=tk.W)
-
-        self.analysis_frame = ttk.Frame(self.mag_page, padding="3 3 12 12")
-        #    text="Analysis Options")#, font=("TkDefaultFont", 16, "bold"))
-        self.analysis_frame.grid(row=2, column=0, columnspan=5, rowspan=4,
-            sticky=tk.EW)
+        self.analysis_frame_label.grid(row=0, column=0, columnspan=3,
+            sticky=tk.W)
 
         self.analysis_type_label = ttk.Label(self.analysis_frame,
             text="Analysis Type")
-        self.analysis_type_label.grid(row=0, column=0, columnspan=3)
+        self.analysis_type_label.grid(row=1, column=0, columnspan=3)
         self.analysis_type_var = tk.IntVar()
 
         # individual analysis button
         self.analysis_type_indiv = ttk.Radiobutton(self.analysis_frame,
             text="Individual", variable=self.analysis_type_var,
             value=0)
-        self.analysis_type_indiv.grid(row=0, column=3)
+        self.analysis_type_indiv.grid(row=1, column=3)
         # grouped analysis button
         self.analysis_type_group = ttk.Radiobutton(self.analysis_frame,
             text="Grouped", variable=self.analysis_type_var,
             value=1)
-        self.analysis_type_group.grid(row=0, column=4)
+        self.analysis_type_group.grid(row=1, column=4)
 
         self.density_label = ttk.Label(self.analysis_frame,
             text="Intrinsic Material Density:")
-        self.density_label.grid(row=1, column=0, columnspan=3)
+        self.density_label.grid(row=2, column=0, columnspan=3)
 
         # TODO: add validation function to entry
         self.density_var = tk.StringVar(self.root, "5150")
         self.density_entry = ttk.Entry(self.analysis_frame,
             textvariable=self.density_var, justify=tk.LEFT)
-        self.density_entry.grid(row=1, column=3)
+        self.density_entry.grid(row=2, column=3)
 
         self.density_units_label = ttk.Label(self.analysis_frame,
             text = "mg/cm^3")
-        self.density_units_label.grid(row=1, column=4, sticky=tk.W)
+        self.density_units_label.grid(row=2, column=4, sticky=tk.W)
 
         # TODO: add validation function to entry
         self.start_time_label = ttk.Label(self.analysis_frame,
             text = "Start time:")
-        self.start_time_label.grid(row=2, column=0, columnspan=3)
+        self.start_time_label.grid(row=3, column=0, columnspan=3)
 
         self.start_time_var = tk.StringVar(self.root, "0")
         self.start_time_entry = ttk.Entry(self.analysis_frame,
             textvariable=self.start_time_var, justify=tk.LEFT)
-        self.start_time_entry.grid(row=2, column=3)
+        self.start_time_entry.grid(row=3, column=3)
 
         self.start_time_units_label = ttk.Label(self.analysis_frame,
             text = "sec")
-        self.start_time_units_label.grid(row=2, column=4, sticky=tk.W)
+        self.start_time_units_label.grid(row=3, column=4, sticky=tk.W)
 
         self.analyze_button = ttk.Button(self.mag_page, text="Analyze!",
             command=self.start_analysis)
-        self.analyze_button.grid(row=6, column=3, columnspan=2)
+        self.analyze_button.grid(row=0, column=4, columnspan=2)
 
-        #TODO: add horizontal divider (row 7)
+        self.results_frame = ttk.Frame(self.mag_page, padding="3 3 12 12")
+        self.results_frame.grid(row=2, column=2, columnspan=2, rowspan=6,
+            sticky=tk.EW)
+
+        self.results_frame_label = ttk.Label(self.results_frame,
+            text="Results")
+        self.results_frame_label.configure(font=("TkDefaultFont", 16, "bold"))
+        self.results_frame_label.grid(row=0, column=0, columnspan=2,
+            sticky=tk.W)
+
+        self.results_tree = self.create_results_tree()
+        self.update_results_tree()
+
+        self.results_scrollbar = ttk.Scrollbar(self.results_frame,
+            orient=tk.VERTICAL, command=self.results_tree.yview)
+        self.results_tree.configure(yscrollcommand=self.results_scrollbar.set)
+        self.results_scrollbar.grid(row=1, column=1, sticky='nse')
+
+    def create_results_tree(self):
+        cols = ['file-name', 'chi']
+        tree = ttk.Treeview(self.results_frame, columns=tuple(cols))
+        tree.grid(row=1, column=0, sticky=tk.NSEW)
+        return tree
+
+    def update_results_tree(self):
+        for item in self.results_tree.get_children():
+            self.results_tree.delete(item)
+
+        results = self.fm.get_analyzed_files()
+        selected_files = self.fm.get_selected_list()
+
+        for f in selected_files:
+            row_text = str(results[f][0])
+            if results[f][1] is None:
+                row_value = ''
+            else:
+                row_value = "{:0.3e}".format(results[f][1]['chi'])
+            self.results_tree.insert('', 'end', text=row_text, value=row_value)
 
 
-        # self.progress_label = ttk.Label(self.mag_page, text="Progress: ")
-        # self.progress_label.configure(font=("TkDefaultFont", 16, "bold"))
-        # self.progress_label.grid(row=8, column=2, columnspan=2)
-        #
-        # # TODO: add this:
-        # #self.progress_canvas = ttk.Canvas()
-        #
-        # # dynamic label that outputs the step of the analysis that the program is on
-        # # TOOD: how do i update this?
-        # self.progress_str = ""
-        # self.progress_str_label = ttk.Label(self.mag_page, text=self.progress_str)
-        # self.progress_str_label.grid(row=9, column=2)
-        #
-        # #TODO: add horizontal divider (row 10)
-        #
-        #
-        # self.results_label = ttk.Label(self.mag_page, text="Results")
-        # self.results_label.configure(font=("TkDefaultFont", 20, "bold"))
-        # self.results_label.grid(row=11, column=0, sticky='w')
-        #
-        # #TODO: create file list from file groups
-        # # use check mark char: u'\u2713' to indicate file selection
-        # self.files_frame = ttk.Frame(self.mag_page)
-        # self.files_frame.grid(row=11, column=0, columnspan=5, rowspan=12,
-        #     sticky='nswe')
-        # self.ff_rows = self.create_files_frame()
+    def create_analyzed_files_tree(self, frame, ht=10):
+        cols = []
+        tree = ttk.Treeview(frame, columns=tuple(cols), height=ht)
+        tree.column('#0', width=120)
+        tree.heading('#0', text='File-name')
 
-    # TODO: need a way to populate this with selected files before the chi
-    # values are available
-    def create_files_frame(self):
-        # for each file group
-            # list the group attributes: magnet, concentration, etc.
-            # for each file within the file group
-                # have a blank for column for selected
-                # list the file name
-                # list the trial number
-                # list the chi value
-            # or maybe I should essentially make this as a grid of labels and
-            # checkboxes?
-        # file keys format: f_key = (f_sample, f_conc, f_magnet)
-        fg_keys = self.analyzer.get_fg_keys()
+        # set column widths
+        # first "column" is file-location - should be longer
+        tree.column(self.fm.get_file_loc_col(), width=200, anchor='w')
+        tree.heading(self.fm.get_file_loc_col(),
+            text=self.fm.get_file_loc_col())
 
-        # file_groups is a nested list of files - why didn't I make this a dictionary...? I literally have the keys labeled as KEYS smh
-        file_groups = self.analyzer.get_file_groups()
-        results = self.analyzer.get_analyzed_files()
+        # set all other columns to width of 100
+        for i in (range(len(cols[1:]))):
+            i += 1
+            tree.column(cols[i], width=100, anchor='center')
+            tree.heading(cols[i], text=cols[i])
 
-        ff_rows = {}
-
-        # if "No files" not in ff_rows.keys():
-        #     ff_rows["No files"] = ttk.Label(self.files_frame,
-        #         text="No files selected.")
-
-        if fg_keys is None:
-            # only show a label saying "No files selected."
-            # ff_rows["No files"].grid(row=0, column=0, sticky='w',
-            #     padx=20, pady=20)
-            return None
-
-        else:
-            # hide the no files label
-            #ff_rows["No files"].grid_forget()
-
-            row_num = 0 # starting row in parent frame
-            # for each file group
-            for key in fg_keys:
-                print("showing " + str(key))
-                # get results correponding to group key
-                fg_results = results[key]
-
-                check_box = ttk.Checkbutton(self.files_frame, onvalue=1,
-                    offvalue=0)
-                check_box.grid(row=row_num, column=0)
-
-                group_str = "Sample: " + str(key[0]) \
-                    + "Magnet: " + str(key[2])
-                group_label = ttk.Label(self.files_frame, text=group_str)
-                group_label.grid(row=row_num, column=1, columnspan=3)
-
-                # num_trials_str = "n = " + str(fg_results[2])
-                # num_trials_label = ttk.Label(parent_frame, text=num_trials_str)
-                # num_trials_label.grid(row=row_num, column=5)
-
-                avg_chi_str = str(fg_results[3])
-                avg_chi_label = ttk.Label(self.files_frame, text=avg_chi_str)
-                avg_chi_label.grid(row=row_num, column=5)
-
-                std_chi_str = "(avg., std dev = " + str(fg_results[4]) + ")"
-                std_chi_label = ttk.Label(self.files_frame, text=std_chi_str)
-                std_chi_label.grid(row=row_num, column=6)
-                print("using row number " + str(row_num))
-
-                # save the widgets for later access
-                ff_rows[key] = [row_num, check_box, group_label,
-                    avg_chi_label, std_chi_label]
-                    #num_trials_label, avg_chi_label, std_chi_label]
-
-                # increment row number
-                row_num += 1
-
-                # now do each individual file
-                for file in file_groups[key]:
-                    print("building " + str(file) + "...")
-                    file_results = results[key]
-
-                    check_box = ttk.Checkbutton(self.files_frame, onvalue=1,
-                        offvalue=0)
-                    #check_box.deselect()
-                    check_box.grid(row=row_num, column=1)
-
-                    filename_label = ttk.Label(self.files_frame, text=file)
-                    filename_label.grid(row=row_num, column=2)
-
-                    #trial_str = "Trial #" + str(file_results[2])
-                    trial_label = ttk.Label(self.files_frame,
-                        text=str(file_results[2]))
-                    trial_label.grid(row=row_num, column=3)
-
-                    #chi_str = "X = " + str(file_results[3])
-                    chi_label = ttk.Label(self.files_frame,
-                        text=str(file_results[3]))
-                    chi_label.grid(row=row_num, column=4, columnspan=2)
-
-                    ff_rows[file] = [check_box, filename_label, trial_label,
-                        chi_label]
-                    print("using row number " + str(row_num))
-
-                    row_num += 1
-
-        return ff_rows
-
-    # def create_analyzed_files_tree(self, frame, ht=10):
-    #     cols = []
-    #     tree = ttk.Treeview(frame, columns=tuple(cols), height=ht)
-    #     tree.column('#0', width=120)
-    #     tree.heading('#0', text='File-name')
-    #
-    #     # set column widths
-    #     # first "column" is file-location - should be longer
-    #     tree.column(self.fm.get_file_loc_col(), width=200, anchor='w')
-    #     tree.heading(self.fm.get_file_loc_col(),
-    #         text=self.fm.get_file_loc_col())
-    #
-    #     # set all other columns to width of 100
-    #     for i in (range(len(cols[1:]))):
-    #         i += 1
-    #         tree.column(cols[i], width=100, anchor='center')
-    #         tree.heading(cols[i], text=cols[i])
-    #
-    #     # add to grid and fill space in frame
-    #     tree.grid(row=0, column=0, sticky=tk.NSEW)
+        # add to grid and fill space in frame
+        tree.grid(row=0, column=0, sticky=tk.NSEW)
 
     def start_analysis(self):
         print("Starting analysis...")
 
         self.analyzer.update_start_time(self.start_time_var.get())
         self.analyzer.update_density(self.density_var.get())
-        self.analyzer.analyze(self.fm)
-        #
-        # print("Running psuedo-analysis")
-        # self.analyzer.fg_keys = [('test1', 1.0, '3')]
-        # self.analyzer.fg_groups = {('test1', 1.0, '3'): ['test1a', 'test1b']}
-        # self.analyzer.analyzed_files = {
-        #     ('test1', 1.0, '3'): [True, 0, 2, 2e-5, 2e-6],
-        #     'test1a': [False, 0, 1, 1e-5, ''],
-        #     'test1b': [False, 0, 2, 3e-5, '']
-        # }
+        self.analyzer.analyze_v2(self.fm)
 
-        self.ff_rows = self.create_files_frame()
         print("finished updating mag page")
+        self.update_results_tree()
 
 
 

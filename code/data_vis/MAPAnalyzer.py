@@ -125,6 +125,27 @@ class Analyzer:
         self.add_magnet(magnet['id'], magnet['name'], magnet['B_r'],
             magnet['length'], magnet['width'], magnet['thickness'])
 
+    def analyze_v2(self, file_manager):
+        data_dict = file_manager.load_data()
+
+        selected_files = file_manager.get_selected_list()
+        for i in selected_files:
+            file_dict = data_dict[i]
+            mag_id = file_dict['magnet']
+            A = self.magnets[mag_id]['A']
+            b = self.magnets[mag_id]['b']
+
+            guesses = self.get_param_guesses(data_dict, [i])
+
+            file_name = data_dict[i]['file_name']
+            time = data_dict[i]['time_data']
+            lux = data_dict[i]['lux_data']
+            full_results = self.analyze_file(time, lux, guesses, A, b)
+            chi = full_results['chi']
+
+            test_info = [self.magnets[mag_id]['name'], self.start_time]
+
+            file_manager.add_analysis_results(i, file_name, full_results, test_info)
 
     #TODO: write function lol
     def analyze(self, file_manager):
@@ -135,7 +156,7 @@ class Analyzer:
         # get relevant variables from the file manager
         df = file_manager.get_df()
         sample_dict = file_manager.get_sample_dict()
-        selection = file_manager.get_plot_list()
+        selection = file_manager.get_selected_list()
         # load selected data from dataframe
         data_dict = file_manager.load_data()
 
@@ -262,7 +283,7 @@ class Analyzer:
 
         # pick one file at random to test the parameter guesses
         test_file = fg[random.randint(0, len(fg) - 1)]
-        print("parameters picked based on: " + test_file)
+        print("parameters picked based on: " + str(data_dict[test_file]['file_name']))
 
         # load the actual data
         time_raw = data_dict[test_file]['time_data']

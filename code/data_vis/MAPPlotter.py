@@ -42,7 +42,7 @@ class Plotter:
 
         df = file_manager.get_df()
         sample_dict = file_manager.get_sample_dict()
-        selection = file_manager.get_plot_list()
+        selection = file_manager.get_selected_list()
         ax = self.fig.axes[0]
         ax.clear()
         plt.tight_layout()
@@ -69,7 +69,7 @@ class Plotter:
 
         for file in data_dict.keys():
             file_data = data_dict[file]
-            print(str(curve_index) + ": " + file)
+            print(str(curve_index) + ": " + file_data['file_name'])
 
             # load data
             t = file_data['time_data']
