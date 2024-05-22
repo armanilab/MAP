@@ -42,6 +42,9 @@ class MagFieldFit:
 
         A, b = popt_B
 
+        # print("Magnetic field fit pcov_B:")
+        # print(pcov_B)
+
         return [A, b]
 
 
@@ -54,6 +57,7 @@ class ParamGuesser:
         else:
             self.fileNames = [file]
         self.density = 5150 #5240 #Intrinsic material density
+        #self.density = 1055 # polystyrene
 
     def get_paramGuesses(self, minTrunc, maxTrunc):
 
@@ -62,14 +66,16 @@ class ParamGuesser:
         # s1_iter = np.linspace(-500, 0, 20)
         # s2_iter = np.linspace(-0.001, -1e-6, 50)
         # s1_iter = np.linspace(-2000, -250, 20)
-        s1_iter = np.linspace(-2000, -500, 40)
+        s1_iter = np.linspace(-2000, -500, 40) # used in analysis
         # s2_iter = np.linspace(-0.01, -1e-6, 50)
-        s2_iter = np.linspace(-0.01, -1e-6, 40)
+        s2_iter = np.linspace(-0.01, -1e-6, 40) # used in analaysis
 
 
 
         total_iters = len(s1_iter)*len(s2_iter)
         testFile = self.fileNames[random.randint(0, len(self.fileNames)-1)]
+
+        print("Picking parameters from " + str(testFile))
 
         #Determine fit params for light curves#########
         filecp = codecs.open(self.path+"/{}".format(testFile), encoding = 'cp1252')
@@ -191,9 +197,12 @@ class ParamGuesser:
             S2_array[i] = S2
 
             print(str(X) + "\t" + str(eps) + "\t" + str(S1) + "\t" + str(S2) + "\t" + str(omega))
+            print("Covariance matrix: ")
+            print(pcov)
 
             file.write(name+"\t{:.2}\t\t{:.2}\t\t{:.2}\t\t{:.2}\t\t{:.2}\n".format(X, *popt, omega))
-
+            # file.write("\n--- Covariance matrix ---\n")
+            # file.write(pcov)
 
             time = np.linspace(0, maxTrunc-minTrunc, len(t_F))
             logT_fit = lf.transm(time, *popt, omega)
@@ -254,5 +263,7 @@ class ParamGuesser:
         plt.savefig('magSus.png', dpi=100)
         #plt.show()
         ################################################
+
+        print("\n\n")
 
         return None
