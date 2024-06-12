@@ -42,19 +42,20 @@ for file in file_list:
     data = np.genfromtxt(file_path)
 
     # plot data
-    #plt.plot(data[:, 0], data[:, 1], label=file[-12:], marker='.', markersize=2, linestyle='None', alpha=0.75)
-    plt.plot(data[:, 0], data[:, 1]-min(data[:, 1]), marker='.', markersize=2, linestyle='None', label=file.split('/')[-1])
+    plt.plot(data[:, 0], data[:, 1], label=file[-12:], marker='.', markersize=2, linestyle='None', alpha=0.75)
+    #plt.plot(data[:, 0], data[:, 1]-min(data[:, 1]), marker='.', markersize=2, linestyle='None', label=file.split('/')[-1])
     print(file.split('/')[-1])
     print(min(data[:, 1]))
     print(data[-101:-1, 1].mean())
     #plt.plot(data[:, 0], data[:, 1]-data[0, 1], label=file[-10:]) #linestyle='None', marker = '+', markersize=0.25)
-    ax = plt.subplot(111)
-    #ax.legend(loc='center left')
+
 
 plt.title("MAP Light curve")
 plt.xlabel("Time (s)")
 plt.ylabel("Lux")
+#plt.xlim([-100, 1950])
 
 
-plt.legend()
+plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+plt.tight_layout()
 plt.show()
