@@ -3,7 +3,7 @@
  * Written by: Lexie Scholtz
  *             Vic Nunez
  * Created: 2022.09.29
- * Last Updated: 2023.04.12
+ * Last Updated: 2024.08.28
 */
 
 #include "Arduino.h"
@@ -36,6 +36,7 @@ const uint8_t NAME_LEN = 8;
 char file_entry[NAME_LEN + 1] = "********";
 String file_name = "";
 uint8_t current_name_char = 0;
+
 // run time
 const uint8_t TIME_LEN = 4;
 int run_time[TIME_LEN] = {0, 0, 0, 0}; // nums in the run_time variable [mm/ss]
@@ -110,6 +111,10 @@ void setup() {
   if (!check_open_log_connection()) {
     logger_error();
   }
+  // byte open_log_status = open_log.getStatus();
+  // if (!(open_log_status & 1<<STATUS_IN_ROOT_DIRECTORY)) {
+  //   logger_error();
+  // }
 
   // set up sensor  - confirm connection
   if (!tsl.begin()) {
@@ -260,6 +265,7 @@ void loop() {
     if (red_status > LONG_HOLD) {
       // user long held red button to go back to name entry
       state = ENTER_NAME;
+      updated = true; 
 
     } else if (red_status > SHORT_HOLD) {
       // user short held red button to go back 1 character
@@ -494,7 +500,7 @@ bool check_file(String file_name) {
 }
 
 bool check_open_log_connection() {
-  return open_log.getStatus() != 0xFF;
+  return open_log.getStatus() & 1<<STATUS_SD_INIT_GOOD;
 }
 
 bool check_sensor_connection() {

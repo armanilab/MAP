@@ -1,6 +1,6 @@
 import numpy as np
 from Classes import MagFieldFit, ParamGuesser
-
+import sys # new
 
 
 '''This code is to be run by students running the iron oxide
@@ -10,7 +10,6 @@ nanoparticle characterization lab. The structure of the code is as follows:
 	3) name of the folder they would like to output the results to
 This code is to replace multi_LA.py, which is less user friendly
 '''
-
 
 ##########Determine fit params for magnetic field##############
 magSize = input("Please select the size magnet used in the analysis:\n[a]\t3/8 inch\n[b]\t1/4 inch\n[c]\t3/16 inch\n")
@@ -46,7 +45,9 @@ print("Mag. Field Params: {} \t {}\n".format(*magFieldParams))
 file_input = input("Are you analzing...\n[a] a single file?\n[b] all files in a folder?\n")
 if file_input == 'a':
 	path = input("Please enter the path to the data file (not including the file name):\n")
+	path = sys.argv[1]
 	file = input("Please enter the file name:\n")
+	file = sys.argv[2]
 else:
 	# TODO: change path input here
 	path = input("Please enter the path to the data folder: ")
