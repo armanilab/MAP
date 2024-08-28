@@ -42,6 +42,7 @@ public:
     void show_file_name(char file_entry[], int index); // displays the screen to enter the file name
     void show_run_time(int run_time[], int index); // displays the screen to enter the run time wanted
     void show_test_ready(String file_name, int run_time[]); // screen tells user what info they inputted and tells them test is ready to start 
+    void show_countdown();
     void show_test_in_progress(int run_time[], unsigned long time_elapsed, float recent_val, String file_name, float avg_slope); // displays screen with time elapsed and active trendline
     void show_test_ended(String file_name, int min, int sec); // displays test ended screen w/ file name and actual time elapsed
     void show_error_logger();   // displays error

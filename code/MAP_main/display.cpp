@@ -196,9 +196,48 @@ void Display::show_test_ready(String file_name, int run_time[])
     tft.println("Hold green to START");
 }
 
+void Display::show_countdown() {
+  tft.fillScreen(ST77XX_BLACK); // clear the screen
+  tft.setCursor(0, 0);
+  tft.setTextSize(2);
+  tft.setTextColor(WHITE);
+
+  tft.println("Get ready to push");
+  tft.println("magnet in...");
+
+  delay(1500);
+
+  tft.setTextColor(RED);
+  tft.setTextSize(3);
+  tft.setCursor(15, 50);
+  tft.print("3");
+  for (int i = 0; i < 3; i++) {
+    tft.print(".");
+    delay(333);
+  }
+
+  tft.print("2");
+  for (int i = 0; i < 3; i++) {
+    tft.print(".");
+    delay(333);
+  }
+
+  tft.print("1");
+  for (int i = 0; i < 3; i++) {
+    tft.print(".");
+    delay(333);
+  }
+
+  tft.setTextSize(5);
+  tft.setTextColor(GREEN);
+  tft.setCursor(80, 90);
+  tft.print("GO!");
+  
+}
+
 void Display::show_test_in_progress(int run_time[], unsigned long time_elapsed, float recent_val, String file_name, float avg_slope) // displays screen with time elapsed and active trendline
 {
-     tft.fillScreen(ST77XX_BLACK); // clear the screen
+    tft.fillScreen(ST77XX_BLACK); // clear the screen
 
     tft.setCursor(0,0);             // changing cursor, text size, and color to display informational words
     tft.setTextSize(2);
@@ -418,7 +457,7 @@ void Display::show_enter_name_overwrite(String file_name) // displays warnning s
 
     tft.setTextColor(ORANGE);
     tft.setTextSize(3);
-    tft.setCursor(25, 60);
+    tft.setCursor(15, 60);
     tft.print(file_name);       // prints file name to screen
     tft.setCursor(0,100);
     tft.setTextSize(2);

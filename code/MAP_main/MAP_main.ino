@@ -47,7 +47,7 @@ unsigned long start_time = 0;
 unsigned long LED_start_time = 0;
 unsigned long time_elapsed = 0;
 const unsigned long UPDATE_INT = 1000; // [ms] refresh rate of display during test
-unsigned long last_update = -UPDATE_INT;
+unsigned long last_update = 0; //-UPDATE_INT;
 bool ended_early = false;
 // avg_slope
 int data_points = 40;
@@ -218,7 +218,8 @@ void loop() {
 
     // green button input
     if (green_status > LONG_HOLD) {
-      if (strcmp(file_entry, "********") == 0) {
+      if (strcmp(file_entry, "********") == 0) { 
+        // user must enter a file name
       }
       else {
         // post processing on entered name
@@ -299,6 +300,10 @@ void loop() {
 
       // flush file - flush() command
       open_log.syncFile();
+
+      // show countdown screen
+      tft.show_countdown();
+
       // record start time
       start_time = millis();
 
@@ -343,6 +348,7 @@ void loop() {
       state = ERROR_LOGGER;
     }
 
+    // TODO: fix the display
     // display stuff
     // finds avg_slope value
     time_interval = time_elapsed - prev_time_elapsed;
@@ -371,7 +377,7 @@ void loop() {
       tft.show_test_in_progress(run_time, time_elapsed, lux, file_name, avg_slope); // call to display function
     }
 
-    if (red_status > LONG_HOLD || time_elapsed >= run_time_ms) { // user cancelled test
+    if (red_status > LONG_HOLD || time_elapsed >= run_time_ms) { // user cancelled test or time is up
       open_log.syncFile();
       state = TEST_ENDED;
       if (time_elapsed < run_time_ms) {
