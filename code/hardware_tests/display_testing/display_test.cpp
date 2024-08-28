@@ -136,7 +136,7 @@ void Display::show_test_ready(char file_name[], int run_time[])
 {
     tft.fillScreen(ST77XX_BLACK); // clear the screen
 
-    tft.setCursor(30, 0);        // sets cursor for first line
+    tft.setCursor(15, 0);        // sets cursor for first line
     tft.setTextSize(3);         // sets text size for file name and run time
     tft.setTextColor(ORANGE);   // file name will be orange
     tft.print(file_name);       // prints file name to screen
@@ -432,3 +432,42 @@ void Display::show_connection_re_established(char re_established[]) // displays 
     tft.println("Test resetting...");    
 
 }   
+
+void Display::show_countdown() {
+  tft.fillScreen(ST77XX_BLACK); // clear the screen
+  tft.setCursor(0, 0);
+  tft.setTextSize(2);
+  tft.setTextColor(WHITE);
+
+  tft.println("Get ready to push");
+  tft.println("magnet in...");
+
+  delay(1500);
+
+  tft.setTextColor(RED);
+  tft.setTextSize(3);
+  tft.setCursor(15, 50);
+  tft.print("3");
+  for (int i = 0; i < 3; i++) {
+    tft.print(".");
+    delay(333);
+  }
+
+  tft.print("2");
+  for (int i = 0; i < 3; i++) {
+    tft.print(".");
+    delay(333);
+  }
+
+  tft.print("1");
+  for (int i = 0; i < 3; i++) {
+    tft.print(".");
+    delay(333);
+  }
+
+  tft.setTextSize(5);
+  tft.setTextColor(GREEN);
+  tft.setCursor(80, 90);
+  tft.print("GO!");
+  
+}

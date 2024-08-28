@@ -45,7 +45,7 @@ void setup() {
   //         99:99
   // Hold GREEN to start
   int test_time[4] = {9, 9, 9, 9};
-  screen.show_test_ready("display", test_time);
+  screen.show_test_ready("disptest", test_time);
 
   // Serial.println("We made it to here.");
   // screen.show_error_logger();
