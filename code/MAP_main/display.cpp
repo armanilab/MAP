@@ -4,7 +4,7 @@
  * Written by: Lexie Scholtz
  *             Vic Nunez
  * Created: 2022.09.29
- * Last Updated: 2023.04.03
+ * Last Updated: 2024.08.28
 */
 
 #include "Display.h"
@@ -376,7 +376,9 @@ void Display::show_error_logger()
     tft.setCursor(0, 65);
     tft.println("and open log");
     tft.setCursor(0,85);
-    tft.println("connection.");
+    tft.println("connection. Reset");
+    tft.setCursor(0, 105);
+    tft.println("system when done.");
 }
 
 void Display::show_error_sensor()
