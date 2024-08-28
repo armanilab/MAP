@@ -54,7 +54,7 @@ int data_points = 40;
 int slope_index = 0;
 float prev_lux = 1;
 bool array_full = false;
-int slopes[39];                        // *IMPORTANT* If we change # of data points, we must change this number inside of brackets
+int slopes[39];          // *IMPORTANT* If we change # of data points, we must change this number inside of brackets
 float time_interval;    // *IMPORTANT* need to find the value this needs to be at
 unsigned long prev_time_elapsed = 0;
 float cur_slope;
@@ -111,10 +111,6 @@ void setup() {
   if (!check_open_log_connection()) {
     logger_error();
   }
-  // byte open_log_status = open_log.getStatus();
-  // if (!(open_log_status & 1<<STATUS_IN_ROOT_DIRECTORY)) {
-  //   logger_error();
-  // }
 
   // set up sensor  - confirm connection
   if (!tsl.begin()) {
@@ -149,12 +145,10 @@ void setup() {
     if (setup_green_status > LONG_HOLD) { // user cancelled test
         break;
       }
-
   }
 
-
   // initialize state to name entry
-  state = ENTER_NAME;
+  state = ENTER_TIME;
   updated = true;
 
 }
@@ -169,70 +163,9 @@ void loop() {
   if (red_status == -1 || green_status == -1) {
     state = ERROR_BUTTON;
   }
-
-  /* NAME ENTRY */
-  if (state == ENTER_NAME) {
-    // TODO: display stuff
-    // update display
-    // 2nd argument = index of char to highlight (if out of range i.e. -1, highlight none)
-
-    // update "display" (serial for now) - remove when done troubleshooting
-    if (updated) { // only send updates if something has actually changed
-      tft.show_file_name(file_entry, current_name_char);  // call to display function
-      updated = false;
-    }
-
-    // green button input
-    if (green_status > LONG_HOLD) {
-      if (strcmp(file_entry, "********") == 0)
-      {
-      }
-      else {
-      // post processing on entered name
-      file_name = String(file_entry);
-      file_name.replace("*", ""); // remove *'s from name
-      file_name.concat(".txt"); // append .txt to make a text file
-
-      // check file name against existing files
-      bool will_overwrite = check_file(file_name);
-      if (will_overwrite) {
-        // move to NAME_OVERWRITE
-        state = NAME_OVERWRITE;
-      } else {
-        // move to ENTER_TIME state
-        state = ENTER_TIME;
-      }
-      updated = true;
-      }
-    }
-     else if (green_status > SHORT_HOLD) {
-      // move forward one character
-      if (current_name_char < NAME_LEN - 1) {
-        current_name_char++;
-        updated = true;
-      }
-    } else if (green_status > CLICK) {
-      // increment current char
-      file_entry[current_name_char] = increment_char(file_entry[current_name_char]);
-      updated = true;
-    } // otherwise, button was not pressed, do nothing
-
-    // react to red button
-    if (red_status > SHORT_HOLD) {
-      // go back one character
-      if (current_name_char > 0) {
-        current_name_char--;
-        updated = true;
-      }
-    } else if (red_status > CLICK) {
-      // decrement current character
-      file_entry[current_name_char] = decrement_char(file_entry[current_name_char]);
-      updated = true;
-
-    }
-  }
+  
   /* TIME ENTRY */
-   else if (state == ENTER_TIME) {
+  if (state == ENTER_TIME) {
     // remove this loop when done troubleshooting
     if (updated) { // only send updates if something has actually changed
       tft.show_run_time(run_time, current_time_char); // call to display function
@@ -246,7 +179,7 @@ void loop() {
       run_time_ms = min * 60000 + sec * 1000;
 
       updated = true;
-      state = TEST_READY;
+      state = ENTER_NAME;
 
     } else if (green_status > SHORT_HOLD) {
       if (current_time_char < TIME_LEN - 1) {
@@ -262,12 +195,7 @@ void loop() {
       updated = true;
     }
 
-    if (red_status > LONG_HOLD) {
-      // user long held red button to go back to name entry
-      state = ENTER_NAME;
-      updated = true; 
-
-    } else if (red_status > SHORT_HOLD) {
+    if (red_status > SHORT_HOLD) {
       // user short held red button to go back 1 character
       if (current_time_char > 0) { // decrement the character index
         current_time_char--;
@@ -281,9 +209,64 @@ void loop() {
       }
       updated = true;
     }
+  } else if (state == ENTER_NAME) { /* NAME ENTRY */
+    // update "display" (serial for now) - remove when done troubleshooting
+    if (updated) { // only send updates if something has actually changed
+      tft.show_file_name(file_entry, current_name_char);  // call to display function
+      updated = false;
+    }
+
+    // green button input
+    if (green_status > LONG_HOLD) {
+      if (strcmp(file_entry, "********") == 0) {
+      }
+      else {
+        // post processing on entered name
+        file_name = String(file_entry);
+        file_name.replace("*", ""); // remove *'s from name
+        file_name.concat(".txt"); // append .txt to make a text file
+
+        // check file name against existing files
+        bool will_overwrite = check_file(file_name);
+        if (will_overwrite) {
+          // move to NAME_OVERWRITE
+          state = NAME_OVERWRITE;
+        } else {
+          // move to ENTER_TIME state
+          state = TEST_READY;
+        }
+        updated = true;
+      }
+    }
+     else if (green_status > SHORT_HOLD) {
+      // move forward one character
+      if (current_name_char < NAME_LEN - 1) {
+        current_name_char++;
+        updated = true;
+      }
+    } else if (green_status > CLICK) {
+      // increment current char
+      file_entry[current_name_char] = increment_char(file_entry[current_name_char]);
+      updated = true;
+    } // otherwise, button was not pressed, do nothing
+
+    // react to red button
+    if (red_status > LONG_HOLD) {
+      state = ENTER_TIME;
+      updated = true; 
+    } else if (red_status > SHORT_HOLD) {
+      // go back one character
+      if (current_name_char > 0) {
+        current_name_char--;
+        updated = true;
+      }
+    } else if (red_status > CLICK) {
+      // decrement current character
+      file_entry[current_name_char] = decrement_char(file_entry[current_name_char]);
+      updated = true;
+    }
   } else if (state == TEST_READY) {
-    if (updated)
-    {
+    if (updated) {
       tft.show_test_ready(file_name, run_time); // call to display function
       updated = false;
     }
@@ -325,7 +308,7 @@ void loop() {
     }
     if (red_status > LONG_HOLD) {
       // user long held red button to go back to time entry
-      state = ENTER_TIME;
+      state = ENTER_NAME;
       updated = true;
     }
   } else if (state == TEST_IN_PROGRESS) {
@@ -360,7 +343,6 @@ void loop() {
       state = ERROR_LOGGER;
     }
 
-
     // display stuff
     // finds avg_slope value
     time_interval = time_elapsed - prev_time_elapsed;
@@ -378,8 +360,7 @@ void loop() {
     }
 
     float avg_slope = 0;                                // initializes our avg_slope variable
-    for (int i = 0; i < (data_points - 2); i++)
-    {
+    for (int i = 0; i < (data_points - 2); i++) {
       avg_slope = avg_slope + slopes[i];
     }
     avg_slope = avg_slope / (float)(data_points - 1);     // avg_slope value of last x lux values
@@ -438,7 +419,7 @@ void loop() {
 
     if (green_status > LONG_HOLD) {
       // user long held green to confirm file name
-      state = ENTER_TIME;
+      state = TEST_READY;
       updated = true;
     }
     if (red_status > SHORT_HOLD) {
