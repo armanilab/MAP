@@ -13,30 +13,6 @@ def display_chi_p_values(X_p_values, uncertainties):
     result = "\n".join([f"X_p = {X:.4f}, Uncertainty = {u:.4f}" for X, u in zip(X_p_values, uncertainties)])
     return result
 
-# def show_gui(X_p_values, uncertainties, X_ppms):
-#     # Create the main window
-#     root = tk.Tk()
-#     root.title("Parameter Display")
-#
-#     # Create and pack widgets
-#     tk.Label(root, text=f"χ_ppms = {X_ppms:.4f}", font=("Helvetica", 16)).pack(pady=10)
-#
-#     results = display_chi_p_values(X_p_values, uncertainties)
-#     tk.Label(root, text="X_p values and uncertainties:", font=("Helvetica", 14)).pack(pady=5)
-#
-#     text_area = tk.Text(root, wrap=tk.WORD, height=10, width=50)
-#     text_area.insert(tk.END, results)
-#     text_area.pack(pady=10)
-#
-#     # Create a close button
-#     close_button = ttk.Button(root, text="Close", command=root.destroy)
-#     close_button.pack(pady=10)
-#
-#     # Run the GUI event loop
-#     root.mainloop()
-
-
-
 def main():
     # Parameters
     L = 0.0254
@@ -72,11 +48,11 @@ def main():
     for file_path in file_paths:
         data_processor = ma.DataProcessor(file_path)
         conc = data_processor.calibration(c0=0.1)
-        model_fitter = ma.ModelFitter(data_processor.time, conc, C0, eta, rho, mu0, Xs, a3, regularization=1)
+        model_fitter = ma.ModelFitter(file_path, data_processor.time, conc, C0, eta, rho, mu0, Xs, a3, regularization=1)
         fitted_params.append(model_fitter.fit(initial_guess, bounds))
         model_fitter.evaluate_fit()  # Print goodness-of-fit metrics
         # model_fitter.plot_residuals()  # Plot residuals for each file
-        model_fitter.plot_parameter_convergence()  # Plot parameter convergence for each file
+        #model_fitter.plot_parameter_convergence()  # Plot parameter convergence for each file
         model_fitter.plot_fit()
         # model_fitter.plot_residuals_surface(r_planeRange, X_p_planeRange)
 
@@ -136,20 +112,21 @@ def main_lexie():
     L = 0.0254
     W = 0.0254
     T = 0.009525
-    sensor_pos = 0.00885
-    sensor_w = 0.00965
+    sensor_pos = 0.00905
+    sensor_w = 0.00004
     B_r = 1.32
     eta = 8.9e-4
     rho = 5200
     mu0 = 4 * np.pi * 10**-7
     Xs = -9.04e-6
-    C0 = 0.1 * (3 * 0.001 * 0.001 * 0.01) / (4e6 * np.pi * ((0.5e-6)**3) *rho) #0.1 * (0.001 * 0.001 * 0.01) / (3.84e-22)
+    C0 = 0.1 #* (3 * 0.001 * 0.001 * 0.01) / (4e6 * np.pi * ((0.5e-6)**3) *rho) #0.1 * (0.001 * 0.001 * 0.01) / (3.84e-22)
     initial_guess = [1e-6, 0.001]
     bounds = ([0, 0], [0.1, 0.1])#([0, 0], [np.inf, np.inf])
     #a3 = -9.0408
-    a3 = -26.195861 # 1/4" magnets, repelling
+    #a3 = -26.195861 # 1/4" magnets, repelling
+    a3 = -34.051553 #3/8" magnets, repelling
 
-    file = '../../../../test_data/paper_data/noir2/noir2005.txt'
+    file = '../../../../test_data/paper_data/noir2/noir2004.txt'
     results = []
 
     r_planeRange = np.linspace(1e-7, 3e-5, 50)
@@ -160,37 +137,61 @@ def main_lexie():
 
     data_processor = ma.DataProcessor(file)
     conc = data_processor.calibration(c0=0.1)
-    model_fitter = ma.ModelFitter(data_processor.time, conc, C0, eta, rho, mu0, Xs, a3, regularization=1)
+    model_fitter = ma.ModelFitter(file, data_processor.time, conc, C0, eta, rho, mu0, Xs, a3, regularization=1)
     max_r_sq = -np.inf
     max_result = []
 
-    counter = 0
-    for r in r_range:
-        counter += 1
-        print("# " + str(counter) + " of " + str(len(r_range)))
-        for x in x_range:
-            initial_guess = [x, r]
-            fitted_param = model_fitter.fit(initial_guess, bounds)
-            r_fit, X_p_fit = fitted_param
-            y_pred = model_fitter.model(model_fitter.time, r_fit, X_p_fit)
-            r_squared, adj_r_squared, mse, rmse, mae = ma.calculate_metrics(conc, y_pred, model_fitter.n, model_fitter.p)
-            new_result = [x, r, fitted_param[0], fitted_param[1], r_squared, adj_r_squared, mse, rmse, mae]
-            if r_squared > max_r_sq:
-                max_result = new_result
-            results.append(new_result)
-            #print(new_result)
+    # counter = 0
+    # for r in r_range:
+    #     counter += 1
+    #     print("# " + str(counter) + " of " + str(len(r_range)))
+    #     for x in x_range:
+    #         initial_guess = [r, x]
+    #         print('initial- r: {:.4e}, chi: {:.4e}'.format(r, r))
+    #         fitted_param = model_fitter.fit(initial_guess, bounds)
+    #         r_fit, X_p_fit = fitted_param
+    #         print('fit ---- r: {:.4e}, chi: {:.4e}'.format(r_fit, X_p_fit))
+    #         y_pred = model_fitter.model(model_fitter.time, r_fit, X_p_fit)
+    #         r_squared, adj_r_squared, mse, rmse, mae = ma.calculate_metrics(conc, y_pred, model_fitter.n, model_fitter.p)
+    #         new_result = [x, r, fitted_param[0], fitted_param[1], r_squared, adj_r_squared, mse, rmse, mae]
+    #         if r_squared > max_r_sq:
+    #             max_result = new_result
+    #         results.append(new_result)
+    #         #print(new_result)
+    #
+    # print('max_result:')
+    # print(max_result)
+    #
+    # print("analysis done; writing file")
+    # with open('results.txt', 'w') as f:
+    #     f.write(file + '\n')
+    #     f.write('r_init, x_init, r_fit, x_fit, r_sq, adj_r_sq, mse, rmse, mae\n')
+    #     for ri in range(len(results)):
+    #         r = results[ri]
+    #         f.write(str(r) + '\n')
 
-    print('max_result:')
-    print(max_result)
+    file_paths = ['../../../../test_data/paper_data/noir2/noir2011.txt',
+        '../../../../test_data/paper_data/noir2/noir2012.txt',
+        '../../../../test_data/paper_data/noir2/noir2013.txt']
+    fitted_params = []
 
-    print("analysis done; writing file")
-    with open('results.txt', 'w') as f:
-        f.write(file + '\n')
-        f.write('r_init, x_init, r_fit, x_fit, r_sq, adj_r_sq, mse, rmse, mae\n')
-        for ri in range(len(results)):
-            r = results[ri]
-            f.write(str(r) + '\n')
+    for file_path in file_paths:
+        data_processor = ma.DataProcessor(file_path)
+        conc = data_processor.calibration(c0=0.1)
+        model_fitter = ma.ModelFitter(file_path, data_processor.time, conc, C0, eta, rho, mu0, Xs, a3, regularization=1)
+        fitted_params.append(model_fitter.fit(initial_guess, bounds))
+        model_fitter.evaluate_fit()  # Print goodness-of-fit metrics
+        # model_fitter.plot_residuals()  # Plot residuals for each file
+        #model_fitter.plot_parameter_convergence()  # Plot parameter convergence for each file
+        model_fitter.plot_fit()
+        # model_fitter.plot_residuals_surface(r_planeRange, X_p_planeRange)
+
+        plt.show()
+
+    for i, params in enumerate(fitted_params):
+        r_fit, X_p_fit = params
+        print(f"Fitted parameters ({file_paths[i]}): r={r_fit:.3}, X_p={X_p_fit:.4}")
 
 
 if __name__ == "__main__":
-    main()
+    main_lexie()

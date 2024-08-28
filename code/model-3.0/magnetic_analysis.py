@@ -78,10 +78,16 @@ class DataProcessor:
         self.file_path = file_path
         self.time, self.intensity = np.loadtxt(file_path, skiprows=3, unpack=True)
 
+        # NEW: cutoff files at certain timepoint
+        cutoff = 400
+        print("cutoff time: " + str(cutoff))
+        self.intensity = self.intensity[self.time < cutoff]
+        self.time = self.time[self.time < cutoff]
+
         # the conversion factor between concentration and number of particles
         self.conc2num =(0.001 * 0.001 * 0.01) / (3.84e-22)
 
-    def calibration(self, c0=0.0625):
+    def calibration(self, c0=0.1):
         """Performs calibration steps to turn intensity data into concentration
 
         Parameters
@@ -156,7 +162,7 @@ def calculate_metrics(y_true, y_pred, n, p):
     return r_squared, adj_r_squared, mse, rmse, mae
 
 class ModelFitter:
-    def __init__(self, time, conc, C0, eta, rho, mu0, Xs, a, regularization=1.0):
+    def __init__(self, file_name, time, conc, C0, eta, rho, mu0, Xs, a, regularization=1.0):
         self.time = time
         self.conc = conc
         self.C0 = C0
@@ -169,6 +175,7 @@ class ModelFitter:
         self.n = len(time)
         self.p = 2  # Number of parameters: r and X_p
         self.regularization = regularization
+        self.file_name = file_name
 
     def model(self, t, r, X_p):
         alpha = 9 * self.eta / (2 * self.rho * r**2)
@@ -196,7 +203,7 @@ class ModelFitter:
             else:
                 # Distinct roots case
                 k1 = self.C0 * delta2 / (delta2 - delta1)
-                return k1 * np.exp(delta1 * t) + (self.C0 - k1) * np.exp(delta2 * t)
+                return 2*(k1 * np.exp(delta1 * t) + (self.C0 - k1) * np.exp(delta2 * t))
 
     def residuals(self, params):
         r, X_p = params
@@ -244,10 +251,11 @@ class ModelFitter:
         plt.figure(figsize=(3.5, 3.5))
         plt.plot(self.time, self.conc, label='Experimental Data', markersize=5)
         plt.plot(self.time, y_pred, '-', label='Fitted Model', color='red')
-        plt.xlabel('Time')
-        plt.ylabel('Concentration')
+        plt.xlabel('Time (s)')
+        plt.ylabel('Concentration (mg/mL)')
+        plt.title(self.file_name)
         plt.legend()
-        plt.title('Concentration vs Time with Fitted Model')
+        plt.tight_layout()
         plt.grid(True)
 
 
