@@ -79,7 +79,7 @@ class DataProcessor:
         self.time, self.intensity = np.loadtxt(file_path, skiprows=3, unpack=True)
 
         # NEW: cutoff files at certain timepoint
-        cutoff = 400
+        cutoff = 300
         print("cutoff time: " + str(cutoff))
         self.intensity = self.intensity[self.time < cutoff]
         self.time = self.time[self.time < cutoff]
@@ -162,7 +162,7 @@ def calculate_metrics(y_true, y_pred, n, p):
     return r_squared, adj_r_squared, mse, rmse, mae
 
 class ModelFitter:
-    def __init__(self, file_name, time, conc, C0, eta, rho, mu0, Xs, a, regularization=1.0):
+    def __init__(self, file_name, time, conc, C0, eta, rho, mu0, Xs, a, regularization=0.0):
         self.time = time
         self.conc = conc
         self.C0 = C0
@@ -177,8 +177,9 @@ class ModelFitter:
         self.regularization = regularization
         self.file_name = file_name
 
-    def model(self, t, r, X_p):
-        alpha = 9 * self.eta / (2 * self.rho * r**2)
+    def model(self, t, X_p, r):
+        #alpha = 9 * self.eta / (2 * self.rho * r**2)
+        alpha = 18 * self.eta / (np.pi * self.rho * r**2)
         beta = 2 * self.a**2 * X_p / (self.rho * self.mu0 * (1 + self.Xs))
 
         discriminant = alpha**2 - 4 * beta
@@ -203,27 +204,27 @@ class ModelFitter:
             else:
                 # Distinct roots case
                 k1 = self.C0 * delta2 / (delta2 - delta1)
-                return 2*(k1 * np.exp(delta1 * t) + (self.C0 - k1) * np.exp(delta2 * t))
+                return k1 * np.exp(delta1 * t) + (self.C0 -k1) * np.exp(delta2 * t)
 
     def residuals(self, params):
-        r, X_p = params
-        residual = self.model(self.time, r, X_p) - self.conc
+        X_p, r = params
+        residual = self.model(self.time, X_p, r) - self.conc
         # Add regularization term
         regularization = self.regularization * (r**2 + X_p**2)
         return residual + regularization
 
-    def fit(self, initial_guess, bounds, verbose=0, convergence_method='dogbox', convergence_tol=1e-8):
+    def fit(self, initial_guess, bounds, verbose=0, convergence_method='trf', convergence_tol=1e-8):
         def objective_function(params):
             self.tracker.update(params)
             return self.residuals(params)
 
-        result = least_squares(objective_function, initial_guess, method=convergence_method, ftol=convergence_tol, gtol=convergence_tol, xtol=convergence_tol, bounds=bounds, verbose=verbose)
+        result = least_squares(objective_function, initial_guess, method=convergence_method, tr_solver=None, loss='soft_l1', f_scale=0.1, x_scale=[1e-3, 1e-6], ftol=convergence_tol, gtol=convergence_tol, xtol=convergence_tol, bounds=bounds, verbose=verbose)
         self.fitted_params = result.x
         return self.fitted_params
 
     def evaluate_fit(self):
-        r_fit, X_p_fit = self.fitted_params
-        y_pred = self.model(self.time, r_fit, X_p_fit)
+        X_p_fit, r_fit = self.fitted_params
+        y_pred = self.model(self.time, X_p_fit, r_fit)
         r_squared, adj_r_squared, mse, rmse, mae = calculate_metrics(self.conc, y_pred, self.n, self.p)
         print(f"R²: {r_squared:.4f}")
         print(f"Adjusted R²: {adj_r_squared:.4f}")
@@ -242,18 +243,18 @@ class ModelFitter:
 
     def plot_parameter_convergence(self):
         history = self.tracker.get_history()
-        plot_convergence(history, ['r', 'X_p'])
+        plot_convergence(history, ['X_p', 'r'])
 
     def plot_fit(self):
-        r_fit, X_p_fit = self.fitted_params
-        y_pred = self.model(self.time, r_fit, X_p_fit)
+        X_p_fit, r_fit = self.fitted_params
+        y_pred = self.model(self.time, X_p_fit, r_fit)
 
         plt.figure(figsize=(3.5, 3.5))
         plt.plot(self.time, self.conc, label='Experimental Data', markersize=5)
         plt.plot(self.time, y_pred, '-', label='Fitted Model', color='red')
         plt.xlabel('Time (s)')
         plt.ylabel('Concentration (mg/mL)')
-        plt.title(self.file_name)
+        plt.title(self.file_name[-12:])
         plt.legend()
         plt.tight_layout()
         plt.grid(True)
@@ -288,9 +289,10 @@ class ModelFitter:
             ax.scatter(path[-1, 0], path[-1, 1], path_residuals[-1], color='green', s=150, edgecolor='black', label='End Point', zorder=10)
 
         # Plot the final convergence values
-        r_fit, X_p_fit = self.fitted_params
-        final_residuals = np.sum(self.residuals([r_fit, X_p_fit]) ** 2)
-        ax.scatter(r_fit, X_p_fit, final_residuals, color='red', s=100, edgecolor='black', label='Final Convergence', zorder=10)
+
+        X_p_fit, r_fit = self.fitted_params
+        final_residuals = np.sum(self.residuals([X_p_fit, r_fit]) ** 2)
+        ax.scatter(X_p_fit, r_fit, final_residuals, color='red', s=100, edgecolor='black', label='Final Convergence', zorder=10)
 
         ax.set_xlabel('r')
         ax.set_ylabel('X_p')
