@@ -52,25 +52,32 @@ def plot_data(time, lux, conc, file):
     plt.tight_layout()
     plt.show()
 
-def model(t, chi, r):
-
 
 def driver():
     # parameters
     eta = 8.9e-4
-    rho = 5200
+    rho_p = 5200
+    rho_s = 1000
     mu0 = 4 * np.pi * (10e-7)
     Xs = -9.04e-6
+
+    # physical setup parameters
+    sensor = [0.0130, 0.014] #TODO: enter sensor position
+    z_low = sensor[0]
+    z_high = sensor[1]
+    h_window = 0.001
+    a_window = 0.01 * 0.01
+    v_window = a_window * h_window
 
     # magnet parameters
     l = 0.0254
     w = 0.0254
     in2m = 0.0254
 
-    t_input = input('How thick is your magnet?\n[a] 3/16"\n[b] 1/4"\n[c] 3/8"\n[d] 1/2"\n')
+    t_input = input('Which magnet are you using?\n[a] 3/16"\n[b] 1/4"\n[c] 3/8"\n[d] 1/2"\n')
     if t_input == 'a':
         t = 3/16 * in2m
-        print('3/16" thickness selected.')
+        print('3/16" thickness, Grade N42 selected.')
     elif t_input == 'b':
         t = 1/4 * in2m
         print('1/4" thickness selected.')
@@ -95,26 +102,44 @@ def driver():
         print("ENTRY ERROR: invalid magnet grade entered")
         return
 
-    # set position of sensor relative to magnet
-    system = input('\nWhich system are you using?\n[a] Magmitus-Obsidian\n[b] Noir\n[c] Silva\n')
-    if system == 'a': # Mag-Ob
-        sensor = [0.0130, 0.014] #TODO: enter sensor position
-        print('Magmitus-Obsidian selected.')
-    elif system == 'b': # Noir
-        sensor = [0.00885, 0.00965]
-        print('Noir selected.')
-    elif system =='c': # Silva (modified though)
-        sensor [0.0442, 0.0452]
-        print('Silva selected.')
-    else:
-        print("ENTRY ERROR: invalid system entered")
-
-    if t_input == 'c' and system == 'a':
+    # TODO: eventually, replace this with the fit itself
+    if t_input == 'a': # 3/16" thick, N42
+        a = -6.677333
+    elif t_input == 'b': #1/4" thick, N42
+        a = -8.208740
+    elif t_input == 'c' and grade =='a':
         a = -10.545907
+    elif t_input == 'c' and grade =='b':
+        a = -11.824199
+    elif t_input == 'd':
+        a = -13.655887
+    print('a = ' + str(a)) 
 
+    shape = input('\nWhat shape are you expecting your particles to be?\n[a] Spherical clusters\n[b] Oblong clusters\n'
+        + '[c] spherical - Re=0.86 (mag 5)\n[d] spherical - Re=0.26 (mag 1)\n')
+    if shape == 'a':
+        cd = 0.47
+    elif shape == 'b':
+        cd = 0.04
+    elif shape == 'c':
+        cd = 5988.85#27.91
+    elif shape =='d':
+        cd = 92.31
+    else:
+        cd = 0.5
+
+    print('cd = ' + str(cd))
     path = '../../../../test_data/paper_data/'
 
     print("\nCurrent path: " + path)
+    path_append = input('Add to path? [enter to skip or start with "-" to enter fully new path]\n')
+    if len(path_append) > 0 and path_append[0]=='-':
+        path = path_append[1:]
+    else:
+        path += path_append
+
+    print("\nNew path: " + path)
+
     file = input('Please enter file name: \n')
 
     if file[-4:] != '.txt':
@@ -150,22 +175,36 @@ def driver():
     print("\nCurrent Parameters:")
     print("Given chi: " + str(chi))
     print("Given r: " + str(r))
+    alpha = (eta * cd) / (2 * r * rho_p)
+    beta = (2 * (a**2) * chi) / (mu0 * rho_p * (1 + Xs))
+    delta1 = 0.5 * (-alpha + np.sqrt((alpha**2) - 4 * beta))
+    delta2 = 0.5 * (-alpha - np.sqrt((alpha**2) - 4 * beta))
 
-    alpha = 9 * eta / (2 * rho * (r**2))
-    beta = -2 * (a**2) * chi * rho / (mu0 * (1+Xs))
 
     print("Alpha: " + str(alpha))
     print("Beta: " + str(beta))
-
-    delta1 = (-alpha + np.sqrt((alpha**2) - 4 * beta)) / 2
-    delta2 = (-alpha - np.sqrt((alpha**2) - 4 * beta)) / 2
-
+    print((alpha**2) - 4 * beta)
     print("Delta1: " + str(delta1))
     print("Delta2: " + str(delta2))
 
     ### MODEL FIT ###
+    def model_eqn(t, chi, r):
+        alpha = (eta * cd) / (2 * r * rho_p)
+        beta = (2 * (a**2) * chi) / (mu0 * rho_p * (1 + Xs))
+        delta1 = 0.5 * (-alpha + np.sqrt((alpha**2) - 4 * beta))
+        delta2 = 0.5 * (-alpha - np.sqrt((alpha**2) - 4 * beta))
 
+        k1 = delta2 / (delta2 - delta1)
+        k2 = -delta1 / (delta2 - delta1)
+        return c0 / (k1 * np.exp(delta1 * t) + k2 * np.exp(delta2 * t))
+        #k = (3 * c0 * v_window) / (rho_p * 4 * np.pi * (r**2) * (z_high - z_low))
+        #deltas = delta2 - delta1
+        #return k * (z_low + z_high) / (delta2 / deltas * np.exp(delta1 * t) - delta1 / (deltas) * np.exp(delta2 * t))
 
+    model = Model(model_eqn)
+    params = model.make_params(chi=chi, r=r)
+    result = model.fit(conc, params, t=time)
+    print(result.fit_report())
 
 
 

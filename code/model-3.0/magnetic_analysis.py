@@ -79,10 +79,10 @@ class DataProcessor:
         self.time, self.intensity = np.loadtxt(file_path, skiprows=3, unpack=True)
 
         # NEW: cutoff files at certain timepoint
-        cutoff = 300
-        print("cutoff time: " + str(cutoff))
-        self.intensity = self.intensity[self.time < cutoff]
-        self.time = self.time[self.time < cutoff]
+        # cutoff = 180
+        # print("cutoff time: " + str(cutoff))
+        # self.intensity = self.intensity[self.time < cutoff]
+        # self.time = self.time[self.time < cutoff]
 
         # the conversion factor between concentration and number of particles
         self.conc2num =(0.001 * 0.001 * 0.01) / (3.84e-22)
@@ -179,7 +179,20 @@ class ModelFitter:
 
     def model(self, t, X_p, r):
         #alpha = 9 * self.eta / (2 * self.rho * r**2)
-        alpha = 18 * self.eta / (np.pi * self.rho * r**2)
+        #lpha = 18 * self.eta / (np.pi * self.rho * r**2)
+        #alpha = 4.50001 * self.eta / (self.rho * r**2)
+        #alpha = .1 * self.eta / (2 * self.rho * r**2)
+        #cd = 5589 10:1 aspect ratio
+        #cd = 3384
+        # cd = 31523 # dynabeads
+
+        # stokes = 6 * np.pi * self.eta * r
+        # alpha = stokes / (4 * np.pi * (r**3) * self.rho / 3)
+        #alpha = (self.eta * cd) / (2 * r* self.rho) # new - lexie 10/26
+        #print("stokes drag")
+        #alpha = (0.375 * 1.2 * self.eta) / (r * self.rho) # cylinder
+        alpha = (4.500001 * self.eta) / (r**2 * self.rho) # sphere (stokes)
+        #alpha = (self.eta * 0.82) / (2 * r * self.rho)
         beta = 2 * self.a**2 * X_p / (self.rho * self.mu0 * (1 + self.Xs))
 
         discriminant = alpha**2 - 4 * beta
@@ -218,7 +231,12 @@ class ModelFitter:
             self.tracker.update(params)
             return self.residuals(params)
 
-        result = least_squares(objective_function, initial_guess, method=convergence_method, tr_solver=None, loss='soft_l1', f_scale=0.1, x_scale=[1e-3, 1e-6], ftol=convergence_tol, gtol=convergence_tol, xtol=convergence_tol, bounds=bounds, verbose=verbose)
+        result = least_squares(objective_function, initial_guess,
+            method=convergence_method, tr_solver=None, loss='soft_l1',
+            f_scale=0.1, x_scale=[1e-3, 1e-6], ftol=convergence_tol,
+            gtol=convergence_tol, xtol=convergence_tol, bounds=bounds,
+            verbose=verbose, max_nfev=10000)
+
         self.fitted_params = result.x
         return self.fitted_params
 
@@ -226,11 +244,12 @@ class ModelFitter:
         X_p_fit, r_fit = self.fitted_params
         y_pred = self.model(self.time, X_p_fit, r_fit)
         r_squared, adj_r_squared, mse, rmse, mae = calculate_metrics(self.conc, y_pred, self.n, self.p)
-        print(f"R²: {r_squared:.4f}")
-        print(f"Adjusted R²: {adj_r_squared:.4f}")
-        print(f"MSE: {mse:.4e}")
-        print(f"RMSE: {rmse:.4e}")
-        print(f"MAE: {mae:.4e}")
+        # print(f"R²: {r_squared:.4f}")
+        # print(f"Adjusted R²: {adj_r_squared:.4f}")
+        # print(f"MSE: {mse:.4e}")
+        # print(f"RMSE: {rmse:.4e}")
+        # print(f"MAE: {mae:.4e}")
+        return r_squared, adj_r_squared, mse, rmse, mae
 
     def plot_residuals(self):
         residuals = self.residuals(self.fitted_params)
@@ -249,12 +268,12 @@ class ModelFitter:
         X_p_fit, r_fit = self.fitted_params
         y_pred = self.model(self.time, X_p_fit, r_fit)
 
-        plt.figure(figsize=(3.5, 3.5))
+        plt.figure(figsize=(3.5, 3.5), dpi=300)
         plt.plot(self.time, self.conc, label='Experimental Data', markersize=5)
-        plt.plot(self.time, y_pred, '-', label='Fitted Model', color='red')
+        plt.plot(self.time, y_pred, '--', label='Fitted Model', color='red')
         plt.xlabel('Time (s)')
         plt.ylabel('Concentration (mg/mL)')
-        plt.title(self.file_name[-12:])
+        plt.title(self.file_name.split('/')[-1])
         plt.legend()
         plt.tight_layout()
         plt.grid(True)
