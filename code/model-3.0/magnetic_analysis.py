@@ -78,15 +78,6 @@ class DataProcessor:
         self.file_path = file_path
         self.time, self.intensity = np.loadtxt(file_path, skiprows=3, unpack=True)
 
-        # NEW: cutoff files at certain timepoint
-        # cutoff = 180
-        # print("cutoff time: " + str(cutoff))
-        # self.intensity = self.intensity[self.time < cutoff]
-        # self.time = self.time[self.time < cutoff]
-
-        # the conversion factor between concentration and number of particles
-        self.conc2num =(0.001 * 0.001 * 0.01) / (3.84e-22)
-
     def calibration(self, c0=0.1):
         """Performs calibration steps to turn intensity data into concentration
 
@@ -178,22 +169,8 @@ class ModelFitter:
         self.file_name = file_name
 
     def model(self, t, X_p, r):
-        #alpha = 9 * self.eta / (2 * self.rho * r**2)
-        #lpha = 18 * self.eta / (np.pi * self.rho * r**2)
-        #alpha = 4.50001 * self.eta / (self.rho * r**2)
-        #alpha = .1 * self.eta / (2 * self.rho * r**2)
-        #cd = 5589 10:1 aspect ratio
-        #cd = 3384
-        # cd = 31523 # dynabeads
-
-        # stokes = 6 * np.pi * self.eta * r
-        # alpha = stokes / (4 * np.pi * (r**3) * self.rho / 3)
-        #alpha = (self.eta * cd) / (2 * r* self.rho) # new - lexie 10/26
-        #print("stokes drag")
-        #alpha = (0.375 * 1.2 * self.eta) / (r * self.rho) # cylinder
-        alpha = (4.500001 * self.eta) / (r**2 * self.rho) # sphere (stokes)
-        #alpha = (self.eta * 0.82) / (2 * r * self.rho)
         beta = 2 * self.a**2 * X_p / (self.rho * self.mu0 * (1 + self.Xs))
+        alpha = 9 * self.eta / (2 * self.rho * r**2)
 
         discriminant = alpha**2 - 4 * beta
 

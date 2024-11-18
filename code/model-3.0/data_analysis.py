@@ -24,10 +24,10 @@ def main_flip():
     #
     # B_r = 1.32
     eta = 8.9e-4
-    rho = 5200
-    mu0 = 4 * np.pi * 10**-7
+    rho = 5170
+    mu0 = 4 * np.pi * (10**-7)
     Xs = -9.04e-6
-    C0 =  0.1 #* (0.001 * 0.001 * 0.01) / (3.84e-22)#0.1 * (3 * 0.001 * 0.001 * 0.01) / (4e6 * np.pi * ((0.5e-6)**3) *rho)
+    C0 =  1.0 #* (0.001 * 0.001 * 0.01) / (3.84e-22)#0.1 * (3 * 0.001 * 0.001 * 0.01) / (4e6 * np.pi * ((0.5e-6)**3) *rho)
     initial_guess = [0.001, 0.5e-6]
     bounds = ([0, 0], [0.1, 0.1])#([0, 0], [np.inf, np.inf])
     #a3 = -10.545907 #3/8", mag ob, N42
@@ -43,8 +43,9 @@ def main_flip():
     # Process data and fit model
     #file_paths = ['data/mjack005.txt', 'data/mjack006.txt', 'data/mjack007.txt', 'data/mjack008.txt', 'data/mjack009.txt']
     path = '../../../../test_data/paper_data/magob/'
-    # files = ['dyna0001.txt', 'dyna0002.txt', 'dyna0003.txt']
-    files = ['0423_001.txt', '0423_002.txt', '0423_003.txt', 'magob123.txt', 'magob124.txt', 'magob125.txt']
+    #files = ['dyna0001.txt', 'dyna0002.txt', 'dyna0003.txt']
+    # files = ['94_b1.txt', '94_b2.txt', '94_b3.txt', '94_si1.txt', '94_si2.txt', '94_si3.txt']
+    files = ['magob147.txt', 'magob148.txt', 'magob149.txt', 'magob162.txt', 'magob163.txt', 'magob164.txt']
     file_paths = [path + f for f in files]
     fitted_params = []
 
@@ -62,14 +63,14 @@ def main_flip():
         model_fitter = ma.ModelFitter(file_path, data_processor.time, conc, C0, eta, rho, mu0, Xs, a3, regularization=1)
         chi, r = model_fitter.fit(initial_guess, bounds)
         fitted_params.append((chi, r))
-        # r_squared, adj_r_squared, mse, rmse, mae = model_fitter.evaluate_fit()  # Print goodness-of-fit metrics
-        # print(file_name + '\t' + str(chi) + '\t' + str(r) + '\t'
-        #     + str(r_squared) + '\t' + str(adj_r_squared) + '\t' + str(mse)
-        #     + '\t' + str(rmse) + '\t' + str(mae))
+        r_squared, adj_r_squared, mse, rmse, mae = model_fitter.evaluate_fit()  # Print goodness-of-fit metrics
+        print(file_name + '\t' + str(chi) + '\t' + str(r) + '\t'
+            + str(r_squared) + '\t' + str(adj_r_squared) + '\t' + str(mse)
+            + '\t' + str(rmse) + '\t' + str(mae))
         # model_fitter.plot_residuals()  # Plot residuals for each file
         # model_fitter.plot_parameter_convergence()  # Plot parameter convergence for each file
         # model_fitter.plot_fit()
-        plt.savefig(save_path + 'fit-' + file_name.split('.')[0] + '.png', dpi=300)
+        #plt.savefig(save_path + 'fit-' + file_name.split('.')[0] + '.png', dpi=300)
         #model_fitter.plot_residuals_surface(X_p_planeRange, r_planeRange)
 
     X_ppms = 0.0016750985561811776
