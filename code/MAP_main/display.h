@@ -4,7 +4,7 @@
  * Written by: Lexie Scholtz
  *             Vic Nunez
  * Created: 2022.09.29
- * Last Updated: 2023.04.03
+ * Last Updated: 2024.12.06
 */
 
 #ifndef DISPLAY_H
@@ -30,14 +30,24 @@ class Display
 {
 private:
     Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
+    int meas_num;
+    long meas_int;
+    long last_meas;
+    const static int  NUM_MEAS = 100;
+    const static int X_START = 130;
+    const static int Y_START = 30;
+    float meas[NUM_MEAS];
+    float max_lux;
 
 public:
     // constructors
-    Display(){};
+    Display();
 
     // functions
     void begin(); // initializes the screen
+    void clear_screen();
     void show_LED_stablization(unsigned long time_elapsed, float lux); // initial screen
+    void set_max_lux(float lux);
 
     void show_file_name(char file_entry[], int index); // displays the screen to enter the file name
     void show_run_time(int run_time[], int index); // displays the screen to enter the run time wanted
