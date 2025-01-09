@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import magnetic_analysis as ma
+import single_magnetic_analysis as ma
 from mpl_toolkits.mplot3d import Axes3D
 import sys
 from tqdm import tqdm
@@ -12,8 +12,8 @@ from tkinter import messagebox
 
 def main(path, file, c0, a):
     eta = 8.9e-4
-    #rho = 5170
-    rho = 1400
+    rho = 5170
+    r = 0.5e-6
     mu0 = 4 * np.pi * 10**-7
     Xs = -9.04e-6
     #initial_guess = [0.001, 0.5e-6]
@@ -31,22 +31,17 @@ def main(path, file, c0, a):
             1e-6, 8e-5, 6e-5, 4e-5, 2e-5,
             1e-5, 8e-4, 6e-4, 4e-4, 2e-4,
             1e-4]
-
-    for r in rs:
-        for chi in chis:
-            guesses.append([chi, r])
-
-    guesses = [[0.001, 0.5e-6]]
+    guesses = [0.001]
 
 
-    bounds = ([0, 0], [0.1, 0.1])#([0, 0], [np.inf, np.inf])
+    bounds = ([0], [0.1])#([0, 0], [np.inf, np.inf])
 
     # Process data and fit model
     #file_paths = ['data/mjack005.txt', 'data/mjack006.txt', 'data/mjack007.txt', 'data/mjack008.txt', 'data/mjack009.txt']
 
     fitted_params = []
 
-    save_path = '../../../../validation_data/model-3.0_results/'
+    save_path = '../../../../validation_data/model-3.0_results/single-param/'
 
     r_planeRange = np.linspace(1e-7, 1e-4, 50)
     X_p_planeRange = np.linspace(0.0001, 0.004, 50)
@@ -63,9 +58,9 @@ def main(path, file, c0, a):
     best_r_sq = -np.inf
 
     for initial_guess in tqdm(guesses):
-        model_fitter = ma.ModelFitter(file_path, data_processor.time, conc, c0, eta, rho, mu0, Xs, a, regularization=1)
-        chi, r = model_fitter.fit(initial_guess, bounds)
-        fitted_params.append((chi, r))
+        model_fitter = ma.ModelFitter(file_path, data_processor.time, conc, c0, eta, rho, mu0, Xs, a, r, regularization=1)
+        chi = model_fitter.fit(initial_guess, bounds)
+        fitted_params.append((chi))
         r_squared, adj_r_squared, mse, rmse, mae = model_fitter.evaluate_fit()  # Print goodness-of-fit metrics
         # print(file_name + '\t' + str(chi) + '\t' + str(r) + '\t'
         #     + str(r_squared) + '\t' + str(adj_r_squared) + '\t' + str(mse)
@@ -74,16 +69,16 @@ def main(path, file, c0, a):
         if r_squared > best_r_sq:
             best_guess = initial_guess
             best_r_sq = r_squared
-            print(str(initial_guess[0]) + '\t' + str(initial_guess[1]) + '\t' + str(chi) + '\t' + str(r) + '\t' + str(r_squared))
+            print(str(initial_guess) + '\t' + str(chi) + '\t' + str(r) + '\t' + str(r_squared))
     # model_fitter.plot_residuals()  # Plot residuals for each file
     # model_fitter.plot_parameter_convergence()  # Plot parameter convergence for each file
     # model_fitter.plot_fit()
     #plt.savefig(save_path + 'fit-' + file_name.split('.')[0] + '.png', dpi=300)
     #model_fitter.plot_residuals_surface(X_p_planeRange, r_planeRange)
 
-    model_fitter = ma.ModelFitter(file_path, data_processor.time, conc, c0, eta, rho, mu0, Xs, a, regularization=1)
-    chi, r = model_fitter.fit(best_guess, bounds)
-    fitted_params.append((chi, r))
+    model_fitter = ma.ModelFitter(file_path, data_processor.time, conc, c0, eta, rho, mu0, Xs, a, r, regularization=1)
+    chi = model_fitter.fit(best_guess, bounds)
+    fitted_params.append((chi))
     r_squared, adj_r_squared, mse, rmse, mae = model_fitter.evaluate_fit()  # Print goodness-of-fit metrics
     # print(file_name + '\t' + str(chi) + '\t' + str(r) + '\t'
     #     + str(r_squared) + '\t' + str(adj_r_squared) + '\t' + str(mse)
@@ -96,7 +91,7 @@ def main(path, file, c0, a):
     # plot:
     fig = plt.figure()
     plt.plot(data_processor.time, conc, label='data')
-    orig_model = model_fitter.model(data_processor.time, X_p=chi, r=r)
+    orig_model = model_fitter.model(data_processor.time, X_p=chi)
     plt.plot(data_processor.time, orig_model, label='original')
     plt.xlabel('time (s)')
     plt.ylabel('conc (mg/mL)')

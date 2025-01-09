@@ -147,7 +147,7 @@ class Analyzer:
 
             file_manager.add_analysis_results(i, file_name, full_results, test_info)
 
-    #TODO: write function lol
+    # deprecated now
     def analyze(self, file_manager):
         #TODO: restructure the file grouping part into a separate function
         # so that it can be accessed to display files to be analyzed
