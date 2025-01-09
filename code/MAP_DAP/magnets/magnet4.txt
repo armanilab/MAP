@@ -1,0 +1,6 @@
+id: 4
+name: 3/8" - N52
+B_r: 1.48
+length: 0.0254
+width: 0.0254
+thickness: 0.009525
