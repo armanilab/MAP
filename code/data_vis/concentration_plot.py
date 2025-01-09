@@ -68,7 +68,7 @@ for f in file_list:
         plt.plot(data[:, 0], data[:, 1]) #linestyle='None', marker = '+', markersize=0.25)
 
 
-plt.title("QDM Data")
+plt.title("MAP Data")
 plt.xlabel("Time (s)")
 plt.ylabel("Lux")
 plt.legend(loc='lower right')

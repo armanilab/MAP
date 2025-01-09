@@ -70,6 +70,11 @@ void Display::show_LED_stablization(unsigned long time_elapsed, float lux) {
   } else {
     tft.println(lux);  // prints out current lux
   }
+
+  tft.setTextColor(ST77XX_GREEN);  // sets instructions for user to be in green
+  tft.setTextSize(2);              // changes text size to be smaller than important info about program
+  tft.setCursor(10, 110);
+  tft.println("Hold green to proceed");
 }
 
 void Display::set_max_lux(float lux) {
@@ -322,14 +327,14 @@ void Display::show_test_ended(String file_name, int min, int sec) { // displays 
   tft.print(file_name);
 
   // display test params for test that just ended
-  tft.setCursor(0, 30);  
+  tft.setCursor(0, 30);
   tft.setTextSize(2);
   tft.setTextColor(GREEN);
   tft.println("TEST ENDED");
 
 
 
-  tft.setCursor(0, 50); 
+  tft.setCursor(0, 50);
   tft.setTextColor(DARKGREY);
   tft.println("Runtime:");
   tft.setCursor(0, 70);

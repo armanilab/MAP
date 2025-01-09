@@ -2,6 +2,7 @@ import numpy as np
 from scipy.optimize import least_squares, curve_fit
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from IPython.display import display, Math
 
 class MagneticFieldModel:
     def __init__(self, B_r, L, W, T):
@@ -76,6 +77,7 @@ class DataProcessor:
     def __init__(self, file_path):
         self.file_path = file_path
         self.time, self.intensity = np.loadtxt(file_path, skiprows=3, unpack=True)
+
 
     def calibration(self, c0=0.1):
         """Performs calibration steps to turn intensity data into concentration
@@ -161,16 +163,33 @@ class ModelFitter:
         self.mu0 = mu0
         self.Xs = Xs
         self.a = a
+        self.r = 0.5e-6
         self.tracker = ParameterTracker()
         self.n = len(time)
-        self.p = 2  # Number of parameters: r and X_p
+        self.p = 1  # Number of parameters: r and X_p
         self.regularization = regularization
         self.file_name = file_name
 
-    def model(self, t, X_p, r):
-        beta = 2 * self.a**2 * X_p / (self.rho * self.mu0 * (1 + self.Xs))
-        alpha = 9 * self.eta / (2 * self.rho * r**2)
+    def model(self, t, X_p):
+        alpha = 9 * self.eta / (2 * self.rho * self.r**2)
+        # alpha = 18 * self.eta / (np.pi * self.rho * r**2)
+        #alpha = 4.50001 * self.eta / (self.rho * r**2)
+        #alpha = .1 * self.eta / (2 * self.rho * r**2)
+        #cd = 5589 10:1 aspect ratio
+        #cd = 3384
+        # cd = 31523 # dynabeads
 
+        # stokes = 6 * np.pi * self.eta * r
+        # alpha = stokes / (4 * np.pi * (r**3) * self.rho / 3)
+        #alpha = (self.eta * cd) / (2 * r* self.rho) # new - lexie 10/26
+        #print("stokes drag")
+        #alpha = (0.375 * 0.47 * rho_s) / (r * self.rho) # cylinder
+        #alpha = (4.500001 * self.eta) / (r**2 * self.rho) # sphere (stokes)
+        #alpha = (0.5 * self.eta) / (r * self.rho)
+        #alpha = (self.eta * 0.82) / (2 * r * self.rho)
+        beta = 2 * self.a**2 * X_p / (self.rho * self.mu0 * (1 + self.Xs))
+
+        #alpha = 5.55 * np.pi * self.eta * 2 * r / (4/3 * np.pi * r**3 * self.rho)
         discriminant = alpha**2 - 4 * beta
 
         if discriminant < 0:
@@ -196,10 +215,10 @@ class ModelFitter:
                 return k1 * np.exp(delta1 * t) + (self.C0 -k1) * np.exp(delta2 * t)
 
     def residuals(self, params):
-        X_p, r = params
-        residual = self.model(self.time, X_p, r) - self.conc
+        X_p = params
+        residual = self.model(self.time, X_p) - self.conc
         # Add regularization term
-        regularization = self.regularization * (r**2 + X_p**2)
+        regularization = self.regularization * (X_p**2)
         return residual + regularization
 
     def fit(self, initial_guess, bounds, verbose=0, convergence_method='trf', convergence_tol=1e-8):
@@ -209,7 +228,7 @@ class ModelFitter:
 
         result = least_squares(objective_function, initial_guess,
             method=convergence_method, tr_solver=None, loss='soft_l1',
-            f_scale=0.1, x_scale=[1e-3, 1e-6], ftol=convergence_tol,
+            f_scale=0.1, x_scale=[1e-3], ftol=convergence_tol,
             gtol=convergence_tol, xtol=convergence_tol, bounds=bounds,
             verbose=verbose, max_nfev=10000)
 
@@ -217,27 +236,14 @@ class ModelFitter:
         return self.fitted_params
 
     def evaluate_fit(self):
-        X_p_fit, r_fit = self.fitted_params
-        y_pred = self.model(self.time, X_p_fit, r_fit)
+        X_p_fit= self.fitted_params
+        y_pred = self.model(self.time, X_p_fit)
         r_squared, adj_r_squared, mse, rmse, mae = calculate_metrics(self.conc, y_pred, self.n, self.p)
         # print(f"R²: {r_squared:.4f}")
         # print(f"Adjusted R²: {adj_r_squared:.4f}")
         # print(f"MSE: {mse:.4e}")
         # print(f"RMSE: {rmse:.4e}")
         # print(f"MAE: {mae:.4e}")
-
-        # print model params
-        beta = 2 * self.a**2 * X_p_fit / (self.rho * self.mu0 * (1 + self.Xs))
-        alpha = 9 * self.eta / (2 * self.rho * r_fit **2)
-        discriminant = alpha**2 - 4 * beta
-
-        delta1 = 0.5 * (-alpha - np.sqrt(discriminant))
-        delta2 = 0.5 * (-alpha + np.sqrt(discriminant))
-        k1 = self.C0 * delta2 / (delta2 - delta1)
-        print(delta1)
-        print(delta2)
-        print(k1)
-
         return r_squared, adj_r_squared, mse, rmse, mae
 
     def plot_residuals(self):
@@ -251,11 +257,11 @@ class ModelFitter:
 
     def plot_parameter_convergence(self):
         history = self.tracker.get_history()
-        plot_convergence(history, ['X_p', 'r'])
+        plot_convergence(history, ['X_p'])
 
     def plot_fit(self):
         X_p_fit, r_fit = self.fitted_params
-        y_pred = self.model(self.time, X_p_fit, r_fit)
+        y_pred = self.model(self.time, X_p_fit)
 
         plt.figure(figsize=(3.5, 3.5), dpi=300)
         plt.plot(self.time, self.conc, label='Experimental Data', markersize=5)

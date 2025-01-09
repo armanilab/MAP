@@ -85,7 +85,7 @@ for label in lux_ax.get_xticklabels() + lux_ax.get_yticklabels() + conc_ax.get_x
     label.set_fontproperties(tick_font)
 
 title_str = input('What should this plot be titled?\n')
-fig.suptitle(title_str, fontdict=title_font, fontsize=24, fontweight='black')
+# fig.suptitle(title_str, fontdict=title_font) #, fontweight='black')
 
 handles = []
 labels = []
@@ -95,7 +95,7 @@ for ax in [lux_ax, conc_ax]:
         labels.append(label)
 
 plt.legend(handles, labels, loc='center left', bbox_to_anchor=(1.05, 0.5),
-    prop=tick_font)
+   prop=tick_font)
 
 plt.tight_layout()
 plt.show()

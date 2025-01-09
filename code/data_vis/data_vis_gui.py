@@ -520,7 +520,9 @@ class MapDAP:
 
     def create_results_tree(self):
         cols = ['file-name', 'chi']
-        tree = ttk.Treeview(self.results_frame, columns=tuple(cols))
+        tree = ttk.Treeview(self.results_frame, columns=cols)
+        tree.heading('#0', text='File-name')
+        tree.heading('#1', text='Chi')
         tree.grid(row=1, column=0, sticky=tk.NSEW)
         return tree
 
@@ -537,7 +539,7 @@ class MapDAP:
                 row_value = ''
             else:
                 row_value = "{:0.3e}".format(results[f][1]['chi'])
-            self.results_tree.insert('', 'end', text=row_text, value=row_value)
+            self.results_tree.insert('', 'end', id=f, text=row_text, value=row_value)
 
 
     def create_analyzed_files_tree(self, frame, ht=10):

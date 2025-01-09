@@ -62,16 +62,6 @@ class MagneticFieldModel:
 
         return popt_b
 
-class DoubleMagModel(MagneticFieldModel):
-    def __init__(self, B_r, L, W, T):
-        super().__init__(B_r, L, W, T)
-
-    def B_field(self, z):
-        b1 = (self.B_r / np.pi) * (np.arctan((self.L * self.W) / (2 * z * np.sqrt(4 * z**2 + self.L**2 + self.W**2))) -
-                                     np.arctan((self.L * self.W) / (2 * (z + self.T) * np.sqrt(4 * (z + self.T)**2 + self.L**2 + self.W**2))))
-        b2 = np.flip(b1)
-        return b1 + b2
-
 class DataProcessor:
     def __init__(self, file_path):
         self.file_path = file_path
@@ -152,7 +142,7 @@ def calculate_metrics(y_true, y_pred, n, p):
     return r_squared, adj_r_squared, mse, rmse, mae
 
 class ModelFitter:
-    def __init__(self, file_name, time, conc, C0, eta, rho, mu0, Xs, a, regularization=0.0):
+    def __init__(self, file_name, time, conc, C0, eta, rho, mu0, Xs, a, r, regularization=0.0):
         self.time = time
         self.conc = conc
         self.C0 = C0
@@ -163,13 +153,14 @@ class ModelFitter:
         self.a = a
         self.tracker = ParameterTracker()
         self.n = len(time)
-        self.p = 2  # Number of parameters: r and X_p
+        self.p = 1  # Number of parameters: X_p
         self.regularization = regularization
         self.file_name = file_name
+        self.r = r
 
-    def model(self, t, X_p, r):
+    def model(self, t, X_p):
         beta = 2 * self.a**2 * X_p / (self.rho * self.mu0 * (1 + self.Xs))
-        alpha = 9 * self.eta / (2 * self.rho * r**2)
+        alpha = 9 * self.eta / (2 * self.rho * self.r**2)
 
         discriminant = alpha**2 - 4 * beta
 
@@ -196,10 +187,10 @@ class ModelFitter:
                 return k1 * np.exp(delta1 * t) + (self.C0 -k1) * np.exp(delta2 * t)
 
     def residuals(self, params):
-        X_p, r = params
-        residual = self.model(self.time, X_p, r) - self.conc
+        X_p = params
+        residual = self.model(self.time, X_p) - self.conc
         # Add regularization term
-        regularization = self.regularization * (r**2 + X_p**2)
+        regularization = self.regularization * (X_p**2)
         return residual + regularization
 
     def fit(self, initial_guess, bounds, verbose=0, convergence_method='trf', convergence_tol=1e-8):
@@ -209,7 +200,7 @@ class ModelFitter:
 
         result = least_squares(objective_function, initial_guess,
             method=convergence_method, tr_solver=None, loss='soft_l1',
-            f_scale=0.1, x_scale=[1e-3, 1e-6], ftol=convergence_tol,
+            f_scale=0.1, x_scale=[1e-3], ftol=convergence_tol,
             gtol=convergence_tol, xtol=convergence_tol, bounds=bounds,
             verbose=verbose, max_nfev=10000)
 
@@ -217,8 +208,8 @@ class ModelFitter:
         return self.fitted_params
 
     def evaluate_fit(self):
-        X_p_fit, r_fit = self.fitted_params
-        y_pred = self.model(self.time, X_p_fit, r_fit)
+        X_p_fit = self.fitted_params
+        y_pred = self.model(self.time, X_p_fit)
         r_squared, adj_r_squared, mse, rmse, mae = calculate_metrics(self.conc, y_pred, self.n, self.p)
         # print(f"R²: {r_squared:.4f}")
         # print(f"Adjusted R²: {adj_r_squared:.4f}")
@@ -228,7 +219,7 @@ class ModelFitter:
 
         # print model params
         beta = 2 * self.a**2 * X_p_fit / (self.rho * self.mu0 * (1 + self.Xs))
-        alpha = 9 * self.eta / (2 * self.rho * r_fit **2)
+        alpha = 9 * self.eta / (2 * self.rho * self.r **2)
         discriminant = alpha**2 - 4 * beta
 
         delta1 = 0.5 * (-alpha - np.sqrt(discriminant))
@@ -254,8 +245,8 @@ class ModelFitter:
         plot_convergence(history, ['X_p', 'r'])
 
     def plot_fit(self):
-        X_p_fit, r_fit = self.fitted_params
-        y_pred = self.model(self.time, X_p_fit, r_fit)
+        X_p_fit = self.fitted_params
+        y_pred = self.model(self.time, X_p_fit)
 
         plt.figure(figsize=(3.5, 3.5), dpi=300)
         plt.plot(self.time, self.conc, label='Experimental Data', markersize=5)

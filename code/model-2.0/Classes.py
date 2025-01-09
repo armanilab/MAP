@@ -9,10 +9,12 @@ import random
 import codecs
 from tqdm import tqdm
 
+# modified to avg last 100 data points for omega
+
 
 class MagFieldFit:
 
-    def __init__(self, B_r, t):
+    def __init__(self, B_r, t=0.009525):
         self.B_r = B_r
         self.sensor_pos = 0.015115
         self.sensor_w = 0.001
@@ -21,8 +23,10 @@ class MagFieldFit:
         #magnet dimensions in meters
         self.L = 0.0254 #1 inch in m
         self.W = 0.0254 #1 inch in m
-        self.T = t
-        self.density = 5150 #Intrinsic material density
+        #self.T = 0.009525
+        self.T = t #3/8th inch in m (thickness)
+        #self.density = 5150 #Intrinsic material density
+        print("magnet thickness: " + str(self.T))
 
     def get_sensor_pos(self):
         return self.sensor_pos
@@ -31,14 +35,6 @@ class MagFieldFit:
         return "Length: {} Width: {} Thickness: {}".format(self.L, self.W, self.T)
 
     def get_magFitParams(self):
-        # print test values
-        self.print_mag_field_pt(self.T/2)
-        self.print_mag_field_pt(0.010 - self.T/2)
-        self.print_mag_field_pt(0.015 - self.T/2)
-        self.print_mag_field_pt(0.020 - self.T/2)
-        self.print_mag_field_pt(0.025 - self.T/2)
-        self.print_mag_field_pt(0.030 - self.T/2)
-
         #Creating mag field based on K&J Magnets, Inc. specs.
         B_s = lf.B_field(self.z, self.B_r, self.L, self.W, self.T)
         #Linear curve fit of magnetic field in sampling region
@@ -46,18 +42,21 @@ class MagFieldFit:
 
         A, b = popt_B
 
+        # print("Magnetic field fit pcov_B:")
+        # print(pcov_B)
+
         return [A, b]
-
-    def print_mag_field_pt(self, point):
-        print("z = " + str(point) + ": " + str(lf.B_field(point, self.B_r, self.L, self.W, self.T)))
-
 
 class ParamGuesser:
 
-    def __init__ (self, path):
+    def __init__ (self, path, file=None):
         self.path = path
-        self.fileNames = os.listdir(self.path)
-        self.density = 5150 #5170 #5240 #Intrinsic material density
+        if file is None:
+            self.fileNames = os.listdir(self.path)
+        else:
+            self.fileNames = [file]
+        self.density = 5150 #5240 #Intrinsic material density
+        #self.density = 1055 # polystyrene
 
     def get_paramGuesses(self, minTrunc, maxTrunc):
 
@@ -66,45 +65,31 @@ class ParamGuesser:
         # s1_iter = np.linspace(-500, 0, 20)
         # s2_iter = np.linspace(-0.001, -1e-6, 50)
         # s1_iter = np.linspace(-2000, -250, 20)
-        s1_iter = np.linspace(-2000, -500, 40)
+        s1_iter = np.linspace(-2000, -500, 40) # used in analysis
         # s2_iter = np.linspace(-0.01, -1e-6, 50)
-        s2_iter = np.linspace(-0.01, -1e-6, 40)
+        s2_iter = np.linspace(-0.01, -1e-6, 40) # used in analaysis
 
 
 
         total_iters = len(s1_iter)*len(s2_iter)
         testFile = self.fileNames[random.randint(0, len(self.fileNames)-1)]
-        print("parameters picked based on: " + testFile)
+
+        print("Picking parameters from " + str(testFile))
 
         #Determine fit params for light curves#########
         filecp = codecs.open(self.path+"/{}".format(testFile), encoding = 'cp1252')
-        #t_raw, T_raw = np.loadtxt(filecp, skiprows=3, delimiter=None,unpack=True)
-        data = np.genfromtxt(self.path+"/{}".format(testFile))
-        t_raw = data[:, 0]
-        T_raw = data[:, 1]
+        t_raw, T_raw = np.loadtxt(filecp, skiprows=3, delimiter=None,unpack=True)
 
         t_T, T_T = lf.trunc(minTrunc, maxTrunc, t_raw, T_raw)
-
-        print('last lux: ' + str(T_T[-1]))
-        if np.any(T_T <= 0):
-            print("Negative values detected in a dataset! Thats no good, mate.\nHere is the problem child: "+name)
-
-        T_RAWlog = lf.matchEXP(T_T)
-        t_F, T_logF = lf.set_data_origin(t_T, T_RAWlog)
-
-        def transmOmega(t, eps, S1, S2):
-            Omega = T_logF[-1]
-            return lf.transm(t, eps, S1, S2, Omega)
+        t_F, T_logF = lf.dataAdj(t_T, T_T)
 
         # meanVarArray = np.zeros(total_iters)
         meanMatrix = np.zeros((total_iters, 3))
-        omega = T_logF[-1]
-        print("omega: " + str(omega))
 
         print("\n")
         j=0
         count=0
-        for s1 in tqdm(s1_iter, desc="Scanning Parameters"):
+        for s1 in tqdm(s1_iter, desc="Scanning Parameters", ascii=" ▖▘▝▗▚▞█"):
             k=0
             for s2 in s2_iter:
                 eps = s2*omega/(s1-s2)
@@ -126,8 +111,6 @@ class ParamGuesser:
         S2g = s2_iter[int(S2_gIndx)]
         epsg = S2g*omega/(S1g-S2g)
         guessArray = [epsg, S1g, S2g]
-
-        print("guessArray")
 
         return guessArray
 
@@ -167,28 +150,22 @@ class ParamGuesser:
         for i, name in enumerate(self.fileNames):
             fileCount+=1
             print("File {}/{}".format(fileCount, numFiles))
+            print(name)
 
             #Determine fit params for light curves#########
             filecp = codecs.open(self.path+"/{}".format(name), encoding = 'cp1252')
-            print(self.path+"/{}".format(name))
-            #t_raw, T_raw = np.loadtxt(filecp, skiprows=3, delimiter=None,unpack=True)
-            data = np.genfromtxt(self.path+"/{}".format(name))
-            t_raw = data[:, 0]
-            T_raw = data[:, 1]
+            t_raw, T_raw = np.loadtxt(filecp, skiprows=3, delimiter=None,unpack=True)
 
             t_T, T_T = lf.trunc(minTrunc, maxTrunc, t_raw, T_raw)
 
-            if np.any(T_T <= 0):
-                print("Negative values detected in a dataset! Thats no good, mate.\nHere is the problem child: "+name)
-
             T_RAWlog = lf.matchEXP(T_T)
-            t_F, T_logF = lf.set_data_origin(t_T, T_RAWlog)
+            t_F, T_logF = lf.dataAdj(t_T, T_RAWlog)
 
             def transmOmega(t, eps, S1, S2):
-                Omega = T_logF[-1]
+                Omega = np.mean(T_logF[-101:-1])
                 return lf.transm(t, eps, S1, S2, Omega)
 
-            omega = T_logF[-1]
+            omega = np.mean(T_logF[-101:-1])
 
 
             (popt, pcov) = curve_fit(transmOmega, t_F, T_logF, p0=guesses, maxfev=10000, bounds=(-np.inf,np.inf))
@@ -204,14 +181,14 @@ class ParamGuesser:
             X_array[i] = X
             S1_array[i] = S1
             S2_array[i] = S2
-            print("X: " + str(X))
-            print("eps: " + str(eps))
-            print("delta 1: " + str(S1))
-            print("delta 2: " + str(S2))
-            print("omega: " + str(omega))
+
+            print(str(X) + "\t" + str(eps) + "\t" + str(S1) + "\t" + str(S2) + "\t" + str(omega))
+            print("Covariance matrix: ")
+            print(pcov)
 
             file.write(name+"\t{:.2}\t\t{:.2}\t\t{:.2}\t\t{:.2}\t\t{:.2}\n".format(X, *popt, omega))
-
+            # file.write("\n--- Covariance matrix ---\n")
+            # file.write(pcov)
 
             time = np.linspace(0, maxTrunc-minTrunc, len(t_F))
             logT_fit = lf.transm(time, *popt, omega)
@@ -270,7 +247,9 @@ class ParamGuesser:
         plt.plot(x, normDist/max(normDist), color="purple", label="χ = {:.3}\nσ = {:.3}".format(mu, sigma))
         plt.legend()
         plt.savefig('magSus.png', dpi=100)
-        plt.show()
+        #plt.show()
         ################################################
+
+        print("\n\n")
 
         return None

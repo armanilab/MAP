@@ -252,7 +252,7 @@ def load_data_log(file):
         # assume that the sample key will be named 'sample-key'
         df_samples = pd.read_excel(file, sheet_name='sample-key', dtype='str')
         # set index to sample label (will be keys in sample_dict)
-        df_samples.set_index('Label', inplace=True)
+        df_samples.set_index('ID', inplace=True)
         sample_dict = df_samples.to_dict(orient='index') # make the dict
     except:
         print("Failed to find a sample key.")
@@ -582,8 +582,8 @@ def plot_concentration_curve(df, sample_dict, selection):
     # load selected data from dataframe
     data_dict = load_data(df, sample_dict, selection)
 
-    colors = [colors_list[1], colors_list[6], colors_list[11]]
-    markers = ['o', 'v', 's']
+    colors = [colors_list[1], colors_list[6], colors_list[11], colors_list[0]]
+    markers = ['o', 'v', 's', 'P']
 
     # set title of plot
     title = input("Enter plot title (leave blank for default): ")

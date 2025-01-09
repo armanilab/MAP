@@ -8,6 +8,7 @@ from scipy.optimize import curve_fit
 from tqdm import tqdm
 from matplotlib import font_manager as fm
 from lmfit import Model
+import magnetic_analysis_single_param as ma
 
 def calibrate(lux, c0):
     n = 20
@@ -56,9 +57,9 @@ def plot_data(time, lux, conc, file):
 def driver():
     # parameters
     eta = 8.9e-4
-    rho_p = 5200
+    rho_p = 5170
     rho_s = 1000
-    mu0 = 4 * np.pi * (10e-7)
+    mu0 = np.pi * 4e-7
     Xs = -9.04e-6
 
     # physical setup parameters
@@ -113,7 +114,7 @@ def driver():
         a = -11.824199
     elif t_input == 'd':
         a = -13.655887
-    print('a = ' + str(a)) 
+    print('a = ' + str(a))
 
     shape = input('\nWhat shape are you expecting your particles to be?\n[a] Spherical clusters\n[b] Oblong clusters\n'
         + '[c] spherical - Re=0.86 (mag 5)\n[d] spherical - Re=0.26 (mag 1)\n')
@@ -188,7 +189,7 @@ def driver():
     print("Delta2: " + str(delta2))
 
     ### MODEL FIT ###
-    def model_eqn(t, chi, r):
+    def model_eqn(t, chi):
         alpha = (eta * cd) / (2 * r * rho_p)
         beta = (2 * (a**2) * chi) / (mu0 * rho_p * (1 + Xs))
         delta1 = 0.5 * (-alpha + np.sqrt((alpha**2) - 4 * beta))
@@ -201,11 +202,50 @@ def driver():
         #deltas = delta2 - delta1
         #return k * (z_low + z_high) / (delta2 / deltas * np.exp(delta1 * t) - delta1 / (deltas) * np.exp(delta2 * t))
 
-    model = Model(model_eqn)
-    params = model.make_params(chi=chi, r=r)
-    result = model.fit(conc, params, t=time)
-    print(result.fit_report())
+    def jack_model(t, X_p):
+        alpha = 9 * eta / (2 * rho_p * r**2)
+        beta = 2 * a**2 * X_p / (rho_p * mu0 * (1 + Xs))
 
+        #alpha = 5.55 * np.pi * self.eta * 2 * r / (4/3 * np.pi * r**3 * self.rho)
+        discriminant = alpha**2 - 4 * beta
+
+        if discriminant < 0:
+            print('found complex roots')
+            # Complex roots case: overdamped system
+            real_part = -0.5 * alpha
+            imaginary_part = 0.5 * np.sqrt(-discriminant)
+            k1 = c0
+            k2 = 0
+            return np.exp(real_part * t) * (k1 * np.cos(imaginary_part * t) + k2 * np.sin(imaginary_part * t))
+        else:
+            delta1 = 0.5 * (-alpha - np.sqrt(discriminant))
+            delta2 = 0.5 * (-alpha + np.sqrt(discriminant))
+            print('other!')
+            if np.isclose(delta1, delta2):
+                # Repeated roots case
+                delta = delta1
+                k1 = c0
+                k2 = 0
+                return (k1 + k2 * t) * np.exp(delta * t)
+            else:
+                # Distinct roots case
+                print(delta1)
+                print(delta2)
+                print(delta2-delta1)
+                k1 = c0 * delta2 / (delta2 - delta1)
+                return k1 * np.exp(delta1 * t) + (c0 -k1) * np.exp(delta2 * t)
+
+    file_path = path + file
+    file_name = file
+    data_processor = ma.DataProcessor(file_path)
+    conc = data_processor.calibration(c0)
+    guesses = [[0.001, 0.5e-6]]
+    bounds = ([0], [0.1])#([0, 0], [np.inf, np.inf])
+    model_fitter = ma.ModelFitter(file_path, data_processor.time, conc, c0, eta, rho_p, mu0, Xs, a, regularization=1)
+    chi = model_fitter.fit(0.001, bounds)
+    r_squared, adj_r_squared, mse, rmse, mae = model_fitter.evaluate_fit()  # Print goodness-of-fit metrics
+    print("chi: " + str(chi))
+    print("r-squared: " + str(r_squared))
 
 
 driver()
