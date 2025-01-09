@@ -48,6 +48,7 @@ public:
     void show_enter_name_overwrite(char file_name[]); // displays warnning screen if about to overwrite previous file name
     void show_error_button();
     void show_connection_re_established(char re_established[]);
+    void show_countdown();
 };
 
 #endif
