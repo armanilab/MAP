@@ -5,6 +5,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import sys
 from tqdm import tqdm
 from scipy.optimize import curve_fit
+from scipy.signal import savgol_filter
 
 import tkinter as tk
 from tkinter import ttk
@@ -41,6 +42,25 @@ def calibrate(lux, c0):
 
     # convert attenuation to concentration
     return c0 / (att0 - attf) * att + attf * c0 / (attf - att0)
+
+def fit_data(time, conc, init_guess):
+    popt = (init_guess[0], init_guess[1])
+    try:
+        (popt, pcov) = curve_fit(working_model, time, conc, p0=init_guess, bounds=bounds)
+    except ValueError:
+        #print("ValueError encountered at chi_init {chi:0.4f}, r_init {r:0.4f}".format(chi=init_guess[0], r=init_guess[1]))
+        pass
+    except RuntimeError:
+        #print("RuntimeError encountered at chi_init {chi:0.4f}, r_init {r:0.4f}".format(chi=init_guess[0], r=init_guess[1]))
+        pass
+
+    model_y = working_model(time, *popt)
+
+    residuals = conc - model_y
+    ss_res = np.sum(residuals**2) # sum of square residuals
+    ss_total = np.sum((conc - np.mean(conc)) ** 2) # total sum of squares
+    r_sq = 1 - ss_res / ss_total
+    return popt, r_sq
 
 ### START SCRIPT
 path = '../../../../test_data/paper_data/'
@@ -132,23 +152,23 @@ print('a = ' + str(a))
 #initial_guess = [0.001, 0.5e-6]
 
 # guesses = []
-# chis = [1e-8, 8e-7, 6e-7, 4e-7, 2e-7,
-#         1e-7, 8e-6, 6e-6, 4e-6, 2e-6,
-#         1e-6, 8e-5, 6e-5, 4e-5, 2e-5,
-#         1e-5, 8e-4, 6e-4, 4e-4, 2e-4,
-#         1e-4, 8e-3, 6e-3, 4e-3, 2e-3,
-#         1e-3, 8e-2, 6e-2, 4e-2, 2e-2]
-# rs =   [1e-9, 8e-8, 6e-8, 4e-8, 2e-8,
-#         1e-8, 8e-7, 6e-7, 4e-7, 2e-7,
-#         1e-7, 8e-6, 6e-6, 4e-6, 2e-6,
-#         1e-6, 8e-5, 6e-5, 4e-5, 2e-5,
-#         1e-5, 8e-4, 6e-4, 4e-4, 2e-4,
-#         1e-4]
-# #guesses = [0.0001]
-# guesses = []
-# for i in range(len(chis)):
-#     for j in range(len(rs)):
-#         guesses.append([chis[i], rs[j]])
+chis = [1e-8, 8e-7, 6e-7, 4e-7, 2e-7,
+        1e-7, 8e-6, 6e-6, 4e-6, 2e-6,
+        1e-6, 8e-5, 6e-5, 4e-5, 2e-5,
+        1e-5, 8e-4, 6e-4, 4e-4, 2e-4,
+        1e-4, 8e-3, 6e-3, 4e-3, 2e-3,
+        1e-3, 8e-2, 6e-2, 4e-2, 2e-2]
+rs =   [1e-9, 8e-8, 6e-8, 4e-8, 2e-8,
+        1e-8, 8e-7, 6e-7, 4e-7, 2e-7,
+        1e-7, 8e-6, 6e-6, 4e-6, 2e-6,
+        1e-6, 8e-5, 6e-5, 4e-5, 2e-5,
+        1e-5, 8e-4, 6e-4, 4e-4, 2e-4,
+        1e-4]
+#guesses = [0.0001]
+guesses = []
+for i in range(len(chis)):
+    for j in range(len(rs)):
+        guesses.append([chis[i], rs[j]])
 # guesses = [[0.0001, 1.4e-6]]
 print("total number of guesses: " + str(len(guesses)))
 
@@ -181,22 +201,118 @@ print('\n* indicates new best found')
 print('init_chi\tinit_radius\tchi\t\tradius\t\tr_sq')
 
 for init_guess in tqdm(guesses):
+    # # iterate over guesses
+    # model = working_model
+    # try:
+    #     (popt, pcov) = curve_fit(working_model, time, conc, p0=init_guess, bounds=bounds)
+    # except ValueError:
+    #     #print("ValueError encountered at chi_init {chi:0.4f}, r_init {r:0.4f}".format(chi=init_guess[0], r=init_guess[1]))
+    #     pass
+    # except RuntimeError:
+    #     #print("RuntimeError encountered at chi_init {chi:0.4f}, r_init {r:0.4f}".format(chi=init_guess[0], r=init_guess[1]))
+    #     pass
+    #
+    # model_y = working_model(time, *popt)
+    #
+    # residuals = conc - model_y
+    # ss_res = np.sum(residuals**2) # sum of square residuals
+    # ss_total = np.sum((conc - np.mean(conc)) ** 2) # total sum of squares
+    # r_sq = 1 - ss_res / ss_total
+    popt, r_sq = fit_data(time, conc, init_guess)
+
+    if r_sq > best_r_sq:
+        best_r_sq = r_sq
+        best_results = popt
+        best_guess = init_guess
+        print('*', end='')
+
+    print('{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{r_sq:0.8f}'.format(
+        chi_guess=init_guess[0], r_guess=init_guess[1], chi=popt[0],
+        r=popt[1], r_sq=r_sq))
+
+
+print('Input selected initial conditions: ')
+chi_init = float(input('Initial chi: '))
+r_init = float(input('Initial r: '))
+
+selected_popt, r_sq = fit_data(time, conc, (chi_init, r_init))
+
+print("\nFINAL MODEL")
+print("file: " + str(file))
+print('init_chi\tinit_radius\tchi\t\tradius\t\tr_sq')
+print('{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{r_sq:0.4f}'.format(
+    chi_guess=chi_init, r_guess=r_init, chi=selected_popt[0],
+    r=selected_popt[1], r_sq=r_sq))
+
+model_y = working_model(time, *selected_popt)
+
+# plot:
+fig = plt.figure()
+plt.plot(time, conc, label='data')
+plt.plot(time, model_y, ':', label='fit')
+plt.xlabel('time (s)')
+plt.ylabel('conc (mg/mL)')
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+
+#### MULTI-MODAL ANALYSIS
+d_input = input('Do you want to do a deeper multi-modal analysis? [y/n]\n')
+if d_input != 'y':
+    sys.exit()
+
+# smooth data using the Savitzky-Golay filter
+window_size = 21
+poly_order = 3 # polynomial order
+
+# compute first derivative of data
+conc_prime = savgol_filter(conc, window_size, poly_order, deriv=1,
+    delta=time[1]-time[0])
+conc_dbl_prime = savgol_filter(conc, window_size, poly_order, deriv=2,
+    delta=time[1]-time[0])
+min_n = 20
+global_min_index = np.argmin(conc_prime[min_n:])+min_n
+print('global min timepoint: ' + str(time[global_min_index]))
+
+# plot data
+f, (ax1, ax2) = plt.subplots(2, 1)
+ax1.plot(time, conc)
+ax1.set_ylabel('conc (mg/mL)')
+ax2.plot(time, conc_prime)
+ax2.plot(time[global_min_index], conc_prime[global_min_index], 'o', color='r')
+ax2.set_ylabel('change in conc (mg/mL per s)')
+plt.show()
+
+time_shifted = time[global_min_index:] - time[global_min_index]
+conc_shifted = conc[global_min_index:]
+
+# fit the shifted data
+best_guess = guesses[0]
+best_r_sq = -np.inf
+best_results = best_guess
+c0 = conc_shifted[0]
+
+print('\n* indicates new best found')
+print('init_chi\tinit_radius\tchi\t\tradius\t\tr_sq')
+
+for init_guess in tqdm(guesses):
     # iterate over guesses
     model = working_model
     try:
-        (popt, pcov) = curve_fit(working_model, time, conc, p0=init_guess, bounds=bounds)
+        (popt, pcov) = curve_fit(working_model, time_shifted, conc_shifted, p0=init_guess, bounds=bounds)
     except ValueError:
-        print("ValueError encountered at chi_init {chi:0.4f}, r_init {r:0.4f}".format(chi=init_guess[0], r=init_guess[1]))
+        #print("ValueError encountered at chi_init {chi:0.4f}, r_init {r:0.4f}".format(chi=init_guess[0], r=init_guess[1]))
         pass
     except RuntimeError:
-        print("RuntimeError encountered at chi_init {chi:0.4f}, r_init {r:0.4f}".format(chi=init_guess[0], r=init_guess[1]))
+        #print("RuntimeError encountered at chi_init {chi:0.4f}, r_init {r:0.4f}".format(chi=init_guess[0], r=init_guess[1]))
         pass
 
-    model_y = working_model(time, *popt)
+    model_y = working_model(time_shifted, *popt)
 
-    residuals = conc - model_y
+    residuals = conc_shifted - model_y
     ss_res = np.sum(residuals**2) # sum of square residuals
-    ss_total = np.sum((conc - np.mean(conc)) ** 2) # total sum of squares
+    ss_total = np.sum((conc_shifted - np.mean(conc_shifted)) ** 2) # total sum of squares
     r_sq = 1 - ss_res / ss_total
 
     if r_sq > best_r_sq:
@@ -205,9 +321,9 @@ for init_guess in tqdm(guesses):
         best_guess = init_guess
         print('*', end='')
 
-    print('{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{r_sq:0.4f}'.format(
-        chi_guess=init_guess[0], r_guess=init_guess[1], chi=popt[0],
-        r=popt[1], r_sq=r_sq))
+        print('{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{r_sq:0.8f}'.format(
+            chi_guess=init_guess[0], r_guess=init_guess[1], chi=popt[0],
+            r=popt[1], r_sq=r_sq))
 
 print("\nFINAL MODEL")
 print("file: " + str(file))
@@ -216,14 +332,14 @@ print('{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{r_sq:0.4f}'.form
     chi_guess=best_guess[0], r_guess=best_guess[1], chi=best_results[0],
     r=best_results[1], r_sq=best_r_sq))
 
-model_y = model(time, *best_results)
+model_y = working_model(time_shifted, *best_results)
 
 # plot:
 fig = plt.figure()
-plt.plot(time, conc, label='data')
-plt.plot(time, model_y, ':', label='fit')
-plt.xlabel('time (s)')
-plt.ylabel('conc (mg/mL)')
+plt.plot(time_shifted, conc_shifted, label='data')
+plt.plot(time_shifted, model_y, ':', label='fit')
+plt.xlabel('shifted time (s)')
+plt.ylabel('shifted conc (mg/mL)')
 plt.legend()
 plt.tight_layout()
 plt.show()
