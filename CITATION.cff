@@ -1,0 +1,15 @@
+cff-version: 1.0.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Scholtz"
+  given-names: "Alexis"
+  orcid: https://orcid.org/0000-0001-6275-0622
+- family-names: "Paulson"
+  given-names: "Jack"
+- family-names: "Nuñez"
+  given-names: "Victoria"
+- family-names: "Armani"
+  given-names: "Andrea M."
+title: MagnetoPhotometer (MAP) Github Repository
+version: 2.0.0
+url: "https://github.com/armanilab/MAP"
