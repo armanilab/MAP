@@ -46,17 +46,9 @@ class MapDAP:
 
         self.fm = FileManager()
 
-        # --- SETUP PAGE ---
-        # variables for setup page
-        self.log_file_var = tk.StringVar(self.root, 'No file selected')
-        self.log_file_fullpath = ''
-        self.log_file_status_var = tk.StringVar(self.root, 'Unloaded')
 
-        self.sample_from_log = tk.BooleanVar(value=True)
-        self.sample_file_fullpath = ''
-        self.sample_sheet_var = tk.StringVar(self.root, 'samples')
-        self.sample_file_var = tk.StringVar(self.root, 'No file selected')
-        self.sample_status_var = tk.StringVar(self.root, 'Unloaded')
+        # --- FILE SELECTION PAGE ---
+        # variables for file selection page
 
         # --- NOTEBOOK ---
         # set up notebook (tabs)
@@ -65,24 +57,50 @@ class MapDAP:
 
         # set up pages of the notebook
         # setup page - log file selection, other major parameters
-        self.setup_page = ttk.Frame(self.notebook, padding="3 3 12 12")
+        self.setup_page = SetupPage(self.notebook, self.fm, padding="3 3 12 12")
         self.notebook.add(self.setup_page, text='Setup')
-        self.create_setup_page()
+
+        # file selection page - select which files will be analyzed
+        self.selection_page = ttk.Frame(self.notebook, padding="3 3 12 12")
+        self.notebook.add(self.selection_page, text='Selection')
+
+        self.create_selection_page()
 
 
     def run(self):
         self.root.mainloop()
 
+    def create_selection_page(self):
+        pass
+
+class SetupPage(ttk.Frame):
+    def __init__(self, parent, fm, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.fm = fm
+
+        # variables for setup page
+        self.log_file_var = tk.StringVar(self, 'No file selected')
+        self.log_file_fullpath = ''
+        self.log_file_status_var = tk.StringVar(self, 'Unloaded')
+
+        self.sample_from_log = tk.BooleanVar(value=True)
+        self.sample_file_fullpath = ''
+        self.sample_sheet_var = tk.StringVar(self, 'samples')
+        self.sample_file_var = tk.StringVar(self, 'No file selected')
+        self.sample_status_var = tk.StringVar(self, 'Unloaded')
+
+        self.create_setup_page()
+
     def create_setup_page(self):
-        self.setup_label = ttk.Label(self.setup_page, text='SETUP',
+
+        self.setup_label = ttk.Label(self, text='SETUP',
             anchor='w')
         self.setup_label.configure(font=mdf.title_font)
         self.setup_label.grid(row=0, column=0)
-
         # to do: fix columns of each frame at some point
 
         # --- LOG FILE ---
-        self.log_frame = ttk.Frame(self.setup_page)
+        self.log_frame = ttk.Frame(self)
         self.log_frame.grid(row=1, column=0, sticky='wens', pady=20)
         for i in range(8):
             self.log_frame.columnconfigure(i, weight=1)
@@ -129,7 +147,7 @@ class MapDAP:
             sticky='w')
 
         # --- SAMPLE FILE ---
-        self.sample_frame = ttk.Frame(self.setup_page)
+        self.sample_frame = ttk.Frame(self)
         self.sample_frame.grid(row=2, column=0, sticky='wens', pady=20)
 
         for i in range(6):
@@ -175,7 +193,7 @@ class MapDAP:
         # TODO: link sample dict to log file selection
 
         # --- MAGNETS LIBRARY ---
-        self.magnet_frame = ttk.Frame(self.setup_page)
+        self.magnet_frame = ttk.Frame(self)
         self.magnet_frame.grid(row=3, column=0, sticky='wens', pady=20)
 
         # magnets file section label
@@ -184,7 +202,6 @@ class MapDAP:
         self.magnet_sec_label.grid(row=0, column=0, sticky='w', padx=20)
 
         # magnet file select button
-
 
     def select_log_file(self):
         filetypes = (
@@ -260,8 +277,7 @@ class MapDAP:
 
         self.set_sample_file(selected_file)
 
-    def set_sample_file(self, selected_file, ):
-
+    def set_sample_file(self, selected_file):
         self.sample_file_fullpath = selected_file
         self.fm.set_sample_file(self.sample_file_fullpath,
             self.sample_sheet_var.get())
@@ -270,6 +286,28 @@ class MapDAP:
         self.sample_file_var.set(shortened_path)
         self.sample_file_name_label.configure(text=self.sample_file_var.get())
         print('Sample file selected :' + self.sample_file_var.get())
+        self.load_sample_file()
+
+    def load_sample_file(self):
+        self.fm.load_sample_dict()
+
+class SelectionPage(ttk.Frame):
+    def __init__(self, parent, fm, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.fm = fm
+
+        # variables for selection page
+        # default file selections
+        cols = ['File', 'Sample ID', 'Concentration', 'Magnet', 'Trial']
+
+        # create page
+        self.create_selection_page()
+
+    def create_selection_page(self):
+        print(self.fm.get_col_names())
+
+    def update_tree(self):
+        print(self.fm.get_col_names())
 
 
 app = MapDAP()

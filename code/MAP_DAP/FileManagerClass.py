@@ -15,10 +15,13 @@ class FileManager:
         #i initialize
         self.df = None
         self.sample_dict = None
+        self.sample_df = None
 
         # load data and sample key from file
         # self.df = self.load_data_log(self.file)
         # self.sample_dict = self.load_sample_dict(self.file)
+
+        self.selected_list = []
 
     def __str__(self):
         return 'File Manager object for file: ' + self.file
@@ -28,8 +31,10 @@ class FileManager:
         print('Successfully set log file to: ' + self.log_file)
 
     def set_sample_file(self, file, sample_sheet):
-        self.sample_dict = file
+        self.sample_file = file
+        print('Set new sample file: ' + str(self.sample_file))
         self.sample_sheet = sample_sheet
+        print('Set new sample_sheet:' + str(self.sample_sheet))
 
     def load_data_log(self):
         print("Loading data from: " + self.log_file + "...")
@@ -69,14 +74,26 @@ class FileManager:
             return -1
         else:
             print("Found all required columns in test log.")
+            # set all column names to be sentence case
+            cols = []
+            for c in df.columns:
+                cols.append(self.__to_sentence_case(c))
+            df.columns = cols
             self.df = df
+
+            print(self.df.columns)
             return 0
 
     def load_sample_dict(self):
         sample_dict = {}
+        print('Loading sample key...')
+        print(self.sample_file)
+        xl = pd.ExcelFile(self.sample_file)
+        print(xl.sheet_names)
 
         try:
             # sample key must be named 'sample-key'
+            print('Looking for sample sheet named: ' + self.sample_sheet + ' in file: ' + self.sample_file)
             df = pd.read_excel(self.sample_file, sheet_name=self.sample_sheet,
                 dtype='str')
         except:
@@ -85,7 +102,7 @@ class FileManager:
             return -1
 
         # check dataframes for required columns
-        cols = [False, False, False, False]
+        cols_found = [False, False, False, False]
         df.columns, cols_found[0] = self.__check_column(df.columns,
             'Sample', 'ID', ['sample', 'sampleid', 'sample id', 'sample_id',
             'id', 'name', 'sample name', 'samplename', 'sample_name',
@@ -103,6 +120,9 @@ class FileManager:
             'mnp concentration', 'nanoparticle_concentration',
             'mnp_concentration'])
 
+        print(cols_found)
+        print(df.columns)
+
         # TODO: how to exit?
         if False in cols_found:
             print("EXIT: Sample log missing required column(s).")
@@ -111,14 +131,29 @@ class FileManager:
 
         print("Found all required columns in sample log.")
 
+        # convert to sentence case
+        cols = []
+        for c in df.columns:
+            cols.append(self.__to_sentence_case(c))
+        df.columns = cols
+
         # set index to sample labels (which will be keys in the sample dict)
-        df_samples.set_index('Sample', inplace=True)
+        df.set_index('Sample', inplace=True)
 
         # make a dict from the dataframe
-        sample_dict = df_samples.to_dict(orient='index')
+        sample_dict = df.to_dict(orient='index')
 
+        self.sample_df = df
         self.sample_dict = sample_dict
+        self.merge_df()
         return 0
+
+    def merge_df(self):
+        print('Merging sample dataframe....')
+        self.df = self.df.merge(self.sample_df, on='Sample', how='left')
+        print('Successfully merged!')
+        print('new dataframe:')
+        print(self.df)
 
     def get_df(self):
         return self.df
@@ -142,3 +177,12 @@ class FileManager:
             ' or ' + alt_name)
 
         return cols, False
+
+    def __to_sentence_case(self, s):
+        return s[0].upper() + s[1:]
+
+    def get_col_names(self):
+        if self.df is None:
+            return -1
+
+        return self.df.columns
