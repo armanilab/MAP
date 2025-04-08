@@ -182,7 +182,28 @@ class FileManager:
         return s[0].upper() + s[1:]
 
     def get_col_names(self):
+        """Return names of all columns or -1 if no log file has been loaded"""
         if self.df is None:
             return -1
 
         return self.df.columns
+
+    # cols is a list of columns
+    def get_file_df(self, cols):
+        if self.df is None:
+            return None
+        else:
+            return self.df[cols]
+
+    def add_to_selected_list(self, index):
+        """Adds a given index of the df to the list of files that have been selected"""
+        if index not in self.selected_list:
+            self.selected_list.append(index)
+
+    def remove_from_selected_list(self, index):
+        """Removes a given index of the df to the list of files that have been selected"""
+        if index in self.selected_list:
+            self.selected_list.remove(index)
+
+    def get_selected_df(self, cols):
+        return self.df.iloc[self.selected_list][cols]
