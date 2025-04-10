@@ -2,15 +2,23 @@ import pandas as pd
 import numpy as np
 import sys
 from os import path
+import platform
 
 DATA_DIR = "../../../../test_data/"
 
+#TODO: known bug when file is reloaded -> need to wipe selected_list
+
 class FileManager:
     def __init__(self):
-        # initialize the FileManager by loading the test file
+        self.path = None
         self.log_file = None
         self.sample_file = None
         self.sample_sheet = ''
+
+        if 'windows' in platform.system().lower():
+            self.path_div = '\\' # for windows only
+        else:
+            self.path_div = '/' # for mac or linux
 
         #i initialize
         self.df = None
@@ -30,8 +38,13 @@ class FileManager:
         self.log_file = file
         print('Successfully set log file to: ' + self.log_file)
 
+    def reset_selected_list(self):
+        self.selected_list = []
+
     def set_sample_file(self, file, sample_sheet):
         self.sample_file = file
+        self.path = file[:file.rfind(self.path_div)] + self.path_div # TODO: fix for windows
+
         print('Set new sample file: ' + str(self.sample_file))
         self.sample_sheet = sample_sheet
         print('Set new sample_sheet:' + str(self.sample_sheet))
@@ -43,6 +56,7 @@ class FileManager:
         try:
             df = pd.read_excel(self.log_file, dtype='str')
             print("Successfully read excel file.")
+            self.reset_selected_list()
         except:
             print("ERROR: Failed to read excel file.")
             return -1
@@ -205,5 +219,56 @@ class FileManager:
         if index in self.selected_list:
             self.selected_list.remove(index)
 
+    def get_selected_list(self):
+        return self.selected_list
+
     def get_selected_df(self, cols):
+        """Returns only the dataframe of the files that have been selected,
+           as specified from the self.selected_list variable.
+
+           Keyword arguments:
+           cols - the dataframe columns that should be included
+           """
+        if self.df is None:
+            return None
+
+        print(self.df.iloc[self.selected_list][cols])
         return self.df.iloc[self.selected_list][cols]
+
+    def get_row(self, row, cols=None):
+        if cols is None:
+            cols = self.df.columns
+        return self.df.iloc[int(row)][cols]
+
+    def get_file_name(self, row):
+        return self.df.iloc[int(row)]['File']
+
+    def load_file(self, index, preprocess=False):
+        """Returns the data from the file for a given row
+
+        Keyword arguments:
+        index - the index of the desired file
+        preprocess - if additional pre-processing should be done on the file to
+                     correct for MAP writing errors (defualt: True)
+        """
+
+        print('loading file for index: ' + str(index))
+        row = self.df.iloc[int(index)]
+        print(row)
+        dir = row['Directory']
+        if dir[-1] != self.path_div:
+            dir += self.path_div
+
+        file_path = self.path + row['Directory']
+
+        file_name = row['File']
+        if file_name [-4:] != '.txt':
+            file_name += '.txt'
+
+        data = np.genfromtxt(file_path + file_name)
+
+        if preprocess:
+            print('todo: implement pre-processing')
+
+        print(data[0:5, :])
+        return data
