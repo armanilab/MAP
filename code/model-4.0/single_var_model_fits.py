@@ -17,8 +17,33 @@ ver = 1.0
 to_save = True
 
 file_suffix = ''
+
+# pre-processing parameters
+min_n = 20
+window_size = 50
+poly_order = 3 # polynomial order
+
+
 if len(sys.argv) > 1:
-    file_suffix = sys.argv[1]
+    if sys.argv[1] == '-n':
+        try:
+            min_n = int(sys.argv[2])
+            file_suffix = '-n' + str(min_n)
+        except:
+            min_n = 20
+    elif sys.argv[1] == '-window':
+        try:
+            window_size = int(sys.argv[2])
+            file_suffix = '-window' + str(window_size)
+        except:
+            window_size = 50
+    elif sys.argv[1] == '-order':
+        try:
+            poly_order = int(sys.argv[2])
+            file_suffix = '-order' + str(poly_order)
+        except:
+            poly_order = 3
+
 
 ### START SCRIPT
 path = '../../../../test_data/paper_data/'
@@ -358,15 +383,13 @@ else:
 
 #### MULTI-MODAL ANALYSIS
 # smooth data using the Savitzky-Golay filter
-window_size = 50
-poly_order = 3 # polynomial order
 
 # compute first derivative of data
 conc_prime = savgol_filter(conc, window_size, poly_order, deriv=1,
     delta=time[1]-time[0])
 conc_dbl_prime = savgol_filter(conc, window_size, poly_order, deriv=2,
     delta=time[1]-time[0])
-min_n = 20
+
 print('Minimum inflection point: ' + str(min_n))
 global_min_index = np.argmin(conc_prime[min_n:])+min_n
 print('Global minimum timepoint: ' + str(time[global_min_index]))
