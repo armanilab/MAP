@@ -25,10 +25,10 @@ poly_order = 3 # polynomial order
 
 
 if len(sys.argv) > 1:
-    if sys.argv[1] == '-n':
+    if '-n' in sys.argv[1]:
         try:
             min_n = int(sys.argv[2])
-            file_suffix = '-n' + str(min_n)
+            file_suffix = sys.argv[1] + str(min_n)
         except:
             min_n = 20
     elif sys.argv[1] == '-window':
@@ -43,6 +43,8 @@ if len(sys.argv) > 1:
             file_suffix = '-order' + str(poly_order)
         except:
             poly_order = 3
+    else:
+        file_suffix = sys.argv[1]
 
 
 ### START SCRIPT
