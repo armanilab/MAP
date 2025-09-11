@@ -22,7 +22,7 @@ file_suffix = ''
 min_n = 20
 window_size = 50
 poly_order = 3 # polynomial order
-
+to_adj = True
 
 if len(sys.argv) > 1:
     if '-n' in sys.argv[1]:
@@ -43,6 +43,9 @@ if len(sys.argv) > 1:
             file_suffix = '-order' + str(poly_order)
         except:
             poly_order = 3
+    elif sys.argv[1] == '-unadj':
+        to_adj = False
+        file_suffix = sys.argv[1]
     else:
         file_suffix = sys.argv[1]
 
@@ -386,24 +389,34 @@ else:
 #### MULTI-MODAL ANALYSIS
 # smooth data using the Savitzky-Golay filter
 
-# compute first derivative of data
-conc_prime = savgol_filter(conc, window_size, poly_order, deriv=1,
-    delta=time[1]-time[0])
-conc_dbl_prime = savgol_filter(conc, window_size, poly_order, deriv=2,
-    delta=time[1]-time[0])
+if to_adj:
+    # compute first derivative of data
+    conc_prime = savgol_filter(conc, window_size, poly_order, deriv=1,
+        delta=time[1]-time[0])
+    conc_dbl_prime = savgol_filter(conc, window_size, poly_order, deriv=2,
+        delta=time[1]-time[0])
 
-print('Minimum inflection point: ' + str(min_n))
-global_min_index = np.argmin(conc_prime[min_n:])+min_n
-print('Global minimum timepoint: ' + str(time[global_min_index]))
+    print('Minimum inflection point: ' + str(min_n))
+    global_min_index = np.argmin(conc_prime[min_n:])+min_n
+    print('Global minimum timepoint: ' + str(time[global_min_index]))
 
-time_shifted = time[global_min_index:] - time[global_min_index]
-conc_shifted = conc[global_min_index:]
+    time_shifted = time[global_min_index:] - time[global_min_index]
+    conc_shifted = conc[global_min_index:]
 
-## update file lines
-file_lines.append('\n--- File Processing Information ---')
-file_lines.append('Calibrated with {} negative concentration values.'.format(neg_count))
-file_lines.append('Smoothed with Savitzky-Golay filter with window size of {} and poly_order of {}.'.format(window_size, poly_order))
-file_lines.append('Global min timepoint (after min {} values) is {} s.'.format(min_n, time[global_min_index]))
+    ## update file lines
+    file_lines.append('\n--- File Processing Information ---')
+    file_lines.append('Calibrated with {} negative concentration values.'.format(neg_count))
+    file_lines.append('Smoothed with Savitzky-Golay filter with window size of {} and poly_order of {}.'.format(window_size, poly_order))
+    file_lines.append('Global min timepoint (after min {} values) is {} s.'.format(min_n, time[global_min_index]))
+
+else:
+    time_shifted = time
+    conc_shifted = conc
+    file_lines.append('\n--- File Processing Information ---')
+    file_lines.append('Calibrated with {} negative concentration values.'.format(neg_count))
+    file_lines.append('Data unadjusted.')
+    conc_prime = conc_shifted
+    global_min_index=0
 
 ### FIT OPTIMIZATION
 # fit the shifted data
