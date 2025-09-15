@@ -23,6 +23,7 @@ min_n = 20
 window_size = 50
 poly_order = 3 # polynomial order
 to_adj = True
+num_guesses = 1000
 
 if len(sys.argv) > 1:
     if '-n' in sys.argv[1]:
@@ -46,6 +47,10 @@ if len(sys.argv) > 1:
     elif sys.argv[1] == '-unadj':
         to_adj = False
         file_suffix = sys.argv[1]
+    elif sys.argv[1] == '-guessnum':
+        num_guesses = int(sys.argv[2])
+        file_suffix = '-guessnum' + str(num_guesses)
+        print('set number of guesses to {}'.format(num_guesses))
     else:
         file_suffix = sys.argv[1]
 
@@ -354,13 +359,13 @@ file_lines.append('\tWindow: [{}, {}]'.format(window[0], window[1]))
 file_lines.append('Magnetic field fit:\n' + fit_str)
 
 ### INTIALIZE GUESSES & BOUNDS
-num_guesses = 100
-chis = np.logspace(-9, 3, num=1000) # chi only
+chis = np.logspace(-9, 3, num=num_guesses) # chi only
 guesses = []
 for c in chis:
     guesses.append([c])
 
-bounds = ([0], [100])#([0, 0], [np.inf, np.inf])
+# bounds = ([0], [100])#([0, 0], [np.inf, np.inf])
+bounds = ([0], [np.inf])
 
 ## update file lines
 file_lines.append('\n--- Fit parameters ---')
