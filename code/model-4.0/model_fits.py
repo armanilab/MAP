@@ -347,16 +347,12 @@ for f in to_run_list:
     file_lines.append('Magnetic field fit:\n' + fit_str)
 
     ### INTIALIZE GUESSES & BOUNDS
-    r_perc = 0.05
-    low_r_bound = radius*(1-r_perc)
-    high_r_bound = radius*(1+r_perc)
-    print('radius: {:0.4e}'.format(radius))
-    print('low_r_bound: {:0.4e}'.format(low_r_bound))
-    print('high_r_bound: {:0.4e}'.format(high_r_bound))
-    bounds = ([0.01, low_r_bound], [100, high_r_bound])#([0, 0], [np.inf, np.inf])
+    low_r_bound = radius-radius_std
+    high_r_bound = radius+radius_std
+    bounds = ([1e-6, low_r_bound], [np.inf, high_r_bound])#([0, 0], [np.inf, np.inf])
     num_chi_guesses = 1000
     num_r_guesses = 20
-    chis = np.logspace(-2, 1, num=num_chi_guesses) # changed from -6 to -2
+    chis = np.logspace(-6, 1, num=num_chi_guesses) # changed from -6 to -2
     rs = np.linspace(low_r_bound, high_r_bound, num=num_r_guesses)
     guesses = []
 
@@ -424,9 +420,11 @@ for f in to_run_list:
     best_MSE_guess = guesses[0]
     best_MSE = np.inf
     best_MSE_result = [0, 0]
+    best_MSE_r_sq = -np.inf
     best_dist_guess = guesses[0]
     best_dist = np.inf
     best_dist_MSE = -np.inf
+    best_dist_r_sq = -np.inf
     best_dist_result = [0, 0]
     c0 = conc_shifted[0]
 
@@ -447,9 +445,10 @@ for f in to_run_list:
             ss_res = np.sum(residuals**2) # sum of square residuals
             mse = ss_res / len(residuals)
             MSE = mse
-            # ss_total = np.sum((conc_shifted - np.mean(conc_shifted)) ** 2) # total sum of squares
-            # MSE = 1 - ss_res / ss_total
-
+            ss_total = np.sum((conc_shifted - np.mean(conc_shifted)) ** 2) # total sum of squares
+            r_sq = 1 - ss_res / ss_total
+            chi_err = (pcov[0][0]) * (1/2)
+            rad_err = (pcov[1][1]) * (1/2)
             # check conditionals
             to_print = False
             print_str = ''
@@ -458,6 +457,7 @@ for f in to_run_list:
                 best_MSE = MSE
                 best_MSE_result = popt
                 best_MSE_guess = init_guess
+                best_MSE_r_sq = r_sq
                 to_print = True
                 print_str += '^'
 
@@ -470,13 +470,14 @@ for f in to_run_list:
                     best_dist_result = popt
                     best_dist = distance
                     best_dist_MSE = MSE
+                    best_dist_r_sq = r_sq
                     to_print = True
                     print_str += '*'
 
             if to_print:
-                print_str += '{chi_guess:0.2e}\t{r_guess:0.2e}\t{chi:0.6e}\t{r:0.6e}\t{MSE:0.12f}'.format(
+                print_str += '{chi_guess:0.6e}\t{r_guess:0.6e}\t{chi:0.6e}\t{r:0.6e}\t{MSE:0.12f}\t{r_sq:0.12f}'.format(
                     chi_guess=init_guess[0], r_guess=init_guess[1], chi=popt[0],
-                    r=popt[1], MSE=MSE)
+                    r=popt[1], MSE=MSE, r_sq=r_sq)
                 print_list.append(print_str)
 
         except ValueError:
@@ -492,25 +493,25 @@ for f in to_run_list:
     duration = end_time - start_time
 
     # print results
-    print('\n^new best by MSE\n')
-    if optimize_radius:
-        print('*new best by radius\n')
-    print('init_chi\tinit_radius\tchi\t\tradius\t\tMSE\tdist_to_r')
-    for s in print_list:
-        print(s)
+    # print('\n^new best by MSE\n')
+    # if optimize_radius:
+    #     print('*new best by radius\n')
+    # print('init_chi\tinit_radius\tchi\t\tradius\t\tMSE\tdist_to_r')
+    # for s in print_list:
+    #     print(s)
 
     print('time to fit: ' + str(duration) + ' s')
 
     print("\nFINAL MODEL")
     print("file: " + str(file))
-    print('fit:\tinit_chi\tinit_radius\tchi\t\tradius\t\tMSE')
-    print('MSE:\t{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{MSE:0.12f}'.format(
+    print('fit:\tinit_chi\tinit_radius\tchi\t\tradius\t\tMSE\t\tr_sq')
+    print('MSE:\t{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{MSE:0.12f}\t{r_sq:0.12f}'.format(
         chi_guess=best_MSE_guess[0], r_guess=best_MSE_guess[1], chi=best_MSE_result[0],
-        r=best_MSE_result[1], MSE=best_MSE))
+        r=best_MSE_result[1], MSE=best_MSE, r_sq=best_MSE_r_sq))
     if optimize_radius:
-        print('rad:\t{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{MSE:0.12f}'.format(
+        print('rad:\t{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{MSE:0.12f}\t{r_sq:0.12f}'.format(
             chi_guess=best_dist_guess[0], r_guess=best_dist_guess[1], chi=best_dist_result[0],
-            r=best_dist_result[1], MSE=best_dist_MSE))
+            r=best_dist_result[1], MSE=best_dist_MSE, r_sq=best_dist_r_sq))
 
     best_MSE_y = working_model(time_shifted, *best_MSE_result)
 
@@ -519,13 +520,13 @@ for f in to_run_list:
 
     file_lines.append('\nFINAL RESULTS')
     file_lines.append('Opt. param.:\tinit_chi\tinit_radius\tchi\t\tradius\t\tMSE')
-    file_lines.append('Best MSE:\t{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{MSE:0.12f}'.format(
+    file_lines.append('Best MSE:\t{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{MSE:0.12e}\t{r_sq:0.12f}'.format(
         chi_guess=best_MSE_guess[0], r_guess=best_MSE_guess[1], chi=best_MSE_result[0],
-        r=best_MSE_result[1], MSE=best_MSE))
+        r=best_MSE_result[1], MSE=best_MSE, r_sq=best_MSE_r_sq))
     if optimize_radius:
-        file_lines.append('Best rad:\t{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{MSE:0.12f}'.format(
+        file_lines.append('Best rad:\t{chi_guess:0.6e}\t{r_guess:0.6e}\t{chi:0.6e}\t{r:0.6e}\t{MSE:0.12e}\t{r_sq:0.12f}'.format(
             chi_guess=best_dist_guess[0], r_guess=best_dist_guess[1], chi=best_dist_result[0],
-            r=best_dist_result[1], MSE=best_dist_MSE))
+            r=best_dist_result[1], MSE=best_dist_MSE, r_sq=best_dist_r_sq))
 
     ## update files
     file_lines.append('\n--- Full Results ---')
@@ -533,7 +534,7 @@ for f in to_run_list:
     file_lines.append('^new best by MSE')
     if optimize_radius:
         file_lines.append('*new best by radius\n')
-    file_lines.append('init_chi\tinit_radius\tchi\t\tradius\t\tMSE')
+    file_lines.append('init_chi\tinit_radius\tchi\t\tradius\t\tMSE\t\tr_sq')
     for s in print_list:
         file_lines.append(s)
 
@@ -566,10 +567,10 @@ for f in to_run_list:
         'verticalalignment': 'top', 'horizontalalignment': 'left',
         'transform': ax1.transAxes}
     labels = 'chi_i:\nrad_i:\nchi:\nrad:\n$MSE$'
-    MSE_str = '{chi_i:0.2e}\n{r_i:0.2e}\n{chi:0.6e}\n{rad:0.6e}\n{rsq:0.6f}'.format(
+    MSE_str = '{chi_i:0.2e}\n{r_i:0.2e}\n{chi:0.2e}\n{rad:0.2e}\n{MSE:0.2e}'.format(
         chi_i=best_MSE_guess[0], r_i=best_MSE_guess[1], chi=best_MSE_result[0],
         rad=best_MSE_result[1], rsq=best_MSE)
-    rad_str = '{chi_i:0.2e}\n{r_i:0.2e}\n{chi:0.6e}\n{rad:0.6e}\n{rsq:0.6f}'.format(
+    rad_str = '{chi_i:0.2e}\n{r_i:0.2e}\n{chi:0.2e}\n{rad:0.2e}\n{MSE:0.2e}'.format(
         chi_i=best_dist_guess[0], r_i=best_dist_guess[1], chi=best_dist_result[0],
         rad=best_dist_result[1], rsq=best_dist_MSE)
 
@@ -617,5 +618,7 @@ for f in to_run_list:
                 f.write(l + '\n')
 
         plt.savefig(save_dir + file[:-4] + '-fit' + file_suffix + '.png', dpi=600)
+        plt.close()
     else:
         plt.show()
+        plt.close()
