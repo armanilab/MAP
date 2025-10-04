@@ -13,11 +13,10 @@ import time as pytime
 import pandas as pd
 import warnings
 
-ver = 2.1
+ver = 2.2 # updated to include data truncation
 to_save = True
 
 file_suffix = ''
-
 
 # load files to run from script
 if len(sys.argv) < 3:
@@ -346,33 +345,6 @@ for f in to_run_list:
     file_lines.append('\tWindow: [{}, {}]'.format(window[0], window[1]))
     file_lines.append('Magnetic field fit:\n' + fit_str)
 
-    ### INTIALIZE GUESSES & BOUNDS
-    low_r_bound = radius-radius_std
-    high_r_bound = radius+radius_std
-    bounds = ([1e-6, low_r_bound], [np.inf, high_r_bound])#([0, 0], [np.inf, np.inf])
-    num_chi_guesses = 1000
-    num_r_guesses = 20
-    chis = np.logspace(-6, 1, num=num_chi_guesses) # changed from -6 to -2
-    rs = np.linspace(low_r_bound, high_r_bound, num=num_r_guesses)
-    guesses = []
-
-    for i in range(len(chis)):
-        for j in range(len(rs)):
-            guesses.append([chis[i], rs[j]])
-    print("total number of guesses: " + str(len(guesses)))
-
-    ## update file lines
-    file_lines.append('\n--- Fit parameters ---')
-    file_lines.append('Guess ranges:')
-    file_lines.append('\tChi: [{:0.2e}, {:0.2e}] ({:d} values with log spacing)'.format(chis[0], chis[-1], num_chi_guesses))
-    file_lines.append('\tRadius: [{:0.6e}, {:0.6e} ({:d} values with lin spacing)]'.format(rs[0], rs[-1], num_r_guesses))
-    file_lines.append('Bounds: ')
-    file_lines.append('\tChi: [{:0.2e}, {:0.2e}]'.format(bounds[0][0], bounds[1][0]))
-    file_lines.append('\tRadius: [{:0.2e}, {:0.2e}]'.format(bounds[0][1], bounds[1][1]))
-    # file_lines.append('All values:')
-    # file_lines.append('\tChi: ' + str(chis))
-    # file_lines.append('\tRadius: ' + str(rs))
-
     ### IMPORT DATA
     file_path = path + dir + file
     print('\nnow processing ' + str(file_path))
@@ -393,8 +365,8 @@ for f in to_run_list:
 
     #### MULTI-MODAL ANALYSIS
     # smooth data using the Savitzky-Golay filter
-    window_size = 50
-    poly_order = 3 # polynomial order
+    window_size = 100
+    poly_order = 2 # polynomial order
 
     # compute first derivative of data
     conc_prime = savgol_filter(conc, window_size, poly_order, deriv=1,
@@ -406,14 +378,60 @@ for f in to_run_list:
     global_min_index = np.argmin(conc_prime[min_n:])+min_n
     print('Global minimum timepoint: ' + str(time[global_min_index]))
 
-    time_shifted = time[global_min_index:] - time[global_min_index]
-    conc_shifted = conc[global_min_index:]
+    # truncate the data
+    trunc_i = len(conc_prime)-1
+    threshold = -1
+    consec_vals = 50
+    counter = 0
+    # for i in range(global_min_index, len(conc_prime)):
+    #     if np.abs(conc_prime[i]) < threshold:
+    #         counter +=1
+    #     else:
+    #         counter = 0
+    #     if counter > consec_vals:
+    #         trunc_i = i
+    #         break
+
+    print('Truncated at: {:0.3f} (n={:d}) with threshold {:e}'.format(time[trunc_i], trunc_i, threshold))
+
+    time_shifted = time[global_min_index:trunc_i] - time[global_min_index]
+    conc_shifted = conc[global_min_index:trunc_i]
 
     ## update file lines
     file_lines.append('\n--- File Processing Information ---')
     file_lines.append('Calibrated with {} negative concentration values.'.format(neg_count))
     file_lines.append('Smoothed with Savitzky-Golay filter with window size of {} and poly_order of {}.'.format(window_size, poly_order))
     file_lines.append('Global min timepoint (after min {} values) is {} s.'.format(min_n, time[global_min_index]))
+    file_lines.append('Truncation threshold: {:0.2e} with {:d} consecutive values.'.format(threshold, consec_vals))
+    file_lines.append('Truncated at: {:0.3f} (n={:d}).'.format(time[trunc_i], trunc_i))
+
+    ### INTIALIZE GUESSES & BOUNDS
+    low_r_bound = radius-radius_std
+    high_r_bound = radius+radius_std
+    bounds = ([1e-5, low_r_bound], [np.inf, high_r_bound])#([0, 0], [np.inf, np.inf])
+    num_chi_guesses = 500
+    num_r_guesses = 25
+    chis = np.logspace(-6, 2, num=num_chi_guesses) # changed from -6 to -2
+    rs = np.linspace(low_r_bound, high_r_bound, num=num_r_guesses)
+    guesses = []
+
+    for i in range(len(chis)):
+        for j in range(len(rs)):
+            guesses.append([chis[i], rs[j]])
+    print("total number of guesses: " + str(len(guesses)))
+
+    ## update file lines
+    file_lines.append('\n--- Fit parameters ---')
+    file_lines.append('Guess ranges:')
+    file_lines.append('\tChi: [{:0.2e}, {:0.2e}] ({:d} values with log spacing)'.format(chis[0], chis[-1], num_chi_guesses))
+    file_lines.append('\tRadius: [{:0.6e}, {:0.6e} ({:d} values with lin spacing)]'.format(rs[0], rs[-1], num_r_guesses))
+    file_lines.append('Bounds: ')
+    file_lines.append('\tChi: [{:0.2e}, {:0.2e}]'.format(bounds[0][0], bounds[1][0]))
+    file_lines.append('\tRadius: [{:0.2e}, {:0.2e}]'.format(bounds[0][1], bounds[1][1]))
+    # file_lines.append('All values:')
+    # file_lines.append('\tChi: ' + str(chis))
+    # file_lines.append('\tRadius: ' + str(rs))
+
 
     ### FIT OPTIMIZATION --- UPDATED TO MEAN SQUARE ERROR (BUT MSE LABELS ARE UNCHANGED FOR NOW)
     # fit the shifted data
@@ -492,24 +510,16 @@ for f in to_run_list:
     end_time = pytime.time()
     duration = end_time - start_time
 
-    # print results
-    # print('\n^new best by MSE\n')
-    # if optimize_radius:
-    #     print('*new best by radius\n')
-    # print('init_chi\tinit_radius\tchi\t\tradius\t\tMSE\tdist_to_r')
-    # for s in print_list:
-    #     print(s)
-
     print('time to fit: ' + str(duration) + ' s')
 
     print("\nFINAL MODEL")
     print("file: " + str(file))
     print('fit:\tinit_chi\tinit_radius\tchi\t\tradius\t\tMSE\t\tr_sq')
-    print('MSE:\t{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{MSE:0.12f}\t{r_sq:0.12f}'.format(
+    print('MSE:\t{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{MSE:0.12e}\t{r_sq:0.12f}'.format(
         chi_guess=best_MSE_guess[0], r_guess=best_MSE_guess[1], chi=best_MSE_result[0],
         r=best_MSE_result[1], MSE=best_MSE, r_sq=best_MSE_r_sq))
     if optimize_radius:
-        print('rad:\t{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{MSE:0.12f}\t{r_sq:0.12f}'.format(
+        print('rad:\t{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{MSE:0.12e}\t{r_sq:0.12f}'.format(
             chi_guess=best_dist_guess[0], r_guess=best_dist_guess[1], chi=best_dist_result[0],
             r=best_dist_result[1], MSE=best_dist_MSE, r_sq=best_dist_r_sq))
 
@@ -542,14 +552,15 @@ for f in to_run_list:
     # plot data
     f, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(10, 4))
     f.suptitle(file)
-    ax2.plot(time, conc_prime * 1000, color='green', label='Data')
-    ax2.plot(time[global_min_index], conc_prime[global_min_index] * 1000, 'o', markersize=5, color='r', label='Inflection point')
+    ax2.plot(time, conc_prime * 1000, color='green', label='Data', zorder=2)
+    ax2.plot(time[global_min_index], conc_prime[global_min_index] * 1000, 'o', markersize=5, color='r', label='Inflection point', zorder=3)
+    ax2.axvline(time[trunc_i], color='#777777', zorder=1, label='Truncation')
     ax2.set_xlabel('Time (s)')
     ax2.set_ylabel('Conc. gradient (µg/mL per s)')
     ax2.legend(loc='lower right', handlelength=2)
 
     ax3.plot(time, conc, color='green', label='Data')
-    ax3.plot(time_shifted + time[global_min_index], best_MSE_y, '--', color='blue', label='Best $MSE$ fit')
+    ax3.plot(time_shifted + time[global_min_index], best_MSE_y, '--', color='blue', label='Best MSE fit')
     if optimize_radius:
         ax3.plot(time_shifted + time[global_min_index], best_dist_y, ':', color='red', label='Best radius fit')
     ax3.set_xlabel('Time (s)')
@@ -569,10 +580,10 @@ for f in to_run_list:
     labels = 'chi_i:\nrad_i:\nchi:\nrad:\n$MSE$'
     MSE_str = '{chi_i:0.2e}\n{r_i:0.2e}\n{chi:0.2e}\n{rad:0.2e}\n{MSE:0.2e}'.format(
         chi_i=best_MSE_guess[0], r_i=best_MSE_guess[1], chi=best_MSE_result[0],
-        rad=best_MSE_result[1], rsq=best_MSE)
+        rad=best_MSE_result[1], MSE=best_MSE)
     rad_str = '{chi_i:0.2e}\n{r_i:0.2e}\n{chi:0.2e}\n{rad:0.2e}\n{MSE:0.2e}'.format(
         chi_i=best_dist_guess[0], r_i=best_dist_guess[1], chi=best_dist_result[0],
-        rad=best_dist_result[1], rsq=best_dist_MSE)
+        rad=best_dist_result[1], MSE=best_dist_MSE)
 
     ax1.text(0.02, 0.44, labels, **text_kwargs)
     ax1.text(0.24, 0.54, 'Best $MSE$', **text_kwargs, fontsize=12)
@@ -586,14 +597,14 @@ for f in to_run_list:
     ax1.plot([0.2, 1.0], [0.465, 0.465], color='grey', linewidth=1, linestyle=':')
 
     chi_param_str = 'chi_init range'
-    chi_params = '[' + str(chis[0]) + ', ' + str(chis[-1]) + ']'
+    chi_params = '[{:0.4e}, {:0.4e}]'.format(chis[0], chis[-1])
     r_param_str = 'r_init range'
-    r_params = '[' + str(rs[0]) + ', ' + str(rs[-1]) + ']'
+    r_params = '[{:0.4e}, {:0.4e}]'.format(rs[0], rs[-1])
     bounds_str = 'bounds'
     bounds_chi_str = 'chi: '
-    bounds_chi = str(bounds[0][0]) + ' - ' + str(bounds[0][1])
+    bounds_chi = '{:0.4e} - {:0.4e}'.format(bounds[0][0], bounds[0][1])
     bounds_rad_str = 'rad: '
-    bounds_rad = str(bounds[1][0]) + ' - ' + str(bounds[1][1])
+    bounds_rad = '{:0.4e} - {:0.4e}'.format(bounds[1][0], bounds[1][1])
 
     ax1.text(0.02, 0.97, 'Fit parameters', **text_kwargs, fontsize=12)
     ax1.text(0.02, 0.87, chi_param_str, **text_kwargs)
