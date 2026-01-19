@@ -38,11 +38,11 @@ if path[-1] != '/':
     path += '/'
 
 # check for flags
-flags = []
-for f in file_list:
-    if '-' in f:
-        flags.append(f)
-        file_list.remove(f)
+# flags = []
+# for f in file_list:
+#     if '-' in f:
+#         flags.append(f)
+#         file_list.remove(f)
 
 # FOR NOW: assume same concentration
 # get concentration data for calibration steps

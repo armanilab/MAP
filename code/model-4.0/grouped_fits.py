@@ -13,12 +13,12 @@ import time as pytime
 import pandas as pd
 import warnings
 
-ver = 2.0
+ver = 3.0
 to_save = True
 
 file_suffix = ''
 num_chi_guesses = 100
-num_r_guesses = 100
+num_r_guesses = 500
 
 # load files to run from script
 if len(sys.argv) < 3:
@@ -65,6 +65,14 @@ plt.rcParams.update({'font.family': 'Avenir', 'figure.titlesize': 16,
 file_lines = []
 
 def working_model(t, chi_p, r):
+    alpha = (9 * eta) / (2 * rho_p * r**2)
+    beta = (2 * a**2 * chi_p) / (rho_p * mu0 * (1 + chi_s))
+    delta1 = 0.5 * (-alpha + np.sqrt(alpha**2 - 4 * beta))
+    delta2 = 0.5 * (-alpha - np.sqrt(alpha**2 - 4 * beta))
+    k = delta2 * c0 / (delta2 - delta1)
+    return k * np.exp(delta1 * t) + (c0 - k) * np.exp(delta2 * t)
+
+def single_var_model(t, chi_p):
     alpha = (9 * eta) / (2 * rho_p * r**2)
     beta = (2 * a**2 * chi_p) / (rho_p * mu0 * (1 + chi_s))
     delta1 = 0.5 * (-alpha + np.sqrt(alpha**2 - 4 * beta))
@@ -354,23 +362,23 @@ for f in to_run_list:
     ### INTIALIZE GUESSES & BOUNDS
     chis = np.logspace(-6, 2, num=num_chi_guesses)
     rs = np.logspace(-9, -4, num=num_r_guesses)
-    guesses = []
-
-    for i in range(len(chis)):
-        for j in range(len(rs)):
-            guesses.append([chis[i], rs[j]])
+    guesses = chis
+    # for i in range(len(chis)):
+        # for j in range(len(rs)):
+        #     guesses.append([chis[i], rs[j]])
     print("total number of guesses: " + str(len(guesses)))
 
-    bounds = ([0, 1e-10], [100, 1e-4])#([0, 0], [np.inf, np.inf])
+    bounds = ([0], [10])
+    #bounds = ([0, 1e-10], [100, 1e-4])#([0, 0], [np.inf, np.inf])
 
     ## update file lines
     file_lines.append('\n--- Fit parameters ---')
     file_lines.append('Guess ranges:')
     file_lines.append('\tChi: [{:0.2e}, {:0.2e}] ({:d} values with log spacing)'.format(chis[0], chis[-1], num_chi_guesses))
-    file_lines.append('\tRadius: [{:0.6e}, {:0.6e} ({:d} values with log spacing)]'.format(rs[0], rs[-1], num_r_guesses))
+    # file_lines.append('\tRadius: [{:0.6e}, {:0.6e} ({:d} values with log spacing)]'.format(rs[0], rs[-1], num_r_guesses))
     file_lines.append('Bounds: ')
     file_lines.append('\tChi: [{:0.2e}, {:0.2e}]'.format(bounds[0][0], bounds[1][0]))
-    file_lines.append('\tRadius: [{:0.2e}, {:0.2e}]'.format(bounds[0][1], bounds[1][1]))
+    # file_lines.append('\tRadius: [{:0.2e}, {:0.2e}]'.format(bounds[0][1], bounds[1][1]))
     # file_lines.append('All values:')
     # file_lines.append('\tChi: ' + str(chis))
     # file_lines.append('\tRadius: ' + str(rs))
@@ -424,8 +432,9 @@ for f in to_run_list:
     ### FIT OPTIMIZATION
     # fit the shifted data
     best_r_sq_guess = guesses[0]
-    best_r_sq = -np.inf
+    best_r_sq = np.inf
     best_r_sq_result = [0, 0]
+    best_r_sq_rad = 0
     best_dist_guess = guesses[0]
     best_dist = np.inf
     best_dist_r_sq = -np.inf
@@ -435,106 +444,108 @@ for f in to_run_list:
     print_list = []
 
     start_time = pytime.time()
-    for init_guess in tqdm(guesses):
-        # iterate over guesses
-        agg_r_sq = 0
-        for row in processed_data:
-            time_shifted = row[0]
-            conc_shifted = row[1]
-            try:
-                (popt, pcov) = curve_fit(working_model, time_shifted, conc_shifted, p0=init_guess, bounds=bounds)
-            except ValueError:
-                #print("ValueError encountered at chi_init {chi:0.4f}, r_init {r:0.4f}".format(chi=init_guess[0], r=init_guess[1]))
-                pass
-            except RuntimeError:
-                #print("RuntimeError encountered at chi_init {chi:0.4f}, r_init {r:0.4f}".format(chi=init_guess[0], r=init_guess[1]))
-                pass
-            except ZeroDivisionError:
-                pass
+    for r in tqdm(rs):
+        for init_guess in guesses:
+            # iterate over guesses
+            agg_r_sq = 0
+            res = []
+            for row in processed_data:
+                time_shifted = row[0]
+                conc_shifted = row[1]
+                try:
+                    (popt, pcov) = curve_fit(single_var_model, time_shifted, conc_shifted, p0=init_guess, bounds=bounds)
+                except ValueError:
+                    #print("ValueError encountered at chi_init {chi:0.4f}, r_init {r:0.4f}".format(chi=init_guess[0], r=init_guess[1]))
+                    pass
+                except RuntimeError:
+                    #print("RuntimeError encountered at chi_init {chi:0.4f}, r_init {r:0.4f}".format(chi=init_guess[0], r=init_guess[1]))
+                    pass
+                except ZeroDivisionError:
+                    pass
 
-            adj_model_y = working_model(time_shifted, *popt)
+                adj_model_y = single_var_model(time_shifted, *popt)
 
-            residuals = conc_shifted - adj_model_y
-            ss_res = np.sum(residuals**2) # sum of square residuals
-            ss_total = np.sum((conc_shifted - np.mean(conc_shifted)) ** 2) # total sum of squares
-            r_sq = 1 - ss_res / ss_total
-            agg_r_sq += r_sq
+                residuals = conc_shifted - adj_model_y
+                ss_res = np.sum(residuals**2) # sum of square residuals
+                # ss_total = np.sum((conc_shifted - np.mean(conc_shifted)) ** 2) # total sum of squares
+                # r_sq = 1 - ss_res / ss_total
+                mse = ss_res / len(residuals)
+                r_sq = mse
+                agg_r_sq += r_sq
+                res.append(*popt)
 
-        # check conditionals
-        to_print = False
-        print_str = ''
+            # check conditionals
+            to_print = False
+            print_str = ''
 
-        if agg_r_sq > best_r_sq:
-            best_r_sq = agg_r_sq
-            best_r_sq_result = popt
-            best_r_sq_guess = init_guess
-            to_print = True
-            print_str += '^'
-
-        if optimize_radius:
-            r_result = popt[1]
-            distance = np.abs(radius - r_result)
-
-            if distance <= best_dist:
-                best_dist_guess = init_guess
-                best_dist_result = popt
-                best_dist = distance
-                best_dist_r_sq = r_sq
+            if agg_r_sq < best_r_sq:
+                best_r_sq = agg_r_sq
+                best_r_sq_result = res
+                best_r_sq_rad = r
+                best_r_sq_guess = init_guess
                 to_print = True
-                print_str += '*'
+                print_str += '^'
 
-        if to_print:
-            print_str += '{chi_guess:0.2e}\t{r_guess:0.2e}\t{chi:0.6e}\t{r:0.6e}\t{r_sq:0.12f}'.format(
-                chi_guess=init_guess[0], r_guess=init_guess[1], chi=popt[0],
-                r=popt[1], r_sq=r_sq)
-            print_list.append(print_str)
+            # if optimize_radius:
+            #     r_result = popt[1]
+            #     distance = np.abs(radius - r_result)
+            #
+            #     if distance <= best_dist:
+            #         best_dist_guess = init_guess
+            #         best_dist_result = res
+            #         best_dist = distance
+            #         best_dist_r_sq = r_sq
+            #         to_print = True
+            #         print_str += '*'
+
+            if to_print:
+                print_str += '{r:0.2e}\t{chi_guess:0.2e}\t{chi:0.6e}\t{r_sq:0.12f}'.format(
+                    r=r, chi_guess=init_guess, chi=popt[0],
+                    r_sq=r_sq)
+                print_list.append(print_str)
 
     end_time = pytime.time()
     duration = end_time - start_time
 
     # print results
-    print('\n^new best by r^2\n')
-    if optimize_radius:
-        print('*new best by radius\n')
-    print('init_chi\tinit_radius\tchi\t\tradius\t\tr_sq\tdist_to_r')
-    for s in print_list:
-        print(s)
+    # print('\n^new best by r^2\n')
+    # if optimize_radius:
+    #     print('*new best by radius\n')
+    # print('init_chi\tinit_radius\tchi\t\tradius\t\tr_sq\tdist_to_r')
+    # for s in print_list:
+    #     print(s)
 
     print('time to fit: ' + str(duration) + ' s')
 
+    def format_chi_str(result):
+        s = ''
+        for r in result:
+            s += '{:0.4e}'.format(r) + ', '
+        return s[:-2]
+
     print("\nFINAL MODEL")
-    print("file: " + str(file))
-    print('fit:\tinit_chi\tinit_radius\tchi\t\tradius\t\tr_sq')
-    print('r^2:\t{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{r_sq:0.12f}'.format(
-        chi_guess=best_r_sq_guess[0], r_guess=best_r_sq_guess[1], chi=best_r_sq_result[0],
-        r=best_r_sq_result[1], r_sq=best_r_sq))
-    if optimize_radius:
-        print('rad:\t{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{r_sq:0.12f}'.format(
-            chi_guess=best_dist_guess[0], r_guess=best_dist_guess[1], chi=best_dist_result[0],
-            r=best_dist_result[1], r_sq=best_dist_r_sq))
+    print("files: " + str(file_names))
+    print('init_chi\t\tchi\t\tr_sq')
+    print('{r:0.4e}\t{chi_guess:0.4e}\t{chi}\t{r_sq:0.12f}'.format(
+        r=best_r_sq_rad, chi_guess=best_r_sq_guess, chi=format_chi_str(best_r_sq_result),
+        r_sq=best_r_sq))
 
-    best_r_sq_y = working_model(time_shifted, *best_r_sq_result)
-
-    if optimize_radius:
-        best_dist_y = working_model(time_shifted, *best_dist_result)
+    # best_r_sq_y = working_model(time_shifted, *best_r_sq_result)
 
     file_lines.append('\nFINAL RESULTS')
+    file_lines.append('Files: ' + str(file_names))
     file_lines.append('Opt. param.:\tinit_chi\tinit_radius\tchi\t\tradius\t\tr_sq')
-    file_lines.append('Best r^2:\t{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{r_sq:0.12f}'.format(
-        chi_guess=best_r_sq_guess[0], r_guess=best_r_sq_guess[1], chi=best_r_sq_result[0],
-        r=best_r_sq_result[1], r_sq=best_r_sq))
-    if optimize_radius:
-        file_lines.append('Best rad:\t{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{r_sq:0.12f}'.format(
-            chi_guess=best_dist_guess[0], r_guess=best_dist_guess[1], chi=best_dist_result[0],
-            r=best_dist_result[1], r_sq=best_dist_r_sq))
+    file_lines.append('{r:0.4e}\t{chi_guess:0.4e}\t{chi}\t{r_sq:0.12f}'.format(
+        r=best_r_sq_rad, chi_guess=best_r_sq_guess, chi=format_chi_str(best_r_sq_result),
+        r_sq=best_r_sq))
 
     ## update files
     file_lines.append('\n--- Full Results ---')
     file_lines.append('Time to fit: ' + str(duration) + ' s')
     file_lines.append('^new best by r^2')
-    if optimize_radius:
-        file_lines.append('*new best by radius\n')
-    file_lines.append('init_chi\tinit_radius\tchi\t\tradius\t\tr_sq')
+    # if optimize_radius:
+    #     file_lines.append('*new best by radius\n')
+    file_lines.append('init_chi\tchi\tr_sq')
     for s in print_list:
         file_lines.append(s)
 
@@ -570,9 +581,9 @@ for f in to_run_list:
     r_sq_str = '{chi_i:0.2e}\n{r_i:0.2e}\n{chi:0.6e}\n{rad:0.6e}\n{rsq:0.6f}'.format(
         chi_i=best_r_sq_guess[0], r_i=best_r_sq_guess[1], chi=best_r_sq_result[0],
         rad=best_r_sq_result[1], rsq=best_r_sq)
-    rad_str = '{chi_i:0.2e}\n{r_i:0.2e}\n{chi:0.6e}\n{rad:0.6e}\n{rsq:0.6f}'.format(
-        chi_i=best_dist_guess[0], r_i=best_dist_guess[1], chi=best_dist_result[0],
-        rad=best_dist_result[1], rsq=best_dist_r_sq)
+    # rad_str = '{chi_i:0.2e}\n{r_i:0.2e}\n{chi:0.6e}\n{rad:0.6e}\n{rsq:0.6f}'.format(
+    #     chi_i=best_dist_guess[0], r_i=best_dist_guess[1], chi=best_dist_result[0],
+    #     rad=best_dist_result[1], rsq=best_dist_r_sq)
 
     ax1.text(0.02, 0.44, labels, **text_kwargs)
     ax1.text(0.24, 0.54, 'Best $r^2$', **text_kwargs, fontsize=12)
@@ -592,8 +603,8 @@ for f in to_run_list:
     bounds_str = 'bounds'
     bounds_chi_str = 'chi: '
     bounds_chi = str(bounds[0][0]) + ' - ' + str(bounds[0][1])
-    bounds_rad_str = 'rad: '
-    bounds_rad = str(bounds[1][0]) + ' - ' + str(bounds[1][1])
+    # bounds_rad_str = 'rad: '
+    # bounds_rad = str(bounds[1][0]) + ' - ' + str(bounds[1][1])
 
     ax1.text(0.02, 0.97, 'Fit parameters', **text_kwargs, fontsize=12)
     ax1.text(0.02, 0.87, chi_param_str, **text_kwargs)
@@ -603,8 +614,8 @@ for f in to_run_list:
     ax1.text(0.02, 0.72, bounds_str, **text_kwargs)
     ax1.text(0.24, 0.75, bounds_chi_str, **text_kwargs)
     ax1.text(0.4, 0.75, bounds_chi, **text_kwargs)
-    ax1.text(0.24, 0.69, bounds_rad_str, **text_kwargs)
-    ax1.text(0.4, 0.69, bounds_rad, **text_kwargs)
+    # ax1.text(0.24, 0.69, bounds_rad_str, **text_kwargs)
+    # ax1.text(0.4, 0.69, bounds_rad, **text_kwargs)
     ax1.plot([0.0, 1.0], [0.6, 0.6], color=grey, linewidth=1)
     ax1.plot([0.0, 1.0], [0.89, 0.89], color=grey, linewidth=1, linestyle=':')
     ax1.plot([0.35, 0.35], [0.63, 0.9], color=grey, linewidth=1, linestyle=':')
