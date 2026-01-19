@@ -169,7 +169,7 @@ class ModelFitter:
 
     def model(self, t, X_p, r):
         beta = 2 * self.a**2 * X_p / (self.rho * self.mu0 * (1 + self.Xs))
-        alpha = 9 * self.eta / (2 * self.rho * r**2)
+        alpha =  9 * self.eta / (2 * self.rho * r**2)
 
         discriminant = alpha**2 - 4 * beta
 

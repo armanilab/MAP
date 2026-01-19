@@ -34,12 +34,12 @@ def main(path, file, c0, a):
 
     for r in rs:
         for chi in chis:
-            guesses.append([chi, r])
+            guesses.append([chi, 1.4e-6])
 
-    guesses = [[0.001, 0.5e-6]]
+    #guesses = [[0.0001, 1.4e-6]]
 
 
-    bounds = ([0, 0], [0.1, 0.1])#([0, 0], [np.inf, np.inf])
+    bounds = ([0, 1.3e-6], [0.1, 1.5e-6])#([0, 0], [np.inf, np.inf])
 
     # Process data and fit model
     #file_paths = ['data/mjack005.txt', 'data/mjack006.txt', 'data/mjack007.txt', 'data/mjack008.txt', 'data/mjack009.txt']
@@ -97,7 +97,7 @@ def main(path, file, c0, a):
     fig = plt.figure()
     plt.plot(data_processor.time, conc, label='data')
     orig_model = model_fitter.model(data_processor.time, X_p=chi, r=r)
-    plt.plot(data_processor.time, orig_model, label='original')
+    plt.plot(data_processor.time, orig_model, label='fit')
     plt.xlabel('time (s)')
     plt.ylabel('conc (mg/mL)')
     plt.legend()

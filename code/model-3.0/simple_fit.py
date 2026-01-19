@@ -2,8 +2,19 @@ import sys
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import font_manager as fm
+from scipy.optimize import curve_fit
 
 n = 20
+
+# fit params
+eta = 8.9e-4
+rho_p = 1400
+mu0 = 4 * np.pi * 10**-7
+a = -13.655887
+Xs = -9.04e-6
+
+def og_model(t, k1, d1, k2, d2):
+    return k1 * np.exp(d1*t) + k2 * np.exp(d2 * t)
 
 def calibrate(lux, c0):
     # convert to transmission
@@ -50,13 +61,14 @@ for f in file_list:
 # if same_conc == 'y':
 #
 try:
-    c_i = float(input("What is the concentration of the solution? [mg/mL] "))
+    c0 = float(input("What is the concentration of the solution? [kg/mL] "))
 except ValueError:
     "Error: invalid concentration"
-    c_i = 0
+    c0 = 0
 
 # plot data
 fig, (lux_ax, conc_ax) = plt.subplots(1, 2, figsize=(12, 6))
+
 
 for file in file_list:
     if file[-4:] != '.txt':
@@ -64,15 +76,38 @@ for file in file_list:
 
     file_path = path + file
 
+    print(file)
+
     data = np.genfromtxt(file_path)
-    time = data[:, 0] / 60 # convert to min
-    lux = data[:, 1] / 1000 # convert to klux
-    conc = calibrate(lux, c_i)
+    time = data[:, 0] # convert to min
+    lux = data[:, 1]  # convert to klux
+    conc = calibrate(lux, c0)
 
-    lux_ax.plot(time, lux, '.', markersize=2)
-    conc_ax.plot(time, conc, '.', markersize=2, label=file)
+    if min(conc) < 0:
+        print('*@#!')
 
-    print(file + ": success!")
+    lux_ax.plot(time, lux)
+
+    # fit model
+    (popt, pcov) = curve_fit(og_model, time, conc, p0=[-1.93e-13, -1.5e7, 0.1, -2.9e-5]) #p0=[0, 0.1, 0, 0.1], bounds=([-1, 0, -1, 0], [1, 0.1, 1, 0.1]))
+    k1, d1, k2, d2 = popt
+    model_y = og_model(time, k1, d1, k2, d2)
+
+    conc_ax.plot(time, conc, label=file + ' data')
+    conc_ax.plot(time, model_y, '--', label=file + ' fit')
+
+    print('k1: ' + str(k1))
+    print('d1: ' + str(d1))
+    print('k2: ' + str(k2))
+    print('d2: ' + str(d2))
+
+    chi = rho_p * mu0 * (1 + Xs) / (2 * a**2) * d1 * d2
+    r = (9 * eta / (2 * rho_p * (d1 + d2))) ** 0.5
+    print('chi: ' + str(chi))
+    print('r: ' + str(r))
+
+    print('')
+
 
 # format plot
 lux_ax.set_xlabel('Time (min)', fontdict=axes_font)
@@ -84,7 +119,7 @@ conc_ax.set_ylabel('Concentration (mg/mL)', fontdict=axes_font)
 for label in lux_ax.get_xticklabels() + lux_ax.get_yticklabels() + conc_ax.get_xticklabels() + conc_ax.get_yticklabels():
     label.set_fontproperties(tick_font)
 
-# title_str = input('What should this plot be titled?\n')
+title_str = input('What should this plot be titled?\n')
 # fig.suptitle(title_str, fontdict=title_font) #, fontweight='black')
 
 handles = []

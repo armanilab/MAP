@@ -8,10 +8,6 @@ from tqdm import tqdm
 from scipy.optimize import curve_fit
 from scipy.signal import savgol_filter
 
-import tkinter as tk
-from tkinter import ttk
-from tkinter import messagebox
-
 # fit params
 eta = 8.9e-4
 # rho_p = 5170

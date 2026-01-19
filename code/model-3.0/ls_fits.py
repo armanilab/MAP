@@ -6,10 +6,7 @@ import sys
 from tqdm import tqdm
 from scipy.optimize import curve_fit
 from scipy.signal import savgol_filter
-
-import tkinter as tk
-from tkinter import ttk
-from tkinter import messagebox
+from matplotlib import font_manager as fm
 
 # fit params
 eta = 8.9e-4
@@ -64,7 +61,8 @@ def fit_data(time, conc, init_guess):
 
 ### START SCRIPT
 path = '../../../../test_data/paper_data/'
-
+# path = '../../../../../qcMAP/qc_data/'
+# path = '../../../../../bioMAP/bio_data/'
 print("\nCurrent path: " + path)
 path_append = input('Add to path? [enter to skip or start with "-" to enter fully new path]\n')
 if len(path_append) > 0 and path_append[0]=='-':
@@ -96,6 +94,7 @@ in2m = 0.0254
 
 m_input = input('Which MNP are you using?\n[a] pure iron oxide\n[b] Dynabeads\n')
 if m_input == 'a':
+    print('iron oxide selected.')
     rho_p = 5170
     guesses = [[0.001, 0.5e-6]]
 elif m_input == 'b':
@@ -152,27 +151,29 @@ print('a = ' + str(a))
 #initial_guess = [0.001, 0.5e-6]
 
 # guesses = []
-chis = [1e-8, 8e-7, 6e-7, 4e-7, 2e-7,
-        1e-7, 8e-6, 6e-6, 4e-6, 2e-6,
-        1e-6, 8e-5, 6e-5, 4e-5, 2e-5,
-        1e-5, 8e-4, 6e-4, 4e-4, 2e-4,
+# chis = [1e-8, 8e-7, 6e-7, 4e-7, 2e-7,
+#         1e-7, 8e-6, 6e-6, 4e-6, 2e-6,
+#         1e-6, 8e-5, 6e-5, 4e-5, 2e-5,
+chis=[1e-5, 8e-4, 6e-4, 4e-4, 2e-4,
         1e-4, 8e-3, 6e-3, 4e-3, 2e-3,
-        1e-3, 8e-2, 6e-2, 4e-2, 2e-2]
+        1e-3, 8e-2, 6e-2, 4e-2, 2e-2, 1e-1,
+        2e-1, 4e-1, 6e-1, 8e-1, 1e0,
+        2e0, 4e0, 6e0, 8e0, 1e1,
+        2e1, 4e1, 6e1, 8e1, 1e2]#1, 2, 4, 6, 8, 10, 12, 14, 16,18, 20, 22, 24, 26, 28, 30]
 rs =   [1e-9, 8e-8, 6e-8, 4e-8, 2e-8,
         1e-8, 8e-7, 6e-7, 4e-7, 2e-7,
         1e-7, 8e-6, 6e-6, 4e-6, 2e-6,
         1e-6, 8e-5, 6e-5, 4e-5, 2e-5,
-        1e-5, 8e-4, 6e-4, 4e-4, 2e-4,
-        1e-4]
+        1e-5] #, 8e-4, 6e-4, 4e-4, 2e-4,
+        #1e-4]
 #guesses = [0.0001]
 guesses = []
 for i in range(len(chis)):
     for j in range(len(rs)):
         guesses.append([chis[i], rs[j]])
-# guesses = [[0.0001, 1.4e-6]]
 print("total number of guesses: " + str(len(guesses)))
 
-bounds = ([0, 1e-9], [0.01, 1e-4])#([0, 0], [np.inf, np.inf])
+bounds = ([0, 1e-9], [100, 5e-6])#([0, 0], [np.inf, np.inf])
 
 #print('init_chi\tinit_radius\tchi\t\tradius\t\tr_sq')
 
@@ -197,27 +198,11 @@ best_guess = guesses[0]
 best_r_sq = -np.inf
 best_results = best_guess
 
-print('\n* indicates new best found')
-print('init_chi\tinit_radius\tchi\t\tradius\t\tr_sq')
+# # print('\n* indicates new best found')
+# print('init_chi\tinit_radius\tchi\t\tradius\t\tr_sq')
 
 for init_guess in tqdm(guesses):
-    # # iterate over guesses
-    # model = working_model
-    # try:
-    #     (popt, pcov) = curve_fit(working_model, time, conc, p0=init_guess, bounds=bounds)
-    # except ValueError:
-    #     #print("ValueError encountered at chi_init {chi:0.4f}, r_init {r:0.4f}".format(chi=init_guess[0], r=init_guess[1]))
-    #     pass
-    # except RuntimeError:
-    #     #print("RuntimeError encountered at chi_init {chi:0.4f}, r_init {r:0.4f}".format(chi=init_guess[0], r=init_guess[1]))
-    #     pass
-    #
-    # model_y = working_model(time, *popt)
-    #
-    # residuals = conc - model_y
-    # ss_res = np.sum(residuals**2) # sum of square residuals
-    # ss_total = np.sum((conc - np.mean(conc)) ** 2) # total sum of squares
-    # r_sq = 1 - ss_res / ss_total
+    # # iterate over guesse
     popt, r_sq = fit_data(time, conc, init_guess)
 
     if r_sq > best_r_sq:
@@ -226,7 +211,7 @@ for init_guess in tqdm(guesses):
         best_guess = init_guess
         print('*', end='')
 
-    print('{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{r_sq:0.8f}'.format(
+    print('{chi_guess:0.2e}\t{r_guess:0.2e}\t{chi:0.6e}\t{r:0.6e}\t{r_sq:0.8f}'.format(
         chi_guess=init_guess[0], r_guess=init_guess[1], chi=popt[0],
         r=popt[1], r_sq=r_sq))
 
@@ -234,10 +219,13 @@ for init_guess in tqdm(guesses):
 print('Input selected initial conditions: ')
 chi_init = float(input('Initial chi: '))
 r_init = float(input('Initial r: '))
+selected_popt = best_results
+# chi_init = best_guess[0]
+# r_init = best_guess[1]
 
 selected_popt, r_sq = fit_data(time, conc, (chi_init, r_init))
 
-print("\nFINAL MODEL")
+print("\nUNADJUSTED MODEL")
 print("file: " + str(file))
 print('init_chi\tinit_radius\tchi\t\tradius\t\tr_sq')
 print('{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{r_sq:0.4f}'.format(
@@ -247,23 +235,23 @@ print('{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{r_sq:0.4f}'.form
 model_y = working_model(time, *selected_popt)
 
 # plot:
-fig = plt.figure()
-plt.plot(time, conc, label='data')
-plt.plot(time, model_y, ':', label='fit')
-plt.xlabel('time (s)')
-plt.ylabel('conc (mg/mL)')
-plt.legend()
-plt.tight_layout()
-plt.show()
-
+# fig = plt.figure()
+# plt.title(file)
+# plt.plot(time, conc, label='data')
+# plt.plot(time, model_y, ':', label='fit')
+# plt.xlabel('time (s)')
+# plt.ylabel('conc (mg/mL)')
+# plt.legend()
+# plt.tight_layout()
+# plt.show()
 
 #### MULTI-MODAL ANALYSIS
-d_input = input('Do you want to do a deeper multi-modal analysis? [y/n]\n')
-if d_input != 'y':
-    sys.exit()
+# d_input = input('\nDo you want to do a analysis of inflection point? [y/n]\n')
+# if d_input != 'y':
+#     sys.exit()
 
 # smooth data using the Savitzky-Golay filter
-window_size = 21
+window_size = 50
 poly_order = 3 # polynomial order
 
 # compute first derivative of data
@@ -272,17 +260,9 @@ conc_prime = savgol_filter(conc, window_size, poly_order, deriv=1,
 conc_dbl_prime = savgol_filter(conc, window_size, poly_order, deriv=2,
     delta=time[1]-time[0])
 min_n = 20
+print('min n: ' + str(min_n))
 global_min_index = np.argmin(conc_prime[min_n:])+min_n
 print('global min timepoint: ' + str(time[global_min_index]))
-
-# plot data
-f, (ax1, ax2) = plt.subplots(2, 1)
-ax1.plot(time, conc)
-ax1.set_ylabel('conc (mg/mL)')
-ax2.plot(time, conc_prime)
-ax2.plot(time[global_min_index], conc_prime[global_min_index], 'o', color='r')
-ax2.set_ylabel('change in conc (mg/mL per s)')
-plt.show()
 
 time_shifted = time[global_min_index:] - time[global_min_index]
 conc_shifted = conc[global_min_index:]
@@ -293,12 +273,14 @@ best_r_sq = -np.inf
 best_results = best_guess
 c0 = conc_shifted[0]
 
-print('\n* indicates new best found')
+#print('\n* indicates new best found')
 print('init_chi\tinit_radius\tchi\t\tradius\t\tr_sq')
 
 for init_guess in tqdm(guesses):
     # iterate over guesses
-    model = working_model
+    popt, r_sq = fit_data(time_shifted, conc_shifted, init_guess)
+
+    # model = working_model
     try:
         (popt, pcov) = curve_fit(working_model, time_shifted, conc_shifted, p0=init_guess, bounds=bounds)
     except ValueError:
@@ -308,9 +290,9 @@ for init_guess in tqdm(guesses):
         #print("RuntimeError encountered at chi_init {chi:0.4f}, r_init {r:0.4f}".format(chi=init_guess[0], r=init_guess[1]))
         pass
 
-    model_y = working_model(time_shifted, *popt)
+    adj_model_y = working_model(time_shifted, *popt)
 
-    residuals = conc_shifted - model_y
+    residuals = conc_shifted - adj_model_y
     ss_res = np.sum(residuals**2) # sum of square residuals
     ss_total = np.sum((conc_shifted - np.mean(conc_shifted)) ** 2) # total sum of squares
     r_sq = 1 - ss_res / ss_total
@@ -319,27 +301,68 @@ for init_guess in tqdm(guesses):
         best_r_sq = r_sq
         best_results = popt
         best_guess = init_guess
-        print('*', end='')
+        #print('*', end='')
 
         print('{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{r_sq:0.8f}'.format(
             chi_guess=init_guess[0], r_guess=init_guess[1], chi=popt[0],
             r=popt[1], r_sq=r_sq))
 
-print("\nFINAL MODEL")
+print('Input selected initial conditions: ')
+chi_init = float(input('Initial chi: '))
+r_init = float(input('Initial r: '))
+#
+adj_selected_popt, adj_r_sq = fit_data(time_shifted, conc_shifted, (chi_init, r_init))
+# selected_popt = best_results
+# chi_init = best_guess[0]
+# r_init = best_guess[1]
+
+
+print("\nTWO-PHASE MODEL")
 print("file: " + str(file))
 print('init_chi\tinit_radius\tchi\t\tradius\t\tr_sq')
 print('{chi_guess:0.4e}\t{r_guess:0.4e}\t{chi:0.4e}\t{r:0.4e}\t{r_sq:0.4f}'.format(
-    chi_guess=best_guess[0], r_guess=best_guess[1], chi=best_results[0],
-    r=best_results[1], r_sq=best_r_sq))
+    chi_guess=chi_init, r_guess=r_init, chi=adj_selected_popt[0],
+    r=adj_selected_popt[1], r_sq=adj_r_sq))
 
-model_y = working_model(time_shifted, *best_results)
+two_model_y = working_model(time_shifted, *adj_selected_popt)
 
-# plot:
-fig = plt.figure()
-plt.plot(time_shifted, conc_shifted, label='data')
-plt.plot(time_shifted, model_y, ':', label='fit')
-plt.xlabel('shifted time (s)')
-plt.ylabel('shifted conc (mg/mL)')
+# plot data
+f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(10, 6))
+f.suptitle(file)
+ax3.plot(time, conc, label='data')
+ax3.plot(time, model_y, ':', label='fit')
+ax3.set_xlabel('time (s)')
+ax3.set_ylabel('conc (mg/mL)')
+ax2.plot(time, conc_prime)
+ax2.plot(time[global_min_index], conc_prime[global_min_index], 'o', color='r')
+ax2.set_xlabel('time (s)')
+ax2.set_ylabel('change in conc (mg/mL per s)')
+ax4.plot(time_shifted, conc_shifted, label='data')
+ax4.plot(time_shifted, two_model_y, ':', label='fit')
+ax4.set_xlabel('shifted time (s)')
+ax4.set_ylabel('shifted conc (mg/mL)')
+
+ax1.spines['top'].set_visible(False)   # Hide top spine
+ax1.spines['right'].set_visible(False) # Hide right spine
+ax1.spines['left'].set_visible(False)
+ax1.spines['bottom'].set_visible(False)
+ax1.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+
+# add results as text in ax 1
+results = 'initial guesses:\n     chi = {chi_guess:0.0e}    rad = {r_guess:0.0e}\n'.format(chi_guess=chi_init, r_guess=r_init) + \
+    'bounds:\n     chi = ({cl:0.0e}, {ch:0.0e})\n     rad = ({rl:0.0e}, {rh:0.0e})\n'.format(
+        cl=bounds[0][0], ch=bounds[1][0], rl=bounds[0][1], rh=bounds[1][1]) + \
+    'inflection point: ' + str(time[global_min_index]) + ' s\n\n' + \
+    '        unadjusted       adjusted\n' + \
+    'chi:    {chi_unadj:0.6e}     {chi_adj:0.6e}\n'.format(chi_unadj=selected_popt[0], chi_adj=adj_selected_popt[0]) + \
+    'rad:    {r_unadj:0.6e}     {r_adj:0.6e}\n'.format(r_unadj=selected_popt[1], r_adj=adj_selected_popt[1]) + \
+    'r^2:    {rsq_unadj:0.6f}         {rsq_adj:0.6f}\n'.format(rsq_unadj=r_sq, rsq_adj=adj_r_sq)
+ax1.text(0.05, 0.9, results, transform=ax1.transAxes, fontproperties=fm.FontProperties(family='Monaco',size=10),
+    verticalalignment='top', horizontalalignment='left')
+
 plt.legend()
 plt.tight_layout()
-plt.show()
+# plt.show()
+
+save_dir = '../../../../validation_data/model-3.0_results/qc_tests/'
+plt.savefig(save_dir + file[:-4] + '.png', dpi=600)
